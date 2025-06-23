@@ -1,6 +1,5 @@
 import React from 'react';
-import Header from '@/app/components/layout/Header';
-import Footer from '@/app/components/layout/Footer';
+
 
 export default function MainLayout({
   children,
@@ -9,9 +8,9 @@ export default function MainLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header />
+      {/* <Header /> */}
       <main className="flex-1">{children}</main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 } 
