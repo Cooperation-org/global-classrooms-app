@@ -40,33 +40,27 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 
 function ScheduleSection({ schedule }: { schedule: Project['schedule'] }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-      <div className="px-6 py-5 border-b border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900">Schedule</h3>
+    <section >
+      <h2 className="text-lg font-semibold text-[#222B45] mb-6">Schedule</h2>
+      <div className="flex flex-col">
+        {schedule.map((item, i) => (
+          <div key={i}>
+            <h3 className="font-bold text-[#222B45] text-base mb-1">{item.week}: {item.title}</h3>
+            <div className='text-sm text-[#1A7F4F]  mb-4'>{item.description}</div>
+            {i !== schedule.length - 1 && (
+              <div className=" mb-4" />
+            )}
+          </div>
+        ))}
       </div>
-      <div className="p-6">
-        <div className="space-y-4">
-          {schedule.map((item, i) => (
-            <div key={i} className="relative pl-8">
-              <div className="absolute left-0 top-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-medium text-white">
-                {i + 1}
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 text-sm mb-1">{item.week}: {item.title}</h4>
-                <p className="text-xs text-gray-600">{item.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
 function GoalsSection({ goals }: { goals: string[] }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-      <div className="px-6 py-5 border-b border-gray-100">
+    <div >
+      <div className="py-5 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Goals and Targets</h3>
       </div>
       <div className="p-6">
@@ -85,7 +79,7 @@ function GoalsSection({ goals }: { goals: string[] }) {
 
 function ResourcesSection({ resources }: { resources: Project['resources'] }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div>
       <div className="px-6 py-5 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
       </div>
@@ -160,4 +154,6 @@ function DiscussionSection({ discussion }: { discussion: Project['discussion'] }
       </div>
     </div>
   );
-} 
+}
+
+export { GoalsSection, ResourcesSection, DiscussionSection, ScheduleSection }; 

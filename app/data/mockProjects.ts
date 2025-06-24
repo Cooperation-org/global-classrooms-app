@@ -4,6 +4,7 @@ export const mockProjects: Project[] = [
   {
     id: 1,
     title: 'Water Conservation Initiative',
+    description: 'A collaborative effort to reduce water usage and promote sustainable practices in schools and communities.',
     overview: 'This project focuses on water conservation including the management of water resources through effective methods, education, and community engagement. Students and teachers will participate in water quality monitoring, awareness campaigns, and implementation of conservation strategies. The project culminates in a student-led campaign to implement water-saving measures in their schools and efforts.',
     schedule: [
       { week: 'Week 1-2', title: 'Introduction to Water Conservation', description: 'Project kick-off and team formation' },

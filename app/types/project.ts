@@ -1,6 +1,7 @@
 export interface Project {
   id: number;
   title: string;
+  description: string;
   overview: string;
   schedule: { week: string; title: string; description: string }[];
   goals: string[];
