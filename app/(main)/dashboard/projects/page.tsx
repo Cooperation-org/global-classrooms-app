@@ -1,5 +1,7 @@
-import React from 'react';
+'use client'
+import React, { useState } from 'react';
 import { icons } from '../../../components/icons/icons';
+import Link from 'next/link';
 
 const projects = [
   {
@@ -37,6 +39,14 @@ const projects = [
   },
 ];
 
+const TABS = [
+  'All Projects',
+  'Joined',
+  'Featured',
+  'HomeBiogas',
+  'Collaborative',
+];
+
 function Tag({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${color || 'bg-blue-100 text-blue-800'}`}>{children}</span>
@@ -60,7 +70,7 @@ function ProjectCard({ project }: { project: typeof projects[0] }) {
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-xs text-muted-foreground">{project.school}</span>
-          <button className="px-3 py-1 text-xs font-medium rounded bg-gray-100 hover:bg-gray-200 transition-colors">View Details</button>
+          <Link href={`/dashboard/projects/${project.id}`} className="px-3 py-1 text-xs font-medium rounded bg-gray-100 hover:bg-gray-200 transition-colors">View Details</Link>
         </div>
         <div className="flex items-center gap-2 mt-3">
           {/* Example icons for project features/participants */}
@@ -75,10 +85,26 @@ function ProjectCard({ project }: { project: typeof projects[0] }) {
 }
 
 export default function ProjectsPage() {
+  const [activeTab, setActiveTab] = useState('All Projects');
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-2">Environmental Projects</h1>
       <p className="text-muted-foreground mb-6">Explore and join projects aligned with UN Sustainable Development Goals</p>
+      {/* Tabs */}
+      <div className="flex space-x-2 mb-6 border-b">
+        {TABS.map(tab => (
+          <button
+            key={tab}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors focus:outline-none
+              ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}
+            onClick={() => setActiveTab(tab)}
+            type="button"
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
       {/* Filters and search bar placeholder */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
         <input className="border rounded px-3 py-2 text-sm w-64" placeholder="Search projects..." />
