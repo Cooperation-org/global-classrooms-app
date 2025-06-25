@@ -39,21 +39,21 @@ const DonationForm = () => {
               <h2 className="text-lg font-semibold">Why Donate?</h2>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li className="flex items-start gap-3">
-                  <img src="empower.png" alt="Icon" className="w-6 h-6 mt-1" />
+                  <img src="/empower.png" alt="Icon" className="w-6 h-6 mt-1" />
                   <div>
                     <strong>Empower Students:</strong> Support students in
                     implementing environmental projects
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <img src="equip.png" alt="Icon" className="w-6 h-6 mt-1" />
+                  <img src="/equip.png" alt="Icon" className="w-6 h-6 mt-1" />
                   <div>
                     <strong>Equip Schools:</strong> Provide schools with
                     sustainable technology and resources
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <img src="global.png" alt="Icon" className="w-6 h-6 mt-1" />
+                  <img src="/global.png" alt="Icon" className="w-6 h-6 mt-1" />
                   <div>
                     <strong>Global Impact:</strong> Create lasting environmental
                     change across communities
@@ -273,7 +273,7 @@ const DonationForm = () => {
             </div>
 
             <Button className="w-full flex items-center justify-center gap-2">
-              <img src="heart.png" alt="Icon" className="w-4 h-4" />
+              <img src="/heart.png" alt="Icon" className="w-4 h-4" />
               Donate Now
             </Button>
             <p className="text-center text-sm text-gray-400">
