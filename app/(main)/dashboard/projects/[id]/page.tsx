@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ProjectOverview } from '@/app/components/projects/ProjectOverview';
-import { ProjectMembers } from '@/app/components/projects/ProjectMembers';
+import { ManageMembers } from '@/app/components/projects/ManageMembers';
 import { ParticipatingSchools, ProjectLeaders } from '@/app/components/projects/ProjectSidebar';
 import { Project } from '@/app/types/project';
 import { mockProjects } from '@/app/data/mockProjects';
@@ -76,7 +76,7 @@ export default function ProjectDetailsPage() {
       case 'goals':
         return <GoalsSection goals={project.goals} />;
       case 'members':
-        return <ProjectMembers />;
+        return <ManageMembers />;
       default:
         return <ProjectOverview project={project} />;
     }
