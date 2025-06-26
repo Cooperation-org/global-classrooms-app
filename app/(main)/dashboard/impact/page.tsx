@@ -1,4 +1,5 @@
 import React from 'react';
+import ImpactCharts from './ImpactCharts';
 
 const stats = [
   {
@@ -48,31 +49,9 @@ export default function ImpactPage() {
             </div>
           ))}
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Impact Over Time</h2>
-          {/* Simple SVG area/line chart */}
-          <svg width="100%" height="220" viewBox="0 0 600 220" className="w-full h-56">
-            {/* Axes */}
-            <line x1="50" y1="200" x2="550" y2="200" stroke="#E5E7EB" strokeWidth="2" />
-            <line x1="50" y1="40" x2="50" y2="200" stroke="#E5E7EB" strokeWidth="2" />
-            {/* Area/lines (mock, not dynamic) */}
-            <polyline fill="#4BA18622" stroke="#4BA186" strokeWidth="3" points="50,180 170,170 290,160 410,140 530,120" />
-            <polyline fill="#A78BFA22" stroke="#A78BFA" strokeWidth="3" points="50,200 170,190 290,180 410,170 530,160" />
-            <polyline fill="#60A5FA22" stroke="#60A5FA" strokeWidth="3" points="50,200 170,200 290,190 410,180 530,170" />
-            {/* X-axis labels */}
-            <text x="50" y="215" fontSize="16" fill="#9CA3AF">Jan</text>
-            <text x="170" y="215" fontSize="16" fill="#9CA3AF">Feb</text>
-            <text x="290" y="215" fontSize="16" fill="#9CA3AF">Mar</text>
-            <text x="410" y="215" fontSize="16" fill="#9CA3AF">Apr</text>
-            <text x="530" y="215" fontSize="16" fill="#9CA3AF">May</text>
-            {/* Y-axis labels */}
-            <text x="30" y="200" fontSize="16" fill="#9CA3AF">0</text>
-            <text x="20" y="160" fontSize="16" fill="#9CA3AF">50</text>
-            <text x="20" y="120" fontSize="16" fill="#9CA3AF">100</text>
-            <text x="20" y="80" fontSize="16" fill="#9CA3AF">150</text>
-            <text x="20" y="40" fontSize="16" fill="#9CA3AF">200</text>
-          </svg>
-        </div>
+        
+        <ImpactCharts />
+        
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Your Impact Certificates</h2>
           <div className="divide-y divide-gray-100">
