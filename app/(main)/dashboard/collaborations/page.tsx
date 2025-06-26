@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import { mockCollaborations } from '@/app/data/mockCollaborations';
+import { CollaborationCard } from '@/app/components/collaborations/CollaborationCard';
 
 export default function CollaborationsPage() {
   return (
@@ -15,7 +17,7 @@ export default function CollaborationsPage() {
             Start New
           </Link>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-6 px-8 py-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-6 px-8 py-6 mb-8">
           <div className="flex items-center justify-center w-14 h-14 rounded-full bg-[#E6F4EA]">
             <svg width="32" height="32" fill="none" viewBox="0 0 32 32">
               <circle cx="16" cy="16" r="14" stroke="#4BA186" strokeWidth="2" fill="#F6FCF8" />
@@ -26,6 +28,11 @@ export default function CollaborationsPage() {
             <div className="text-lg font-bold text-gray-900 mb-1">Global Impact Network</div>
             <div className="text-gray-500">Join forces with schools across borders to amplify your environmental impact</div>
           </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {mockCollaborations.map(collab => (
+            <CollaborationCard key={collab.id} collaboration={collab} />
+          ))}
         </div>
       </div>
     </div>
