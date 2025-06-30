@@ -1,10 +1,119 @@
 'use client';
 
 import React, { useState } from 'react';
+import { apiService } from '@/app/services/api';
+import { API_ENDPOINTS } from '@/app/utils/constants';
+import { isValidEmail, isValidPassword } from '@/app/utils/validation';
+import { RegistrationResponse } from '@/app/types';
 
 const SignUpPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    password_confirm: '',
+  });
+  
+  // UI state
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear errors when user starts typing
+    if (error) setError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!selectedRole) {
+      setError('Please select a role');
+      return;
+    }
+    
+    if (!formData.email || !formData.password || !formData.password_confirm) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    if (!isValidEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    const passwordValidation = isValidPassword(formData.password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors[0]);
+      return;
+    }
+    
+    if (formData.password !== formData.password_confirm) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await apiService.post(API_ENDPOINTS.AUTH.REGISTER, {
+        email: formData.email,
+        password: formData.password,
+        password_confirm: formData.password_confirm,
+        role: selectedRole
+      });
+      
+      if (response.success) {
+        setSuccess('Account created successfully! Welcome to Global Classrooms!');
+        
+        // Log the response data for debugging
+        console.log('Registration successful:', response.data);
+        
+        // Store user data and tokens if needed
+        const registrationData = response.data as RegistrationResponse;
+        if (registrationData?.user && registrationData?.tokens) {
+          // Store tokens in localStorage
+          localStorage.setItem('access_token', registrationData.tokens.access);
+          localStorage.setItem('refresh_token', registrationData.tokens.refresh);
+          
+          // Store user data
+          localStorage.setItem('user_data', JSON.stringify(registrationData.user));
+        }
+        
+        // Reset form
+        setFormData({
+          email: '',
+          password: '',
+          password_confirm: '',
+        });
+        setSelectedRole('');
+        setShowEmailForm(false);
+        
+        // Optionally redirect to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      } else {
+        setError(response.error || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      setError('An error occurred during registration. Please try again.');
+      console.error('Registration error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="w-full bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -26,6 +135,7 @@ const SignUpPage = () => {
           <div className="grid grid-cols-2 gap-4">
             {/* Student Role */}
             <button 
+              type="button"
               onClick={() => setSelectedRole('student')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 selectedRole === 'student' 
@@ -34,13 +144,13 @@ const SignUpPage = () => {
               }`}
             >
               <div className="flex flex-col items-center">
-                
                 <span className="font-semibold text-gray-900">Student</span>
               </div>
             </button>
 
             {/* Teacher Role */}
             <button 
+              type="button"
               onClick={() => setSelectedRole('teacher')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 selectedRole === 'teacher' 
@@ -49,7 +159,6 @@ const SignUpPage = () => {
               }`}
             >
               <div className="flex flex-col items-center">
-                
                 <span className="font-semibold text-gray-900">Teacher</span>
               </div>
             </button>
@@ -111,6 +220,7 @@ const SignUpPage = () => {
 
           {/* Email Signup Toggle */}
           <button 
+            type="button"
             onClick={() => setShowEmailForm(!showEmailForm)}
             className="w-full p-4 border-2 border-gray-200 hover:border-gray-300 rounded-lg flex items-center justify-between text-gray-700 transition-colors"
           >
@@ -134,32 +244,62 @@ const SignUpPage = () => {
 
           {/* Email Form - Expandable */}
           {showEmailForm && (
-            <div className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <form onSubmit={handleSubmit} className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
               <div>
                 <input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   placeholder="Enter your email"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                  required
                 />
               </div>
               <div>
                 <input
                   type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   placeholder="Create a password"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                  required
                 />
               </div>
               <div>
                 <input
                   type="password"
+                  name="password_confirm"
+                  value={formData.password_confirm}
+                  onChange={handleInputChange}
                   placeholder="Confirm password"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                  required
                 />
               </div>
-              <button className="w-full p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-                Create Account
+              
+              {/* Error and Success Messages */}
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+                  {success}
+                </div>
+              )}
+              
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full p-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors"
+              >
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
-            </div>
+            </form>
           )}
         </div>
 

@@ -1,9 +1,137 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { apiService } from '@/app/services/api';
+import { API_ENDPOINTS } from '@/app/utils/constants';
+import { isValidEmail } from '@/app/utils/validation';
+import { LoginResponse } from '@/app/types';
 
 const LoginPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const accessToken = localStorage.getItem('access_token');
+    const userData = localStorage.getItem('user_data');
+    
+    if (accessToken && userData) {
+      console.log('User already authenticated, redirecting to:', redirectTo);
+      // User is already logged in, redirect to dashboard or intended page
+      router.replace(redirectTo);
+    }
+  }, [router, redirectTo]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear errors when user starts typing
+    if (error) setError('');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    if (!isValidEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await apiService.post(API_ENDPOINTS.AUTH.LOGIN, {
+        email: formData.email,
+        password: formData.password
+      });
+      
+      if (response.success) {
+        setSuccess('Login successful! Redirecting...');
+        
+        // Debug: Log the response data
+        console.log('Login response:', response.data);
+        
+        // Store user data and tokens
+        const loginData = response.data as LoginResponse;
+        
+        // Check if we have the required data
+        if (loginData?.user && loginData?.access && loginData?.refresh) {
+          localStorage.setItem('access_token', loginData.access);
+          localStorage.setItem('refresh_token', loginData.refresh);
+          localStorage.setItem('user_data', JSON.stringify(loginData.user));
+          
+          console.log('Tokens stored successfully');
+          console.log('User data stored:', loginData.user);
+          console.log('Redirecting to:', redirectTo);
+        } else {
+          console.error('Missing required data in login response:', loginData);
+          setError('Login response is missing required data');
+          return;
+        }
+        
+        // Reset form
+        setFormData({
+          email: '',
+          password: '',
+        });
+        
+        // Use a small delay to ensure localStorage is updated, then redirect
+        setTimeout(() => {
+          // Use router.replace to prevent back button issues
+          router.replace(redirectTo);
+        }, 100);
+      } else {
+        // Handle error response
+        console.log('Login error response:', response);
+        console.log('Response success:', response.success);
+        console.log('Response error:', response.error);
+        console.log('Response message:', response.message);
+        console.log('Response details:', response.details);
+        console.log('Full response object:', JSON.stringify(response, null, 2));
+        
+        // Check for different error response structures
+        let errorMessage = 'Login failed. Please check your credentials.';
+        
+        if (response.error) {
+          errorMessage = response.error;
+        } else if (response.message) {
+          errorMessage = response.message;
+        } else if (response.details?.detail) {
+          errorMessage = response.details.detail;
+        }
+        
+        console.log('Final error message:', errorMessage);
+        setError(errorMessage);
+      }
+    } catch (err) {
+      setError('An error occurred during login. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="w-full bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -74,6 +202,7 @@ const LoginPage = () => {
 
           {/* Email Login Toggle */}
           <button 
+            type="button"
             onClick={() => setShowEmailForm(!showEmailForm)}
             className="w-full p-4 border-2 border-gray-200 hover:border-gray-300 rounded-lg flex items-center justify-between text-gray-700 transition-colors"
           >
@@ -97,21 +226,43 @@ const LoginPage = () => {
 
           {/* Email Form - Expandable */}
           {showEmailForm && (
-            <div className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <form onSubmit={handleLogin} className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
               <div>
                 <input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   placeholder="Enter your email"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                  required
                 />
               </div>
               <div>
                 <input
                   type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   placeholder="Enter your password"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-colors"
+                  required
                 />
               </div>
+              
+              {/* Error and Success Messages */}
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+                  {success}
+                </div>
+              )}
+              
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center">
                   <input type="checkbox" className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
@@ -119,10 +270,14 @@ const LoginPage = () => {
                 </label>
                 <a href="#" className="text-green-600 hover:underline">Forgot password?</a>
               </div>
-              <button className="w-full p-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-                Sign In
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full p-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors"
+              >
+                {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
-            </div>
+            </form>
           )}
         </div>
 

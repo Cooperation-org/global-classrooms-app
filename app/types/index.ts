@@ -58,6 +58,49 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  details?: {
+    detail: string;
+  };
+  status_code?: number;
+  timestamp?: string;
+}
+
+// Registration response types
+export interface RegistrationTokens {
+  refresh: string;
+  access: string;
+}
+
+export interface RegistrationUser {
+  id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  role: 'student' | 'teacher' | 'admin';
+  mobile_number: string | null;
+  gender: string | null;
+  date_of_birth: string | null;
+  profile_picture: string | null;
+  city: string | null;
+  country: string | null;
+  is_active: boolean;
+  date_joined: string;
+  school_count: number;
+  signup_method: string;
+}
+
+export interface RegistrationResponse {
+  user: RegistrationUser;
+  tokens: RegistrationTokens;
+}
+
+// Login response types (same structure as registration)
+export interface LoginResponse {
+  user: RegistrationUser;
+  access: string;
+  refresh: string;
 }
 
 // Form types

@@ -5,10 +5,10 @@ export const APP_DESCRIPTION = 'Connecting students worldwide through innovative
 // API endpoints
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
+    LOGIN: '/auth/login/',
+    REGISTER: '/auth/register/',
+    LOGOUT: '/auth/logout/',
+    REFRESH: '/auth/refresh/',
   },
   USERS: {
     PROFILE: '/users/profile',

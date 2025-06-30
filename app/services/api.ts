@@ -25,11 +25,31 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
+      // If the response is not ok (4xx, 5xx), handle it as an error response
       if (!response.ok) {
-        throw new Error(data.error || 'An error occurred');
+        // Return the error response as-is, but mark it as unsuccessful
+        return {
+          success: false,
+          error: data.details?.detail || data.message || data.error || 'An error occurred',
+          message: data.message,
+          details: data.details,
+          status_code: data.status_code,
+          timestamp: data.timestamp
+        };
       }
 
-      return data;
+      // Handle different response formats
+      // If the response has a 'success' field, use it as is
+      if (data.hasOwnProperty('success')) {
+        return data;
+      }
+      
+      // If the response doesn't have a 'success' field but has data, wrap it
+      return {
+        success: true,
+        data: data,
+        message: data.message || 'Request successful'
+      };
     } catch (error) {
       return {
         success: false,
