@@ -1,50 +1,64 @@
-import React from 'react';
-import Link from 'next/link';
+"use client";
 
-const Footer: React.FC = () => {
+import React from 'react';
+import { icons } from '../icons/icons';
+
+export default function Footer() {
   return (
-    <footer className="border-t bg-background">
-      <div className="container py-8 md:py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Global Classrooms</h3>
-            <p className="text-sm text-muted-foreground">
-              Connecting students worldwide through innovative online learning experiences.
-            </p>
+    <footer className="bg-black text-white pt-16 pb-8">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row gap-12 md:gap-0 justify-between items-start">
+        {/* Left: Logo and description */}
+        <div className="flex-1 min-w-[220px] flex flex-col gap-4">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">🌐</span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold text-lg">Global Classrooms</span>
+              <span className="text-xs text-gray-300 -mt-1">Environmental Education Platform</span>
+            </div>
           </div>
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Platform</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/features" className="text-muted-foreground hover:text-foreground">Features</Link></li>
-              <li><Link href="/pricing" className="text-muted-foreground hover:text-foreground">Pricing</Link></li>
-              <li><Link href="/api" className="text-muted-foreground hover:text-foreground">API</Link></li>
+          <p className="text-gray-400 text-sm max-w-xs">
+            Transforming environmental education through technology, collaboration, and economic incentives.
+          </p>
+        </div>
+        {/* Middle: Links */}
+        <div className="flex-1 flex flex-row gap-16 justify-center min-w-[220px]">
+          <div>
+            <div className="font-bold mb-2">Home</div>
+            <ul className="space-y-1 text-gray-300 text-sm">
+              <li><a href="#features" className="hover:text-white transition">Features</a></li>
+              <li><a href="#how-it-works" className="hover:text-white transition">How It Works</a></li>
+              <li><a href="#impact" className="hover:text-white transition">Impact</a></li>
+              <li><a href="#gooddollar" className="hover:text-white transition">GoodDollar</a></li>
             </ul>
           </div>
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/help" className="text-muted-foreground hover:text-foreground">Help Center</Link></li>
-              <li><Link href="/contact" className="text-muted-foreground hover:text-foreground">Contact</Link></li>
-              <li><Link href="/status" className="text-muted-foreground hover:text-foreground">Status</Link></li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Legal</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/privacy" className="text-muted-foreground hover:text-foreground">Privacy</Link></li>
-              <li><Link href="/terms" className="text-muted-foreground hover:text-foreground">Terms</Link></li>
-              <li><Link href="/cookies" className="text-muted-foreground hover:text-foreground">Cookies</Link></li>
+          <div>
+            <div className="font-bold mb-2">Partners</div>
+            <ul className="space-y-1 text-gray-300 text-sm">
+              <li>HomeBiogas</li>
+              <li>LinkedTrust</li>
+              <li>GoodCollective</li>
             </ul>
           </div>
         </div>
-        <div className="mt-8 border-t pt-8">
-          <p className="text-center text-sm text-muted-foreground">
-            © 2024 Global Classrooms. All rights reserved.
-          </p>
+        {/* Right: Subscribe */}
+        <div className="flex-1 min-w-[260px] flex flex-col gap-4 items-start md:items-end">
+          <div className="font-bold text-2xl mb-2 text-white">Subscribe to get latest updates</div>
+          <form className="flex w-full max-w-xs">
+            <input
+              type="email"
+              placeholder="Your email"
+              className="flex-1 px-4 py-2 rounded-l bg-black border border-gray-600 text-white placeholder-gray-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-r bg-white text-black font-semibold hover:bg-gray-100 transition"
+            >
+              Subscribe
+            </button>
+          </form>
+          <div className="text-gray-300 text-sm mt-2">Contact: <a href="mailto:email@globalclassroom.com" className="underline">email@globalclassroom.com</a></div>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer; 
+} 
