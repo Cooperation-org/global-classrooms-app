@@ -6,6 +6,7 @@ import { apiService } from '@/app/services/api';
 import { API_ENDPOINTS } from '@/app/utils/constants';
 import { isValidEmail } from '@/app/utils/validation';
 import { LoginResponse } from '@/app/types';
+import { useConnect, useAccount } from 'wagmi';
 
 const LoginPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -21,6 +22,10 @@ const LoginPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
+
+  // Wagmi wallet connect
+  const { connect, connectors, isPending } = useConnect();
+  const { address, isConnected } = useAccount();
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -134,6 +139,109 @@ const LoginPage = () => {
     }
   };
 
+  // Wallet sign in handler
+  const handleWalletSignIn = async () => {
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+    
+    try {
+      // If already connected, use the current address
+      if (isConnected && address) {
+        await handleWalletLogin(address);
+        return;
+      }
+
+      // If not connected, connect first
+      const connector = connectors[0];
+      if (!connector) {
+        setError('No wallet connector found.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Connect and wait for the connection to be established
+      await connect({ connector });
+      
+      // The address will be available in the next render cycle
+      // We'll handle the login in a useEffect that watches for address changes
+      
+    } catch (err: unknown) {
+      console.error('Wallet connection error:', err);
+      if (typeof err === 'object' && err && 'message' in err) {
+        setError((err as { message: string }).message || 'Wallet connection failed.');
+      } else {
+        setError('Wallet connection failed.');
+      }
+      setIsLoading(false);
+    }
+  };
+
+  // Handle wallet login after connection
+  useEffect(() => {
+    if (isConnected && address && isLoading) {
+      handleWalletLogin(address);
+    }
+  }, [isConnected, address, isLoading]);
+
+  const handleWalletLogin = async (walletAddress: string) => {
+    try {
+      const response = await apiService.post('/auth/login/wallet/', {
+        wallet_address: walletAddress,
+      });
+      
+      if (response.success) {
+        setSuccess('Wallet login successful! Redirecting...');
+        
+        // Store user data and tokens from the response
+        const responseData = response.data as {
+          user: {
+            id: string;
+            username: string;
+            email: string | null;
+            first_name: string;
+            last_name: string;
+            full_name: string;
+            role: string;
+            mobile_number: string | null;
+            gender: string | null;
+            date_of_birth: string | null;
+            profile_picture: string | null;
+            city: string | null;
+            country: string;
+            is_active: boolean;
+            date_joined: string;
+            school_count: number;
+            signup_method: string;
+          };
+          tokens: {
+            access: string;
+            refresh: string;
+          };
+        };
+        
+        if (responseData?.user && responseData?.tokens) {
+          localStorage.setItem('access_token', responseData.tokens.access);
+          localStorage.setItem('refresh_token', responseData.tokens.refresh);
+          localStorage.setItem('user_data', JSON.stringify(responseData.user));
+          
+          setTimeout(() => {
+            router.replace(redirectTo);
+          }, 100);
+        } else {
+          setError('Wallet login response is missing required data');
+        }
+      } else {
+        setError(response.error || 'Wallet login failed.');
+      }
+    } catch (err) {
+      console.error('Wallet login error:', err);
+      setError('Wallet login failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
       {/* Main Content */}
@@ -148,26 +256,29 @@ const LoginPage = () => {
           </p>
         </div>
 
+        {/* Error and Success Messages */}
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+            {success}
+          </div>
+        )}
+
         {/* Login Options */}
         <div className="space-y-4">
-          {/* MetaMask Wallet Button */}
-          <button className="w-full p-4 bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center justify-between text-white transition-colors group">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-orange-400 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22.05 12l-1.78-6.3L18.8 1.5l-7.5 5.4L3.8 1.5 2.33 5.7.55 12l1.78 6.3L4.8 22.5l7.5-5.4 7.5 5.4 1.47-4.2L22.05 12z"/>
-                </svg>
-              </div>
-              <span className="font-semibold text-white">Connect with MetaMask</span>
-            </div>
-            <svg 
-              className="w-5 h-5 text-orange-200 group-hover:text-white transition-colors" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          {/* Wallet Sign In Button */}
+          <button 
+            type="button"
+            onClick={handleWalletSignIn}
+            disabled={isLoading || isPending}
+            className="w-full p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 rounded-lg flex items-center justify-center text-white font-semibold transition-colors"
+          >
+            {isLoading || isPending ? 'Connecting Wallet...' : 'Sign in with Wallet'}
           </button>
 
           {/* OR Divider */}
@@ -189,7 +300,7 @@ const LoginPage = () => {
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
               <span className="font-semibold text-gray-900">Sign in with Email</span>
@@ -246,19 +357,6 @@ const LoginPage = () => {
                   )}
                 </button>
               </div>
-              
-              {/* Error and Success Messages */}
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-              
-              {success && (
-                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
-                  {success}
-                </div>
-              )}
               
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center">

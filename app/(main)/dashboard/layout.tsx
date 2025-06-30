@@ -35,7 +35,8 @@ export default function DashboardLayout({
         const user = JSON.parse(userData);
         console.log('Parsed user data:', user);
         
-        if (!user.id || !user.email) {
+        // Check for either email (email users) or username (wallet users)
+        if (!user.id || (!user.email && !user.username)) {
           throw new Error('Invalid user data');
         }
         console.log('User data is valid, setting authenticated');
