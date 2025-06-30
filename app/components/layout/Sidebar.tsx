@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { icons } from '../icons/icons';
 import { usePathname } from 'next/navigation';
 import { RegistrationUser } from '@/app/types';
+import { useDisconnect } from 'wagmi';
 
 const navItems = [
   { label: 'Home', icon: 'home', href: '/dashboard' },
@@ -21,6 +22,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<RegistrationUser | null>(null);
+  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     // Get user data from localStorage
@@ -35,6 +37,9 @@ const Sidebar = () => {
   }, []);
 
   const handleLogout = () => {
+    // Disconnect wallet if connected
+    disconnect();
+    
     // Clear all auth data
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
@@ -88,11 +93,13 @@ const Sidebar = () => {
           <div className="mb-4">
             <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                {user.full_name ? user.full_name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                {user.full_name ? user.full_name.charAt(0).toUpperCase() : 
+                 user.email ? user.email.charAt(0).toUpperCase() : 
+                 user.username ? user.username.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.full_name || user.email}
+                  {user.full_name || user.email || user.username}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">
                   {user.role}

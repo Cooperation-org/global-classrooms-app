@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiService } from '@/app/services/api';
 import { API_ENDPOINTS } from '@/app/utils/constants';
 import { isValidEmail, isValidPassword } from '@/app/utils/validation';
-import { RegistrationResponse } from '@/app/types';
+import { useConnect, useAccount } from 'wagmi';
 
 const SignUpPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -23,6 +23,10 @@ const SignUpPage = () => {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Wagmi wallet connect
+  const { connect, connectors, isPending } = useConnect();
+  const { address, isConnected } = useAccount();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,21 +81,10 @@ const SignUpPage = () => {
       });
       
       if (response.success) {
-        setSuccess('Account created successfully! Welcome to Global Classrooms!');
+        setSuccess('Account created successfully! Please check your email to verify your account.');
         
         // Log the response data for debugging
         console.log('Registration successful:', response.data);
-        
-        // Store user data and tokens if needed
-        const registrationData = response.data as RegistrationResponse;
-        if (registrationData?.user && registrationData?.tokens) {
-          // Store tokens in localStorage
-          localStorage.setItem('access_token', registrationData.tokens.access);
-          localStorage.setItem('refresh_token', registrationData.tokens.refresh);
-          
-          // Store user data
-          localStorage.setItem('user_data', JSON.stringify(registrationData.user));
-        }
         
         // Reset form
         setFormData({
@@ -101,17 +94,124 @@ const SignUpPage = () => {
         });
         setSelectedRole('');
         setShowEmailForm(false);
-        
-        // Optionally redirect to dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 2000);
       } else {
         setError(response.error || 'Registration failed. Please try again.');
       }
     } catch (err) {
       setError('An error occurred during registration. Please try again.');
       console.error('Registration error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Wallet sign up handler
+  const handleWalletSignUp = async () => {
+    setError('');
+    setSuccess('');
+    
+    if (!selectedRole) {
+      setError('Please select a role before connecting your wallet.');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // If already connected, use the current address
+      if (isConnected && address) {
+        await handleWalletRegistration(address);
+        return;
+      }
+
+      // If not connected, connect first
+      const connector = connectors[0];
+      if (!connector) {
+        setError('No wallet connector found.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Connect and wait for the connection to be established
+      await connect({ connector });
+      
+      // The address will be available in the next render cycle
+      // We'll handle the registration in a useEffect that watches for address changes
+      
+    } catch (err: unknown) {
+      console.error('Wallet connection error:', err);
+      if (typeof err === 'object' && err && 'message' in err) {
+        setError((err as { message: string }).message || 'Wallet connection failed.');
+      } else {
+        setError('Wallet connection failed.');
+      }
+      setIsLoading(false);
+    }
+  };
+
+  // Handle wallet registration after connection
+  useEffect(() => {
+    if (isConnected && address && selectedRole && isLoading) {
+      handleWalletRegistration(address);
+    }
+  }, [isConnected, address, selectedRole, isLoading]);
+
+  const handleWalletRegistration = async (walletAddress: string) => {
+    try {
+      const response = await apiService.post('/auth/wallet-register/', {
+        wallet_address: walletAddress,
+        role: selectedRole,
+      });
+      
+      if (response.success) {
+        setSuccess('Wallet registration successful!');
+        
+        // Store user data and tokens from the response
+        const responseData = response.data as {
+          user: {
+            id: string;
+            username: string;
+            email: string | null;
+            first_name: string;
+            last_name: string;
+            full_name: string;
+            role: string;
+            mobile_number: string | null;
+            gender: string | null;
+            date_of_birth: string | null;
+            profile_picture: string | null;
+            city: string | null;
+            country: string;
+            is_active: boolean;
+            date_joined: string;
+            school_count: number;
+            signup_method: string;
+          };
+          tokens: {
+            access: string;
+            refresh: string;
+          };
+        };
+        
+        if (responseData?.user && responseData?.tokens) {
+          localStorage.setItem('access_token', responseData.tokens.access);
+          localStorage.setItem('refresh_token', responseData.tokens.refresh);
+          localStorage.setItem('user_data', JSON.stringify(responseData.user));
+          
+          // Redirect to dashboard after successful registration
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1500);
+        }
+        
+        // Reset form
+        setSelectedRole('');
+      } else {
+        setError(response.error || 'Wallet registration failed.');
+      }
+    } catch (err) {
+      console.error('Wallet registration error:', err);
+      setError('Wallet registration failed.');
     } finally {
       setIsLoading(false);
     }
@@ -167,26 +267,29 @@ const SignUpPage = () => {
           </div>
         </div>
 
+        {/* Error and Success Messages */}
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+            {success}
+          </div>
+        )}
+
         {/* Signup Options */}
         <div className="space-y-4">
-          {/* MetaMask Wallet Button */}
-          <button className="w-full p-4 bg-orange-500 hover:bg-orange-600 rounded-lg flex items-center justify-between text-white transition-colors group">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-orange-400 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22.05 12l-1.78-6.3L18.8 1.5l-7.5 5.4L3.8 1.5 2.33 5.7.55 12l1.78 6.3L4.8 22.5l7.5-5.4 7.5 5.4 1.47-4.2L22.05 12z"/>
-                </svg>
-              </div>
-              <span className="font-semibold text-white">Connect with MetaMask</span>
-            </div>
-            <svg 
-              className="w-5 h-5 text-orange-200 group-hover:text-white transition-colors" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          {/* Wallet Sign Up Button */}
+          <button
+            type="button"
+            onClick={handleWalletSignUp}
+            disabled={isLoading || isPending}
+            className="w-full p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 rounded-lg flex items-center justify-center text-white font-semibold transition-colors"
+          >
+            {isLoading || isPending ? 'Connecting Wallet...' : 'Sign up with Wallet'}
           </button>
 
           {/* OR Divider */}
@@ -293,19 +396,6 @@ const SignUpPage = () => {
                   )}
                 </button>
               </div>
-              
-              {/* Error and Success Messages */}
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-              
-              {success && (
-                <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
-                  {success}
-                </div>
-              )}
               
               <button 
                 type="submit"

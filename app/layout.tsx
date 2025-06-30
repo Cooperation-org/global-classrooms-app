@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
+import { WagmiProviders } from "@/components/providers/WagmiProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +19,11 @@ export const metadata: Metadata = {
   description: "Connecting students worldwide through innovative online learning experiences",
   keywords: ["online learning", "education", "courses", "global classrooms"],
   authors: [{ name: "Global Classrooms Team" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -31,9 +36,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <WagmiProviders>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </WagmiProviders>
       </body>
     </html>
   );
