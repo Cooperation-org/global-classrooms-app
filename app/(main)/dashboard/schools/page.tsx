@@ -20,7 +20,7 @@ export default function SchoolsPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Global Schools Network</h1>
       <p className="text-gray-500 mb-8">Connect with schools around the world working on environmental projects</p>
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">

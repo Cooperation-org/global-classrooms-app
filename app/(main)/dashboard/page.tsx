@@ -100,7 +100,7 @@ export default function DashboardHome() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow p-4 flex flex-col">
             <img src={placeholderImg} alt="Project Update" className="rounded mb-2 w-full h-40 object-cover" />
-            <span className="font-semibold">Project 'Green Our School' update submitted</span>
+            <span className="font-semibold">Project &quote;Green Our School&quote; update submitted</span>
             <span className="text-xs text-green-700">Maplewood Academy</span>
           </div>
           <div className="bg-white rounded-xl shadow p-4 flex flex-col">
