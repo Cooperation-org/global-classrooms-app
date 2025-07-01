@@ -370,7 +370,7 @@ const RewardsSection: React.FC = () => {
 
                 {/* 🔗 Slack Button */}
                 <a
-                  href="https://join.slack.com/your-workspace-link" // ← REPLACE with your actual Slack invite link
+                  href="https://join.slack.com/t/global-classroom-talk/shared_invite/zt-38di7bdpy-znxFApF3QNg1F2guuKXPyw"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
