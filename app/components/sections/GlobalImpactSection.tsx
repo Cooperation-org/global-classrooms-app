@@ -33,36 +33,53 @@ const stats = [
   
 ];
 
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.18,
+    },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7 } },
+};
+
 export default function GlobalImpactSection() {
   return (
     <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+      <motion.div
+        className="container mx-auto px-4"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.3 }}
+      >
         <motion.h2
           className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-10"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
+          variants={fadeUp}
         >
           Our Global Impact
         </motion.h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
+          variants={containerVariants}
+        >
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
               className="rounded-2xl bg-[#f6f8fa] flex flex-col items-center justify-center p-8 text-center shadow-sm"
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.12, duration: 0.6, ease: 'easeOut' }}
-              viewport={{ once: true }}
+              variants={fadeUp}
             >
               <span className="text-green-600 text-4xl mb-3">{stat.icon}</span>
               <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
               <div className="text-gray-500 text-base font-medium">{stat.label}</div>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 } 

@@ -28,17 +28,34 @@ const steps = [
   {}
 ];
 
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.18,
+    },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7 } },
+};
+
 export default function HowItWorksSection() {
   return (
     <section className="bg-gradient-to-b from-[#f6fcf8] to-white py-24">
-      <div className="container mx-auto px-4">
+      <motion.div
+        className="container mx-auto px-4"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.3 }}
+      >
         {/* Title with lines */}
         <motion.div
           className="flex items-center justify-center w-full mb-2"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
+          variants={fadeUp}
         >
           <span className="flex-1 h-px bg-gray-300 mr-4 hidden sm:block" />
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 whitespace-nowrap">How It Works</h2>
@@ -46,10 +63,7 @@ export default function HowItWorksSection() {
         </motion.div>
         <motion.p
           className="text-center text-lg sm:text-xl text-gray-500 mb-12"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
+          variants={fadeUp}
         >
           From signup to action — we make climate education easy.
         </motion.p>
@@ -58,10 +72,7 @@ export default function HowItWorksSection() {
             <motion.div
               key={step.title}
               className="rounded-2xl bg-white shadow-sm border border-gray-200 flex flex-col items-center p-8 text-center"
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.15, duration: 0.7, ease: 'easeOut' }}
-              viewport={{ once: true }}
+              variants={fadeUp}
             >
               <span className="text-green-600 text-2xl font-bold mb-2">{String(i + 1).padStart(2, '0')}</span>
               <span className="w-12 h-12 rounded-full bg-[#e6f4ea] flex items-center justify-center mb-4 text-2xl text-green-600">
@@ -72,7 +83,7 @@ export default function HowItWorksSection() {
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 } 

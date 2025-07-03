@@ -37,17 +37,34 @@ const features = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.18,
+    },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 32 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7 } },
+};
+
 export default function WhatWeOfferSection() {
   return (
     <section className="py-24">
-      <div className="container mx-auto px-4">
+      <motion.div
+        className="container mx-auto px-4"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.3 }}
+      >
         {/* Title with lines */}
         <motion.div
           className="flex items-center justify-center w-full mb-2"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
+          variants={fadeUp}
         >
           <span className="flex-1 h-px bg-gray-300 mr-4 hidden sm:block" />
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 whitespace-nowrap">What We Offer</h2>
@@ -55,24 +72,21 @@ export default function WhatWeOfferSection() {
         </motion.div>
         <motion.p
           className="text-center text-xl text-gray-500 mb-12"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
+          variants={fadeUp}
         >
           A platform for regenerative education, built for scale.
         </motion.p>
         <div className="flex flex-col lg:flex-row gap-12 items-center">
           {/* Left: Features grid */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <motion.div
+            className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full"
+            variants={containerVariants}
+          >
             {features.map((f, i) => (
               <motion.div
                 key={i}
                 className="rounded-xl bg-[#f6fcf8] p-6 flex items-center gap-4 shadow-sm"
-                initial={{ opacity: 0, y: 32 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.12, duration: 0.6, ease: 'easeOut' }}
-                viewport={{ once: true }}
+                variants={fadeUp}
               >
                 <span className="w-12 h-12 rounded-lg bg-[#e6f4ea] flex items-center justify-center text-2xl text-green-600">
                   {f.icon}
@@ -83,24 +97,21 @@ export default function WhatWeOfferSection() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
           {/* Right: Image */}
           <motion.div
             className="flex-1 flex justify-center"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
-            viewport={{ once: true }}
+            variants={fadeUp}
           >
             <img
-              src="/what-we-offer.jpg"
+              src="https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=800&q=80"
               alt="Classroom"
               className="rounded-2xl shadow-lg w-full max-w-md object-cover"
               style={{ aspectRatio: '4/3' }}
             />
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 } 

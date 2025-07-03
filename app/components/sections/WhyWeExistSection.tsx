@@ -40,8 +40,8 @@ export default function WhyWeExistSection() {
           viewport={{ once: true }}
         >
           <img
-            src="/why-we-exist.jpg"
-            alt="Children planting a tree"
+            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80"
+            alt="Seedling growing in hands"
             className="rounded-2xl shadow-lg w-full max-w-lg object-cover"
             style={{ aspectRatio: '4/3' }}
           />
