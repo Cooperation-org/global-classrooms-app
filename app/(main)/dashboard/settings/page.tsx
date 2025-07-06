@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   return (
-    <div className="w-full max-w-5xl mx-auto py-8 px-4">
+    <div className="w-full max-w-5xl  py-8 px-4">
       {/* Breadcrumb */}
       <div className="mb-4 text-sm text-gray-500">
         <span className="text-green-700 font-semibold">Settings</span> / <span>Overview</span>

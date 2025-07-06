@@ -59,7 +59,7 @@ export default function CollaborationDetailsPage() {
   const collab = mockCollaborations.find(c => c.id === id) || mockCollaborations[0];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-5xl  px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumbs */}
       <div className="text-sm text-[#4BA186] mb-2">Collaborations / <span className="text-gray-900">{collab.title}</span></div>
       {/* Title, subtitle, tags, join button */}
