@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { fetchSchoolById, SchoolDetails } from '@/app/services/api';
+import { fetchSchoolById, SchoolDetails, fetchProjectsBySchool, Project } from '@/app/services/api';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SchoolActiveProjects } from '@/app/components/schools/SchoolActiveProjects';
@@ -124,6 +124,7 @@ export default function SchoolDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [school, setSchool] = useState<SchoolDetails | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -135,6 +136,10 @@ export default function SchoolDetailsPage() {
         const schoolId = params.id as string;
         const schoolData = await fetchSchoolById(schoolId);
         setSchool(schoolData);
+        
+        // Fetch projects for this school
+        const projectsResponse = await fetchProjectsBySchool(schoolId);
+        setProjects(projectsResponse.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load school details');
       } finally {
@@ -196,7 +201,7 @@ export default function SchoolDetailsPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-10">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">School Not Found</h1>
-          <p className="text-gray-600 mb-4">The school you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-4">The school you&apos;re looking for doesn&apos;t exist.</p>
           <Link 
             href="/dashboard/schools"
             className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -219,14 +224,14 @@ export default function SchoolDetailsPage() {
         <>
           <SchoolOverviewSection school={school} />
           {/* For now, these will be empty since API doesn't provide this data */}
-          <SchoolActiveProjects projects={[]} />
+          <SchoolActiveProjects projects={projects} />
           <SchoolCollaborations collaborations={[]} />
-          <SchoolImpact impact={[]} />
+          <SchoolImpact projects={projects} />
         </>
       )}
-      {activeTab === 'projects' && <SchoolActiveProjects projects={[]} />}
+      {activeTab === 'projects' && <SchoolActiveProjects projects={projects} />}
       {activeTab === 'collaborations' && <SchoolCollaborations collaborations={[]} />}
-      {activeTab === 'impact' && <SchoolImpact impact={[]} />}
+      {activeTab === 'impact' && <SchoolImpact projects={projects} />}
     </div>
   );
 } 

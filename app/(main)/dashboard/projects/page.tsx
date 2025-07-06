@@ -1,43 +1,8 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchProjects, Project } from '@/app/services/api';
 import { icons } from '../../../components/icons/icons';
 import Link from 'next/link';
-
-const projects = [
-  {
-    id: 1,
-    title: 'Clean Water Initiative',
-    description: 'Implement water conservation strategies and water quality monitoring systems in school and surrounding community.',
-    tags: ['Water', 'SDG 6'],
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-    school: 'Unknown School',
-    icons: ['A', 'B', 'C'],
-    count: 42,
-  },
-  {
-    id: 2,
-    title: 'Zero Waste School',
-    description: 'Develop and implement a comprehensive zero waste strategy for schools to reduce landfill waste.',
-    tags: ['Waste', 'SDG 6'],
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
-    school: 'Unknown School',
-    icons: ['A', 'B', 'C'],
-    count: 36,
-  },
-  {
-    id: 3,
-    title: 'Local Biodiversity Mapping',
-    description: 'Map and protect local biodiversity through community science initiatives and habitat restoration.',
-    tags: ['Biodiversity', 'SDG 15'],
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
-    school: 'Unknown School',
-    icons: ['A', 'B', 'C'],
-    count: 29,
-  },
-];
 
 const TABS = [
   'All Projects',
@@ -53,31 +18,50 @@ function Tag({ children, color }: { children: React.ReactNode; color?: string })
   );
 }
 
-function ProjectCard({ project }: { project: typeof projects[0] }) {
+function ProjectCard({ project }: { project: Project }) {
+  // Get the first environmental theme as the main tag
+  const mainTheme = Object.keys(project.environmental_themes)[0] || 'Environmental';
+  
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'bg-green-100 text-green-800';
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="rounded-lg border bg-white shadow-sm flex flex-col">
       <div className="aspect-video overflow-hidden rounded-t-lg">
-        <img src={project.image} alt={project.title} className="w-full h-full object-cover" />
+        <img 
+          src={project.cover_image || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80'} 
+          alt={project.title} 
+          className="w-full h-full object-cover" 
+        />
       </div>
       <div className="p-4 flex-1 flex flex-col">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          {project.tags.map((tag, i) => (
-            <Tag key={tag} color={i === 0 ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>{tag}</Tag>
-          ))}
-          <Tag color="bg-green-100 text-green-800">{project.status}</Tag>
+          <Tag color="bg-blue-100 text-blue-800">{mainTheme}</Tag>
+          <Tag color="bg-purple-100 text-purple-800">SDG 13</Tag>
+          <Tag color={getStatusColor(project.status)}>{project.status}</Tag>
         </div>
         <h3 className="font-semibold text-lg mb-1">{project.title}</h3>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.short_description}</p>
         <div className="flex items-center justify-between mt-auto">
-          <span className="text-xs text-muted-foreground">{project.school}</span>
+          <span className="text-xs text-muted-foreground">{project.lead_school_name || 'Unknown School'}</span>
           <Link href={`/dashboard/projects/${project.id}`} className="px-3 py-1 text-xs font-medium rounded bg-gray-100 hover:bg-gray-200 transition-colors">View Details</Link>
         </div>
         <div className="flex items-center gap-2 mt-3">
-          {/* Example icons for project features/participants */}
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             {icons.check} {icons.star} {icons.users}
           </span>
-          <span className="text-xs text-muted-foreground ml-2">+{project.count}</span>
+          <span className="text-xs text-muted-foreground ml-2">+{project.participating_schools_count || 0}</span>
         </div>
       </div>
     </div>
@@ -86,11 +70,72 @@ function ProjectCard({ project }: { project: typeof projects[0] }) {
 
 export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState('All Projects');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchProjects();
+        setProjects(response.results);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-lg border bg-white shadow-sm">
+                <div className="aspect-video bg-gray-200 rounded-t-lg"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                  <div className="h-6 bg-gray-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Environmental Projects</h1>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-2">Environmental Projects</h1>
       <p className="text-muted-foreground mb-6">Explore and join projects aligned with UN Sustainable Development Goals</p>
+      
       {/* Tabs */}
       <div className="flex space-x-2 mb-6 border-b">
         {TABS.map(tab => (
@@ -105,6 +150,7 @@ export default function ProjectsPage() {
           </button>
         ))}
       </div>
+      
       {/* Filters and search bar placeholder */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
         <input className="border rounded px-3 py-2 text-sm w-64" placeholder="Search projects..." />
@@ -118,11 +164,30 @@ export default function ProjectsPage() {
           <option>All Status</option>
         </select>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
+      
+      {projects.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
+          <p className="text-gray-500 mb-6">Get started by creating your first environmental project</p>
+          <Link 
+            href="/dashboard/collaborations/new"
+            className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
+          >
+            Create Project
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

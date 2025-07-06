@@ -36,7 +36,7 @@ export default function DashboardHome() {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         if (errorMessage.includes('401') || errorMessage.includes('Authentication')) {
           // Redirect to login if authentication failed
-          window.location.href = '/login';
+          window.location.href = '/signin';
           return;
         }
         setError('Failed to load projects. Please try again later.');

@@ -105,26 +105,19 @@ export default function CreateCollaborationPage() {
         }
       }
 
-      // Handle cover image upload
-      let coverImageUrl = '';
-      if (coverImage) {
-        // Convert file to base64 for now (in production, you'd upload to a file service)
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(coverImage);
-        });
-        coverImageUrl = base64;
-      }
-
       // Filter out empty goals
       const filteredGoals = goals.filter(goal => goal.trim() !== '');
 
       const projectData: CreateProjectRequest = {
         ...formData as CreateProjectRequest,
-        cover_image: coverImageUrl,
+        cover_image: coverImage || undefined, // Send undefined instead of empty string
         goals: filteredGoals,
       };
+
+      console.log('Project data being sent:', projectData);
+      console.log('Cover image:', coverImage);
+      console.log('Cover image type:', typeof coverImage);
+      console.log('Is cover image File?', coverImage instanceof File);
 
       await createProject(projectData);
       

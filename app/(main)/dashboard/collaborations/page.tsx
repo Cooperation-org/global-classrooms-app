@@ -6,7 +6,7 @@ import { CollaborationCard } from '@/app/components/collaborations/Collaboration
 export default function CollaborationsPage() {
   return (
     <div className="min-h-screen bg-[#F6FCF8]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-5xl  px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Cross-Community Collaborations</h1>

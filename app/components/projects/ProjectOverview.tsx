@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Slack } from 'lucide-react';
+import { ProjectGoal } from '@/app/services/api';
 
 interface Project {
   id: number;
@@ -30,7 +31,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <ScheduleSection schedule={project.schedule} />
-        <GoalsSection goals={project.goals} />
+        <GoalsSection goals={[]} />
       </div>
       <ResourcesSection resources={project.resources} />
       <DiscussionSection discussion={project.discussion} />
@@ -57,18 +58,51 @@ function ScheduleSection({ schedule }: { schedule: Project['schedule'] }) {
   );
 }
 
-function GoalsSection({ goals }: { goals: string[] }) {
+function GoalsSection({ goals }: { goals: ProjectGoal[] }) {
+  if (!goals || goals.length === 0) {
+    return (
+      <div>
+        <div className="py-5 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900">Goals and Targets</h3>
+        </div>
+        <div className="p-6">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No goals set</h3>
+            <p className="text-gray-500">Project goals will appear here once they are added.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div >
+    <div>
       <div className="py-5 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Goals and Targets</h3>
       </div>
       <div className="p-6">
-        <div className="space-y-3">
-          {goals.map((goal, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5 flex-shrink-0" disabled />
-              <span className="text-sm text-gray-700 leading-relaxed">{goal}</span>
+        <div className="space-y-4">
+          {goals.map((goal) => (
+            <div key={goal.id} className="flex items-start gap-3">
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5 flex-shrink-0" 
+                checked={goal.is_completed}
+                disabled
+              />
+              <div className="flex-1">
+                <span className={`text-sm leading-relaxed ${goal.is_completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                  {goal.title}
+                </span>
+                {goal.description && (
+                  <p className="text-xs text-gray-500 mt-1">{goal.description}</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -107,48 +141,31 @@ function ResourcesSection({ resources }: { resources: Project['resources'] }) {
 }
 
 function DiscussionSection({ discussion }: { discussion: Project['discussion'] }) {
-  const [newMessage, setNewMessage] = React.useState('');
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
       <div className="px-6 py-5 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900">Discussion Forum</h2>
       </div>
-      <div className="p-6">
-        <div className="space-y-6 mb-6">
-          {discussion.map((msg, i) => (
-            <div key={i} className="flex gap-4">
-              <img
-                src={msg.avatar}
-                alt={msg.user}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-semibold text-gray-900">{msg.user}</span>
-                  <span className="text-xs text-gray-500">{msg.time}</span>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{msg.message}</p>
-              </div>
+      <div >
+        {/* Slack Integration Section */}
+        <div >
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="w-12 h-12 bg-[#4A154B] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Slack className="w-6 h-6 text-white" />
             </div>
-          ))}
-        </div>
-        <div className="flex gap-3 pt-4 border-t border-gray-200">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-600 flex-shrink-0">
-            You
-          </div>
-          <div className="flex-1 flex gap-3">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Send Message"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </button>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Join our Slack workspace</h3>
+              <p className="text-xs text-gray-600 mb-3">Connect with team members and stay updated on project progress</p>
+              <a
+                href="https://slack.com/join"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#4A154B] text-white text-sm font-medium rounded-lg hover:bg-[#3a0f3a] transition-colors"
+              >
+                <Slack className="w-4 h-4" />
+                Join Slack Channel
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -27,7 +27,11 @@ export interface Project {
   created_at: string;
   updated_at: string;
   participating_schools_count: string;
-  total_impact: string;
+  total_impact: {
+    trees_planted: number;
+    students_engaged: number;
+    waste_recycled: number;
+  };
 }
 
 export interface ProjectsResponse {
@@ -146,7 +150,7 @@ const handleAuthError = (error: { status_code?: number; detail?: string }) => {
     
     // Redirect to login
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/signin';
     }
   }
   throw error;
@@ -269,6 +273,14 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
     // Add cover image if it's a File
     if (projectData.cover_image instanceof File) {
       formData.append('cover_image', projectData.cover_image);
+      console.log('Cover image added to FormData:', projectData.cover_image.name, projectData.cover_image.size);
+    } else {
+      console.log('No cover image file found:', projectData.cover_image);
+    }
+
+    console.log('FormData entries:');
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value);
     }
 
     const response = await fetch(`${API_BASE_URL}/projects/`, {
@@ -387,6 +399,125 @@ export async function fetchSchoolById(id: string): Promise<SchoolDetails> {
     return await response.json();
   } catch (error) {
     console.error('Error fetching school details:', error);
+    throw error;
+  }
+}
+
+export async function fetchProjectsBySchool(schoolId: string, page: number = 1, limit: number = 10): Promise<ProjectsResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?lead_school=${schoolId}&page=${page}&limit=${limit}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching projects by school:', error);
+    throw error;
+  }
+}
+
+export async function fetchProjectById(id: string): Promise<Project> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching project details:', error);
+    throw error;
+  }
+}
+
+export interface ProjectUpdate {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  author_name: string;
+  created_at: string;
+  updated_at: string;
+  project: string;
+}
+
+export interface ProjectUpdatesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ProjectUpdate[];
+}
+
+export async function fetchProjectUpdates(projectId: string, page: number = 1, limit: number = 10): Promise<ProjectUpdatesResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/updates/?page=${page}&limit=${limit}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching project updates:', error);
+    throw error;
+  }
+}
+
+export interface ProjectGoal {
+  id: string;
+  title: string;
+  description: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+  project: string;
+}
+
+export interface ProjectGoalsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ProjectGoal[];
+}
+
+export async function fetchProjectGoals(projectId: string, page: number = 1, limit: number = 10): Promise<ProjectGoalsResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?page=${page}&limit=${limit}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching project goals:', error);
     throw error;
   }
 }
