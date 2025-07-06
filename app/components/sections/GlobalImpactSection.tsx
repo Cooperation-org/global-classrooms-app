@@ -67,7 +67,7 @@ export default function GlobalImpactSection() {
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
           variants={containerVariants}
         >
-          {stats.map((stat, i) => (
+          {stats.map((stat) => (
             <motion.div
               key={stat.label}
               className="rounded-2xl bg-[#f6f8fa] flex flex-col items-center justify-center p-8 text-center shadow-sm"

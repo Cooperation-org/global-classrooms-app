@@ -1,6 +1,122 @@
 import { ApiResponse } from '@/app/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+export interface Project {
+  id: string;
+  title: string;
+  short_description: string;
+  detailed_description: string;
+  cover_image: string;
+  environmental_themes: Record<string, string>;
+  start_date: string;
+  end_date: string;
+  is_open_for_collaboration: boolean;
+  offer_rewards: boolean;
+  recognition_type: string;
+  award_criteria: string;
+  lead_school: string;
+  lead_school_name: string;
+  contact_person_name: string;
+  contact_person_email: string;
+  contact_person_role: string;
+  contact_country: string;
+  contact_city: string;
+  media_files: Record<string, string>;
+  status: 'draft' | 'published' | 'completed';
+  created_by: string;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+  participating_schools_count: string;
+  total_impact: string;
+}
+
+export interface ProjectsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Project[];
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+export async function fetchProjects(page: number = 1, limit: number = 10): Promise<ProjectsResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?page=${page}&limit=${limit}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    throw error;
+  }
+}
+
+export async function fetchFeaturedProjects(): Promise<Project[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?featured=true&limit=6`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching featured projects:', error);
+    throw error;
+  }
+}
+
+export async function fetchCompletedProjects(): Promise<Project[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?status=completed&limit=4`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching completed projects:', error);
+    throw error;
+  }
+}
+
+export async function fetchOpenCollaborations(): Promise<Project[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?is_open_for_collaboration=true&limit=4`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching open collaborations:', error);
+    throw error;
+  }
+}
 
 class ApiService {
   private async request<T>(

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { motion, useAnimation, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaFlask, FaGlobe, FaCoins } from 'react-icons/fa';
 
 const features = [
@@ -94,7 +94,7 @@ export default function HeroSection() {
           whileInView="show"
           viewport={{ once: true, amount: 0.3 }}
         >
-          {features.map((f, i) => (
+          {features.map((f) => (
             <motion.div
               key={f.title}
               className="rounded-2xl bg-gradient-to-br from-[#f6fcf8] to-white border border-gray-200 p-6 flex items-start gap-4 shadow-sm"
