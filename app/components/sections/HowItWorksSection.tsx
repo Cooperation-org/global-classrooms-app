@@ -24,8 +24,7 @@ const steps = [
     icon: icons.rewards, // Replace with a trophy icon if available
     title: 'Track and celebrate impact',
     desc: 'Schools receive badges, dashboards, and recognition',
-  },
-  {}
+  }
 ];
 
 const containerVariants = {
