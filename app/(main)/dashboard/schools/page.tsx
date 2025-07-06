@@ -1,69 +1,105 @@
 'use client'
-import React, { useState } from 'react';
-import { mockSchools } from '@/app/data/mockSchools';
+import React, { useState, useEffect } from 'react';
+import { fetchSchools, School } from '@/app/services/api';
 import { SchoolCard } from '@/app/components/schools/SchoolCard';
-
-const TABS = [
-  { id: 'all', label: 'All Schools' },
-  { id: 'partners', label: 'Partner Schools' },
-];
+import Link from 'next/link';
 
 export default function SchoolsPage() {
-  const [activeTab, setActiveTab] = useState('all');
-  const [search, setSearch] = useState('');
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // For now, just show all mockSchools. Filtering can be added later.
-  const filteredSchools = mockSchools.filter(school =>
-    school.name.toLowerCase().includes(search.toLowerCase()) ||
-    school.location.toLowerCase().includes(search.toLowerCase()) ||
-    school.description.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    const loadSchools = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchSchools();
+        setSchools(response.results);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load schools');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSchools();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 py-10">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 py-10">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Schools</h1>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Global Schools Network</h1>
-      <p className="text-gray-500 mb-8">Connect with schools around the world working on environmental projects</p>
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
-        <div className="flex-1 relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
-            <svg width="18" height="18" fill="none" viewBox="0 0 20 20">
-              <circle cx="9" cy="9" r="7" stroke="#9CA3AF" strokeWidth="2"/>
-              <path d="M15 15L18 18" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Global Schools Network</h1>
+          <p className="text-gray-500 mb-8">Connect with schools around the world working on environmental projects</p>
+        </div>
+        <Link 
+          href="/dashboard/schools/new"
+          className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
+        >
+          Add New School
+        </Link>
+      </div>
+
+      {schools.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-          </span>
-          <input
-            type="text"
-            placeholder="Search schools by name, location, or description..."
-            className="w-full border border-[#E5E7EB] rounded-lg pl-10 pr-4 py-2 text-sm placeholder-[#9CA3AF] focus:outline-none"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button className="border border-gray-200 bg-white rounded-lg px-4 py-2 text-sm text-gray-700 flex items-center gap-2">
-            <svg width="16" height="16" fill="none" viewBox="0 0 20 20"><path d="M3 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9H4a1 1 0 0 1-1-1V6zm2 3V7h10v2H5z" fill="#6B7280"/></svg>
-            All Regions
-          </button>
-          <button className="border border-gray-200 bg-white rounded-lg px-4 py-2 text-sm text-gray-700">All Focus Areas</button>
-          <button className="border border-gray-200 bg-white rounded-lg px-4 py-2 text-sm text-gray-700">All Students</button>
-        </div>
-      </div>
-      <div className="flex gap-6 border-b border-gray-200 mb-8">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            className={`py-2 px-4 font-medium text-base border-b-2 transition-colors ${activeTab === tab.id ? 'border-[#1A7F4F] text-[#1A7F4F]' : 'border-transparent text-[#6B7280]'}`}
-            onClick={() => setActiveTab(tab.id)}
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No schools found</h3>
+          <p className="text-gray-500 mb-6">Get started by adding your first school</p>
+          <Link 
+            href="/dashboard/schools/new"
+            className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
           >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredSchools.map(school => (
-          <SchoolCard key={school.id} school={school} />
-        ))}
-      </div>
+            Add School
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {schools.map((school) => (
+            <SchoolCard key={school.id} school={school} />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 
