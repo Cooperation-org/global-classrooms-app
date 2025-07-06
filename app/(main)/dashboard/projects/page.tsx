@@ -71,8 +71,13 @@ function ProjectCard({ project }: { project: Project }) {
 export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState('All Projects');
   const [projects, setProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState('All Themes');
+  const [selectedSDG, setSelectedSDG] = useState('All SDGs');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -80,6 +85,7 @@ export default function ProjectsPage() {
         setLoading(true);
         const response = await fetchProjects();
         setProjects(response.results);
+        setFilteredProjects(response.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load projects');
       } finally {
@@ -89,6 +95,69 @@ export default function ProjectsPage() {
 
     loadProjects();
   }, []);
+
+  // Filter projects based on active tab, search, and filters
+  useEffect(() => {
+    let filtered = projects;
+
+    // Filter by active tab
+    switch (activeTab) {
+      case 'Joined':
+        filtered = filtered.filter(project => project.is_open_for_collaboration);
+        break;
+      case 'Featured':
+        // For now, we'll show published projects as featured
+        filtered = filtered.filter(project => project.status === 'published');
+        break;
+      case 'HomeBiogas':
+        // Filter by HomeBiogas theme if it exists
+        filtered = filtered.filter(project => 
+          Object.values(project.environmental_themes).some(theme => 
+            theme.toLowerCase().includes('homebiogas') || 
+            theme.toLowerCase().includes('biogas')
+          )
+        );
+        break;
+      case 'Collaborative':
+        filtered = filtered.filter(project => project.is_open_for_collaboration);
+        break;
+      default:
+        // 'All Projects' - no additional filtering
+        break;
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(project =>
+        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.short_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.lead_school_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by theme
+    if (selectedTheme !== 'All Themes') {
+      filtered = filtered.filter(project =>
+        Object.values(project.environmental_themes).some(theme =>
+          theme.toLowerCase().includes(selectedTheme.toLowerCase())
+        )
+      );
+    }
+
+    // Filter by status
+    if (selectedStatus !== 'All Status') {
+      filtered = filtered.filter(project => project.status === selectedStatus.toLowerCase());
+    }
+
+    setFilteredProjects(filtered);
+  }, [projects, activeTab, searchTerm, selectedTheme, selectedSDG, selectedStatus]);
+
+  // Get unique themes and statuses for filter options
+  const uniqueThemes = Array.from(new Set(
+    projects.flatMap(project => Object.values(project.environmental_themes))
+  )).sort();
+
+  const uniqueStatuses = Array.from(new Set(projects.map(project => project.status))).sort();
 
   if (loading) {
     return (
@@ -151,21 +220,47 @@ export default function ProjectsPage() {
         ))}
       </div>
       
-      {/* Filters and search bar placeholder */}
+      {/* Filters and search bar */}
       <div className="flex flex-wrap items-center gap-4 mb-8">
-        <input className="border rounded px-3 py-2 text-sm w-64" placeholder="Search projects..." />
-        <select className="border rounded px-3 py-2 text-sm">
+        <input 
+          className="border rounded px-3 py-2 text-sm w-64" 
+          placeholder="Search projects..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedTheme}
+          onChange={(e) => setSelectedTheme(e.target.value)}
+        >
           <option>All Themes</option>
+          {uniqueThemes.map(theme => (
+            <option key={theme} value={theme}>{theme}</option>
+          ))}
         </select>
-        <select className="border rounded px-3 py-2 text-sm">
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedSDG}
+          onChange={(e) => setSelectedSDG(e.target.value)}
+        >
           <option>All SDGs</option>
+          <option>SDG 13</option>
+          <option>SDG 14</option>
+          <option>SDG 15</option>
         </select>
-        <select className="border rounded px-3 py-2 text-sm">
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
           <option>All Status</option>
+          {uniqueStatuses.map(status => (
+            <option key={status} value={status}>{status}</option>
+          ))}
         </select>
       </div>
       
-      {projects.length === 0 ? (
+      {filteredProjects.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,17 +268,24 @@ export default function ProjectsPage() {
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
-          <p className="text-gray-500 mb-6">Get started by creating your first environmental project</p>
-          <Link 
-            href="/dashboard/collaborations/new"
-            className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
-          >
-            Create Project
-          </Link>
+          <p className="text-gray-500 mb-6">
+            {projects.length === 0 
+              ? 'Get started by creating your first environmental project'
+              : 'No projects match your current filters'
+            }
+          </p>
+          {projects.length === 0 && (
+            <Link 
+              href="/dashboard/collaborations/new"
+              className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
+            >
+              Create Project
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>
