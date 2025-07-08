@@ -4,7 +4,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchProjectById, Project, fetchProjectGoals, ProjectGoal } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
-import { ProjectOverview } from '@/app/components/projects/ProjectOverview';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
 import { ParticipatingSchools, ProjectLeaders } from '@/app/components/projects/ProjectSidebar';
 import { ProjectProgressUpdates } from '@/app/components/projects/ProjectProgressUpdates';
@@ -136,7 +135,7 @@ export default function ProjectDetailsPage() {
       case 'members':
         return <ManageMembers />;
       default:
-        return <ProjectOverview project={project as any} />;
+        return null;
     }
   };
 
