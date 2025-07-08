@@ -243,6 +243,36 @@ export async function fetchOpenCollaborations(): Promise<Project[]> {
   }
 }
 
+export async function fetchFutureProjects(): Promise<Project[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/?limit=20`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const currentDate = new Date();
+    
+    // Filter projects that haven't started yet (future projects)
+    const futureProjects = data.results.filter((project: Project) => {
+      const startDate = new Date(project.start_date);
+      return startDate > currentDate;
+    });
+
+    return futureProjects;
+  } catch (error) {
+    console.error('Error fetching future projects:', error);
+    throw error;
+  }
+}
+
 export async function createProject(projectData: CreateProjectRequest): Promise<Project> {
   try {
     const formData = new FormData();
@@ -518,6 +548,117 @@ export async function fetchProjectGoals(projectId: string, page: number = 1, lim
     return await response.json();
   } catch (error) {
     console.error('Error fetching project goals:', error);
+    throw error;
+  }
+}
+
+export interface AssignedSubject {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface AssignedClass {
+  id: number;
+  name: string;
+  school: string;
+  school_name: string;
+  description: string;
+}
+
+export interface TeacherProfile {
+  id: number;
+  user: string;
+  school: string;
+  user_name: string;
+  school_name: string;
+  teacher_role: 'class_teacher' | 'subject_teacher' | 'admin';
+  assigned_subjects: number[];
+  assigned_classes: number[];
+  assigned_subjects_data: AssignedSubject[];
+  assigned_classes_data: AssignedClass[];
+  status: 'active' | 'inactive';
+  join_link: string;
+}
+
+export interface TeacherProfilesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: TeacherProfile[];
+}
+
+export async function fetchTeacherProfiles(schoolId?: string, page: number = 1, limit: number = 10): Promise<TeacherProfilesResponse> {
+  try {
+    let url = `${API_BASE_URL}/teacher-profiles/?page=${page}&limit=${limit}`;
+    if (schoolId) {
+      url += `&school=${schoolId}`;
+    }
+
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching teacher profiles:', error);
+    throw error;
+  }
+}
+
+export interface StudentProfile {
+  id: number;
+  user: string;
+  school: string;
+  user_name: string;
+  school_name: string;
+  student_id: string;
+  current_class: number;
+  class_name: string;
+  parent_name: string;
+  parent_email: string;
+  parent_phone: string;
+  enrollment_date: string;
+}
+
+export interface StudentProfilesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: StudentProfile[];
+}
+
+export async function fetchStudentProfiles(schoolId?: string, page: number = 1, limit: number = 10): Promise<StudentProfilesResponse> {
+  try {
+    let url = `${API_BASE_URL}/student-profiles/?page=${page}&limit=${limit}`;
+    if (schoolId) {
+      url += `&school=${schoolId}`;
+    }
+
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching student profiles:', error);
     throw error;
   }
 }

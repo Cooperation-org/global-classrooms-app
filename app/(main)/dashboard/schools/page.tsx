@@ -6,8 +6,13 @@ import Link from 'next/link';
 
 export default function SchoolsPage() {
   const [schools, setSchools] = useState<School[]>([]);
+  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedInstitutionType, setSelectedInstitutionType] = useState('All Types');
+  const [selectedAffiliation, setSelectedAffiliation] = useState('All Affiliations');
+  const [selectedCountry, setSelectedCountry] = useState('All Countries');
 
   useEffect(() => {
     const loadSchools = async () => {
@@ -15,6 +20,7 @@ export default function SchoolsPage() {
         setLoading(true);
         const response = await fetchSchools();
         setSchools(response.results);
+        setFilteredSchools(response.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load schools');
       } finally {
@@ -24,6 +30,53 @@ export default function SchoolsPage() {
 
     loadSchools();
   }, []);
+
+  // Filter schools based on search and filters
+  useEffect(() => {
+    let filtered = schools;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(school =>
+        school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.overview.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by institution type
+    if (selectedInstitutionType !== 'All Types') {
+      filtered = filtered.filter(school => 
+        school.institution_type === selectedInstitutionType.toLowerCase().replace(' ', '_')
+      );
+    }
+
+    // Filter by affiliation
+    if (selectedAffiliation !== 'All Affiliations') {
+      filtered = filtered.filter(school => 
+        school.affiliation === selectedAffiliation.toLowerCase().replace(' ', '_')
+      );
+    }
+
+    // Filter by country
+    if (selectedCountry !== 'All Countries') {
+      filtered = filtered.filter(school => school.country === selectedCountry);
+    }
+
+    setFilteredSchools(filtered);
+  }, [schools, searchTerm, selectedInstitutionType, selectedAffiliation, selectedCountry]);
+
+  // Get unique values for filter options
+  const uniqueInstitutionTypes = Array.from(new Set(schools.map(school => school.institution_type)))
+    .map(type => type.replace('_', ' '))
+    .sort();
+
+  const uniqueAffiliations = Array.from(new Set(schools.map(school => school.affiliation)))
+    .map(affiliation => affiliation.replace('_', ' '))
+    .sort();
+
+  const uniqueCountries = Array.from(new Set(schools.map(school => school.country))).sort();
 
   if (loading) {
     return (
@@ -77,7 +130,47 @@ export default function SchoolsPage() {
         </Link>
       </div>
 
-      {schools.length === 0 ? (
+      {/* Search and Filters */}
+      <div className="flex flex-wrap items-center gap-4 mb-8">
+        <input 
+          className="border rounded px-3 py-2 text-sm w-64" 
+          placeholder="Search schools..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedInstitutionType}
+          onChange={(e) => setSelectedInstitutionType(e.target.value)}
+        >
+          <option>All Types</option>
+          {uniqueInstitutionTypes.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedAffiliation}
+          onChange={(e) => setSelectedAffiliation(e.target.value)}
+        >
+          <option>All Affiliations</option>
+          {uniqueAffiliations.map(affiliation => (
+            <option key={affiliation} value={affiliation}>{affiliation}</option>
+          ))}
+        </select>
+        <select 
+          className="border rounded px-3 py-2 text-sm"
+          value={selectedCountry}
+          onChange={(e) => setSelectedCountry(e.target.value)}
+        >
+          <option>All Countries</option>
+          {uniqueCountries.map(country => (
+            <option key={country} value={country}>{country}</option>
+          ))}
+        </select>
+      </div>
+
+      {filteredSchools.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,17 +178,24 @@ export default function SchoolsPage() {
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No schools found</h3>
-          <p className="text-gray-500 mb-6">Get started by adding your first school</p>
-          <Link 
-            href="/dashboard/schools/new"
-            className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
-          >
-            Add School
-          </Link>
+          <p className="text-gray-500 mb-6">
+            {schools.length === 0 
+              ? 'Get started by adding your first school'
+              : 'No schools match your current filters'
+            }
+          </p>
+          {schools.length === 0 && (
+            <Link 
+              href="/dashboard/schools/new"
+              className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
+            >
+              Add School
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {schools.map((school) => (
+          {filteredSchools.map((school) => (
             <SchoolCard key={school.id} school={school} />
           ))}
         </div>

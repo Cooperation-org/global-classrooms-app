@@ -7,9 +7,7 @@ import Link from 'next/link';
 const TABS = [
   'All Projects',
   'Joined',
-  'Featured',
-  'HomeBiogas',
-  'Collaborative',
+
 ];
 
 function Tag({ children, color }: { children: React.ReactNode; color?: string }) {
@@ -104,19 +102,6 @@ export default function ProjectsPage() {
     switch (activeTab) {
       case 'Joined':
         filtered = filtered.filter(project => project.is_open_for_collaboration);
-        break;
-      case 'Featured':
-        // For now, we'll show published projects as featured
-        filtered = filtered.filter(project => project.status === 'published');
-        break;
-      case 'HomeBiogas':
-        // Filter by HomeBiogas theme if it exists
-        filtered = filtered.filter(project => 
-          Object.values(project.environmental_themes).some(theme => 
-            theme.toLowerCase().includes('homebiogas') || 
-            theme.toLowerCase().includes('biogas')
-          )
-        );
         break;
       case 'Collaborative':
         filtered = filtered.filter(project => project.is_open_for_collaboration);

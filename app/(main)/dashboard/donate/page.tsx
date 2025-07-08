@@ -4,21 +4,52 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { LockIcon } from "lucide-react";
+import StripePaymentForm from "@/app/components/payments/StripePaymentForm";
 
 const DonationForm = () => {
-  const [isECard, setIsECard] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'stripe' | 'wallet'>('stripe');
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [donationAmount, setDonationAmount] = useState(0);
+
+  const getCurrentAmount = () => {
+    if (selectedAmount) return selectedAmount;
+    if (customAmount) {
+      const parsed = parseFloat(customAmount);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentSuccess(true);
+    setDonationAmount(getCurrentAmount());
+  };
+
+  const handlePaymentError = (error: string) => {
+    setError(error);
+    setIsLoading(false);
+  };
+
+  if (paymentSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+          <p className="text-gray-600 mb-4">Thank you for your donation of ${donationAmount.toFixed(2)}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-10 bg-white min-h-screen">
@@ -116,167 +147,87 @@ const DonationForm = () => {
           </Card>
         </div>
 
-        {/* Right Section */}
+        {/* Right Section - Sleek Donation Card */}
         <Card>
-          <CardContent className="p-6 space-y-6 text-center">
+          <CardContent className="p-8 space-y-8 flex flex-col items-center">
             <Image
-              src="/vector.png" // path relative to /public folder
+              src="/vector.png"
               alt="Heart Icon"
-              width={24} // width in pixels
-              height={24} // height in pixels
-              className="mx-auto"
+              width={32}
+              height={32}
+              className="mx-auto mb-2"
             />
-
-            <h2 className="text-xl font-semibold">Make a Donation</h2>
-
-            <ToggleGroup
-              type="single"
-              defaultValue="once"
-              className="w-full justify-center"
-            >
-              <ToggleGroupItem
-                value="once"
-                className="px-4 py-2 rounded-r-md data-[state=on]:bg-black data-[state=on]:text-white"
-              >
-                One-time Donation
-              </ToggleGroupItem>
-
-              <ToggleGroupItem value="monthly">
-                Monthly Donation
-              </ToggleGroupItem>
-            </ToggleGroup>
-            <div>
-              <p className="font-medium mb-2 text-left">Payment Mode</p>
-              {/* Pay by Credit Card Header with Lock */}
-              <div className="p-3 bg-gray-50 rounded-lg border">
-                {/* Header with Lock Icon */}
-                <div className="flex items-center justify-between mb-3">
-                  {/* Left side: Green icon + Text */}
-                  <div className="flex items-center gap-2 mb-3">
-                    {/* Left icon */}
-                    <img
-                      src="/greenicon.png"
-                      alt="Green icon"
-                      className="w-5 h-5 object-contain ml-1 mt-1"
-                    />
-
-                    {/* Text + lock together */}
-                    <span className="text-lg font-normal text-gray-800 flex items-center gap-2">
-                      Pay by Credit Card
-                      <LockIcon className="h-4 w-4 text-gray-600" />
-                    </span>
-                  </div>
-                </div>
-
-                {/* Payment Method Images in Small Boxes - One Line */}
-                <div className="flex space-x-2 justify-start">
-                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded hover:border-blue-300 transition-colors">
-                    <img
-                      src="/mastercard.png"
-                      alt="MasterCard"
-                      className="h-8"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded hover:border-blue-300 transition-colors bg-white shadow-sm">
-                    <img src="/maestro.png" alt="Maestro" className="h-10" />
-                  </div>
-
-                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded hover:border-blue-300 transition-colors bg-white shadow-sm">
-                    <img src="/visa.png" alt="VISA" className="h-8" />
-                  </div>
-
-                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded hover:border-blue-300 transition-colors bg-white shadow-sm">
-                    <img src="/discover.jpg" alt="Discover" className="h-8" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Pay with Wallet Button */}
+            <h2 className="text-2xl font-bold mb-2 text-center">Make a Donation</h2>
+            <div className="flex gap-2 w-full justify-center mb-2">
               <Button
-                variant="outline"
-                className="w-full p-6 mt-4 text-left h-auto min-h-[80px]"
+                variant={paymentMode === 'stripe' ? 'default' : 'outline'}
+                onClick={() => setPaymentMode('stripe')}
+                className="flex-1"
               >
-                <div className="flex items-start gap-3 justify-start w-full text-left">
-                  <div className="mt-1">
-                    <img
-                      src="/circle.png"
-                      alt="Circle icon"
-                      className="w-4 h-4"
-                    />
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="font-semibold text-lg">
-                      Pay with Wallet
-                    </span>
-                    <span className="text-sm text-[#5C8A5C]">
-                      Connect any of your wallet to GoodCollective
-                    </span>
-                  </div>
-                </div>
+                Pay by Credit Card
+              </Button>
+              <Button
+                variant={paymentMode === 'wallet' ? 'default' : 'outline'}
+                onClick={() => setPaymentMode('wallet')}
+                className="flex-1"
+              >
+                Pay with Wallet
               </Button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {[10, 25, 50, 100, 250, 500].map((amount) => (
-                <Button key={amount} variant="outline">
-                  ${amount}
-                </Button>
-              ))}
-            </div>
-            <div className="flex flex-col items-start text-left w-full">
-              <span className="font-semibold text-lg">Custom Amount</span>
-              <Input placeholder="Custom Amount" />
-            </div>
-            <div className="space-y-2 flex flex-col items-start text-left w-full">
-              <span className="font-semibold text-lg">
-                Credit Card Information
-              </span>
-              <Input placeholder="Name on Card" />
-              <Input placeholder="Card Number" />
-              <div className="flex gap-2">
-                <Input placeholder="MM/YY" className="w-1/2" />
-                <Input placeholder="CVV" className="w-1/2" />
+            {/* Unified Amount Selection */}
+            <div className="w-full">
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {[10, 25, 50, 100, 250, 500].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={selectedAmount === amount ? 'default' : 'outline'}
+                    onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
+                    className="w-full"
+                  >
+                    ${amount}
+                  </Button>
+                ))}
               </div>
-              <Input placeholder="Billing Email (optional)" />
-            </div>
-            <div className="space-y-2 text-left w-full">
-              <p className="font-medium">Dedicate this Donation (optional)</p>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Purpose" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in-honor">In Honor</SelectItem>
-                  <SelectItem value="in-memory">In Memory</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input placeholder="Recipient Name" />
-              <div className="flex items-center gap-2 bg-[#F7FCF7] p-2">
-                <div className="flex items-center justify-between gap-2 bg-[#F7FCF7] p-2">
-                  <label htmlFor="ecard" className="cursor-pointer">
-                    Send e-Card?
-                  </label>
-                  <Switch
-                    id="ecard"
-                    checked={isECard}
-                    onCheckedChange={setIsECard}
-                  />
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Custom Amount"
+                  value={customAmount}
+                  onChange={e => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                  className="flex-1"
+                />
+                <span className="text-gray-500">USD</span>
               </div>
-              {isECard && <Input placeholder="Recipient Email" />}
-
-              <Textarea
-                placeholder="Message on Card (Optional)"
-                className="font-bold"
-              />
             </div>
 
-            <Button className="w-full flex items-center justify-center gap-2">
-              <img src="/heart.png" alt="Icon" className="w-4 h-4" />
-              Donate Now
-            </Button>
-            <p className="text-center text-sm text-gray-400">
+            {/* Stripe Payment Form */}
+            {paymentMode === 'stripe' && getCurrentAmount() > 0 && (
+              <div >
+                <StripePaymentForm
+                  amount={getCurrentAmount()}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                  isLoading={isLoading}
+                  setIsLoading={setIsLoading}
+                />
+              </div>
+            )}
+
+            {/* Wallet Payment Button */}
+            {paymentMode === 'wallet' && getCurrentAmount() > 0 && (
+              <Button
+                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-lg"
+                onClick={() => alert('Wallet payment coming soon!')}
+              >
+                Pay {getCurrentAmount().toLocaleString(undefined, { style: 'currency', currency: 'USD' })} with Wallet
+              </Button>
+            )}
+
+            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md my-2 w-full text-center">{error}</div>}
+
+            <p className="text-center text-sm text-gray-400 mt-4">
               All donations are processed securely
             </p>
           </CardContent>

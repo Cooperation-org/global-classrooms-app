@@ -53,7 +53,7 @@ export default function HeroSection() {
             className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight text-left"
             variants={fadeUp}
           >
-            Environmental<br />Education<br />Reimagined
+            Connecting children<br />globally for<br />better tomorrow
           </motion.h1>
           <motion.h2
             className="text-xl sm:text-2xl text-gray-700 font-medium mb-4 text-left"
