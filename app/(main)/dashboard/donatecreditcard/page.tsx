@@ -1,9 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PaymentIntent } from "@stripe/stripe-js";
 import StripePaymentForm from "@/app/components/payments/StripePaymentForm";
-import { useConnect, useAccount, useSendTransaction, usePrepareSendTransaction } from 'wagmi';
+import { useConnect, useAccount, useSendTransaction } from 'wagmi';
 
 const DONATION_WALLET_ADDRESS = '0xYourDonationWalletAddressHere'; // TODO: Replace with your actual donation address
 
@@ -23,16 +22,8 @@ const DonationPage: React.FC = () => {
 
   const router = useRouter();
   const predefinedAmounts = [10, 25, 50, 100, 250, 500];
-  const { connect, connectors, isPending: isConnecting } = useConnect();
-  const { address, isConnected } = useAccount();
-
-  // Prepare transaction (ETH, not ERC-20)
-  const { config: sendTxConfig } = usePrepareSendTransaction({
-    to: DONATION_WALLET_ADDRESS,
-    value: getCurrentAmount() > 0 ? BigInt(Math.floor(getCurrentAmount() * 1e18)) : undefined, // ETH to wei
-    enabled: paymentMode === 'goodcollective' && getCurrentAmount() > 0,
-  });
-  const { sendTransaction, isLoading: isTxLoading, isSuccess: isTxSuccess, isError: isTxError, error: txError, data: txData } = useSendTransaction(sendTxConfig);
+  const { connect, connectors,  } = useConnect();
+  const {  isConnected } = useAccount();
 
   const getCurrentAmount = () => {
     if (selectedAmount) return selectedAmount;
@@ -43,10 +34,13 @@ const DonationPage: React.FC = () => {
     return 0;
   };
 
-  const handlePaymentSuccess = (paymentIntent: PaymentIntent) => {
+  // Prepare transaction (ETH, not ERC-20)
+  const { sendTransaction, isPending: isTxLoading, isSuccess: isTxSuccess, isError: isTxError, error: txError, data: txData } = useSendTransaction();
+
+  const handlePaymentSuccess = () => {
     setPaymentSuccess(true);
     setDonationAmount(getCurrentAmount());
-    console.log('Payment successful:', paymentIntent.id);
+    console.log('Payment successful');
     // You can redirect to thank you page or show success message
     setTimeout(() => {
       router.push('/dashboard/donatecreditcard/thank-you');
@@ -70,7 +64,10 @@ const DonationPage: React.FC = () => {
         await connect({ connector });
       }
       // Send transaction
-      sendTransaction?.();
+      sendTransaction?.({
+        to: DONATION_WALLET_ADDRESS,
+        value: BigInt(Math.floor(getCurrentAmount() * 1e18)) // ETH to wei
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Wallet payment failed');
       setIsLoading(false);
@@ -666,6 +663,9 @@ const DonationPage: React.FC = () => {
               </button>
               {isTxSuccess && txData && (
                 <div style={{ color: 'green', marginTop: 8 }}>
+                  Transaction successful!
+                </div>
+              )}
             </div>
           )}
 

@@ -5,7 +5,6 @@ import { fetchSchools, fetchProjectsBySchool, Project } from '@/app/services/api
 import ImpactCharts from './ImpactCharts';
 
 export default function ImpactPage() {
-  const [school, setSchool] = useState<any>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +17,6 @@ export default function ImpactPage() {
         const schoolResponse = await fetchSchools(1, 1);
         if (schoolResponse.results.length > 0) {
           const schoolData = schoolResponse.results[0];
-          setSchool(schoolData);
           
           // Get projects for this school
           const projectsResponse = await fetchProjectsBySchool(schoolData.id, 1, 100);
