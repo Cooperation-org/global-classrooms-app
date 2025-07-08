@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { apiService } from '@/app/services/api';
-import { API_ENDPOINTS } from '@/app/utils/constants';
-import { isValidEmail } from '@/app/utils/validation';
-import { LoginResponse } from '@/app/types';
-import { useConnect, useAccount } from 'wagmi';
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { apiService } from "@/app/services/api";
+import { API_ENDPOINTS } from "@/app/utils/constants";
+import { isValidEmail } from "@/app/utils/validation";
+import { LoginResponse } from "@/app/types";
+import { useConnect, useAccount } from "wagmi";
 
 const LoginPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
 
   // Wagmi wallet connect
   const { connect, connectors, isPending } = useConnect();
@@ -29,11 +29,11 @@ const LoginPage = () => {
 
   // Check if user is already authenticated
   useEffect(() => {
-    const accessToken = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user_data');
-    
+    const accessToken = localStorage.getItem("access_token");
+    const userData = localStorage.getItem("user_data");
+
     if (accessToken && userData) {
-      console.log('User already authenticated, redirecting to:', redirectTo);
+      console.log("User already authenticated, redirecting to:", redirectTo);
       // User is already logged in, redirect to dashboard or intended page
       router.replace(redirectTo);
     }
@@ -41,68 +41,68 @@ const LoginPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear errors when user starts typing
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
-    
+
     if (!isValidEmail(formData.email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return;
     }
-    
+
     setIsLoading(true);
-    setError('');
-    setSuccess('');
-    
+    setError("");
+    setSuccess("");
+
     try {
       const response = await apiService.post(API_ENDPOINTS.AUTH.LOGIN, {
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
-      
+
       if (response.success) {
-        setSuccess('Login successful! Redirecting...');
-        
+        setSuccess("Login successful! Redirecting...");
+
         // Debug: Log the response data
-        console.log('Login response:', response.data);
-        
+        console.log("Login response:", response.data);
+
         // Store user data and tokens
         const loginData = response.data as LoginResponse;
-        
+
         // Check if we have the required data
         if (loginData?.user && loginData?.access && loginData?.refresh) {
-          localStorage.setItem('access_token', loginData.access);
-          localStorage.setItem('refresh_token', loginData.refresh);
-          localStorage.setItem('user_data', JSON.stringify(loginData.user));
-          
-          console.log('Tokens stored successfully');
-          console.log('User data stored:', loginData.user);
-          console.log('Redirecting to:', redirectTo);
+          localStorage.setItem("access_token", loginData.access);
+          localStorage.setItem("refresh_token", loginData.refresh);
+          localStorage.setItem("user_data", JSON.stringify(loginData.user));
+
+          console.log("Tokens stored successfully");
+          console.log("User data stored:", loginData.user);
+          console.log("Redirecting to:", redirectTo);
         } else {
-          console.error('Missing required data in login response:', loginData);
-          setError('Login response is missing required data');
+          console.error("Missing required data in login response:", loginData);
+          setError("Login response is missing required data");
           return;
         }
-        
+
         // Reset form
         setFormData({
-          email: '',
-          password: '',
+          email: "",
+          password: "",
         });
-        
+
         // Use a small delay to ensure localStorage is updated, then redirect
         setTimeout(() => {
           // Use router.replace to prevent back button issues
@@ -110,16 +110,16 @@ const LoginPage = () => {
         }, 100);
       } else {
         // Handle error response
-        console.log('Login error response:', response);
-        console.log('Response success:', response.success);
-        console.log('Response error:', response.error);
-        console.log('Response message:', response.message);
-        console.log('Response details:', response.details);
-        console.log('Full response object:', JSON.stringify(response, null, 2));
-        
+        console.log("Login error response:", response);
+        console.log("Response success:", response.success);
+        console.log("Response error:", response.error);
+        console.log("Response message:", response.message);
+        console.log("Response details:", response.details);
+        console.log("Full response object:", JSON.stringify(response, null, 2));
+
         // Check for different error response structures
-        let errorMessage = 'Login failed. Please check your credentials.';
-        
+        let errorMessage = "Login failed. Please check your credentials.";
+
         if (response.error) {
           errorMessage = response.error;
         } else if (response.message) {
@@ -127,13 +127,13 @@ const LoginPage = () => {
         } else if (response.details?.detail) {
           errorMessage = response.details.detail;
         }
-        
-        console.log('Final error message:', errorMessage);
+
+        console.log("Final error message:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      setError('An error occurred during login. Please try again.');
-      console.error('Login error:', err);
+      setError("An error occurred during login. Please try again.");
+      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -141,10 +141,10 @@ const LoginPage = () => {
 
   // Wallet sign in handler
   const handleWalletSignIn = async () => {
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setIsLoading(true);
-    
+
     try {
       // If already connected, use the current address
       if (isConnected && address) {
@@ -155,23 +155,24 @@ const LoginPage = () => {
       // If not connected, connect first
       const connector = connectors[0];
       if (!connector) {
-        setError('No wallet connector found.');
+        setError("No wallet connector found.");
         setIsLoading(false);
         return;
       }
-      
+
       // Connect and wait for the connection to be established
       await connect({ connector });
-      
+
       // The address will be available in the next render cycle
       // We'll handle the login in a useEffect that watches for address changes
-      
     } catch (err: unknown) {
-      console.error('Wallet connection error:', err);
-      if (typeof err === 'object' && err && 'message' in err) {
-        setError((err as { message: string }).message || 'Wallet connection failed.');
+      console.error("Wallet connection error:", err);
+      if (typeof err === "object" && err && "message" in err) {
+        setError(
+          (err as { message: string }).message || "Wallet connection failed."
+        );
       } else {
-        setError('Wallet connection failed.');
+        setError("Wallet connection failed.");
       }
       setIsLoading(false);
     }
@@ -186,13 +187,13 @@ const LoginPage = () => {
 
   const handleWalletLogin = async (walletAddress: string) => {
     try {
-      const response = await apiService.post('/auth/login/wallet/', {
+      const response = await apiService.post("/auth/login/wallet/", {
         wallet_address: walletAddress,
       });
-      
+
       if (response.success) {
-        setSuccess('Wallet login successful! Redirecting...');
-        
+        setSuccess("Wallet login successful! Redirecting...");
+
         // Store user data and tokens from the response
         const responseData = response.data as {
           user: {
@@ -219,24 +220,24 @@ const LoginPage = () => {
             refresh: string;
           };
         };
-        
+
         if (responseData?.user && responseData?.tokens) {
-          localStorage.setItem('access_token', responseData.tokens.access);
-          localStorage.setItem('refresh_token', responseData.tokens.refresh);
-          localStorage.setItem('user_data', JSON.stringify(responseData.user));
-          
+          localStorage.setItem("access_token", responseData.tokens.access);
+          localStorage.setItem("refresh_token", responseData.tokens.refresh);
+          localStorage.setItem("user_data", JSON.stringify(responseData.user));
+
           setTimeout(() => {
             router.replace(redirectTo);
           }, 100);
         } else {
-          setError('Wallet login response is missing required data');
+          setError("Wallet login response is missing required data");
         }
       } else {
-        setError(response.error || 'Wallet login failed.');
+        setError(response.error || "Wallet login failed.");
       }
     } catch (err) {
-      console.error('Wallet login error:', err);
-      setError('Wallet login failed.');
+      console.error("Wallet login error:", err);
+      setError("Wallet login failed.");
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +252,8 @@ const LoginPage = () => {
             Welcome back
           </h1>
           <p className="text-gray-600 text-sm">
-            Sign in to your account to continue earning<br />
+            Sign in to your account to continue earning
+            <br />
             CS tokens
           </p>
         </div>
@@ -262,7 +264,7 @@ const LoginPage = () => {
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
             {success}
@@ -272,13 +274,15 @@ const LoginPage = () => {
         {/* Login Options */}
         <div className="space-y-4">
           {/* Wallet Sign In Button */}
-          <button 
+          <button
             type="button"
             onClick={handleWalletSignIn}
             disabled={isLoading || isPending}
-            className="w-full p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 rounded-lg flex items-center justify-center text-white font-semibold transition-colors"
+            className="w-full p-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 rounded-lg flex items-center justify-center text-white font-semibold transition-colors"
           >
-            {isLoading || isPending ? 'Connecting Wallet...' : 'Sign in with Wallet'}
+            {isLoading || isPending
+              ? "Connecting Wallet..."
+              : "Sign in with Wallet"}
           </button>
 
           {/* OR Divider */}
@@ -292,32 +296,54 @@ const LoginPage = () => {
           </div>
 
           {/* Email Login Toggle */}
-          <button 
+          <button
             type="button"
             onClick={() => setShowEmailForm(!showEmailForm)}
             className="w-full p-4 border-2 border-gray-200 hover:border-gray-300 rounded-lg flex items-center justify-between text-gray-700 transition-colors"
           >
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z" />
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
-              <span className="font-semibold text-gray-900">Sign in with Email</span>
+              <span className="font-semibold text-gray-900">
+                Sign in with Email
+              </span>
             </div>
-            <svg 
-              className={`w-5 h-5 text-gray-400 transition-transform ${showEmailForm ? 'rotate-180' : ''}`}
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${
+                showEmailForm ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
 
           {/* Email Form - Expandable */}
           {showEmailForm && (
-            <form onSubmit={handleLogin} className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <form
+              onSubmit={handleLogin}
+              className="border-2 border-gray-200 rounded-lg p-4 space-y-3 animate-in slide-in-from-top-2 duration-200"
+            >
               <div>
                 <input
                   type="email"
@@ -331,7 +357,7 @@ const LoginPage = () => {
               </div>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
@@ -344,33 +370,60 @@ const LoginPage = () => {
                   tabIndex={-1}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.403-3.22 1.125-4.575M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.403-3.22 1.125-4.575M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm2.121-2.121A9.969 9.969 0 0121 12c0 5.523-4.477 10-10 10a9.969 9.969 0 01-7.071-2.929M4.222 4.222l15.556 15.556" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm2.121-2.121A9.969 9.969 0 0121 12c0 5.523-4.477 10-10 10a9.969 9.969 0 01-7.071-2.929M4.222 4.222l15.556 15.556"
+                      />
                     </svg>
                   )}
                 </button>
               </div>
-              
+
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
                   <span className="ml-2 text-gray-600">Remember me</span>
                 </label>
-                <a href="#" className="text-green-600 hover:underline">Forgot password?</a>
+                <a href="#" className="text-green-600 hover:underline">
+                  Forgot password?
+                </a>
               </div>
-              <button 
+              <button
                 type="submit"
                 disabled={isLoading}
                 className="w-full p-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-semibold transition-colors"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? "Signing In..." : "Sign In"}
               </button>
             </form>
           )}
@@ -378,8 +431,11 @@ const LoginPage = () => {
 
         {/* Don't have account link */}
         <p className="text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
-          <a href="/signup" className="font-semibold text-green-600 hover:underline">
+          Don&apos;t have an account?{" "}
+          <a
+            href="/signup"
+            className="font-semibold text-green-600 hover:underline"
+          >
             Create account
           </a>
         </p>
