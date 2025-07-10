@@ -23,7 +23,7 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     const loadProjectDetails = async () => {
       try {
-        setLoading(true);
+    setLoading(true);
         const projectId = params.id as string;
         const projectData = await fetchProjectById(projectId);
         setProject(projectData);
@@ -34,7 +34,7 @@ export default function ProjectDetailsPage() {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load project details');
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
 

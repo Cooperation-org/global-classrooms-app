@@ -45,36 +45,36 @@ export default function ImpactPage() {
     }, { trees_planted: 0, students_engaged: 0, waste_recycled: 0 });
   };
 
-  const stats = [
-    {
-      label: 'Trees Planted',
+const stats = [
+  {
+    label: 'Trees Planted',
       value: calculateCumulativeImpact().trees_planted,
-      icon: (
-        <svg width="28" height="28" fill="none" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#E6F4EA"/><path d="M14 21v-4m0 0c-2.5 0-4.5-2-4.5-4.5S11.5 8 14 8s4.5 2 4.5 4.5S16.5 17 14 17Z" stroke="#4BA186" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      ),
-      color: 'bg-[#E6F4EA] text-[#4BA186]'
-    },
-    {
+    icon: (
+      <svg width="28" height="28" fill="none" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#E6F4EA"/><path d="M14 21v-4m0 0c-2.5 0-4.5-2-4.5-4.5S11.5 8 14 8s4.5 2 4.5 4.5S16.5 17 14 17Z" stroke="#4BA186" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    ),
+    color: 'bg-[#E6F4EA] text-[#4BA186]'
+  },
+  {
       label: 'Students Engaged',
       value: calculateCumulativeImpact().students_engaged,
-      icon: (
+    icon: (
         <svg width="28" height="28" fill="none" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#E6F4EA"/><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" stroke="#4BA186" strokeWidth="2"/></svg>
-      ),
-      color: 'bg-[#E6F4EA] text-[#4BA186]'
-    },
-    {
+    ),
+    color: 'bg-[#E6F4EA] text-[#4BA186]'
+  },
+  {
       label: 'Waste Recycled (kg)',
       value: calculateCumulativeImpact().waste_recycled,
-      icon: (
+    icon: (
         <svg width="28" height="28" fill="none" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#F3F0FB"/><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="#A78BFA" strokeWidth="2"/></svg>
-      ),
-      color: 'bg-[#F3F0FB] text-[#A78BFA]'
-    },
-  ];
+    ),
+    color: 'bg-[#F3F0FB] text-[#A78BFA]'
+  },
+];
 
-  const certificates = [
-    { name: 'Water Guardian' },
-  ];
+const certificates = [
+  { name: 'Water Guardian' },
+];
 
   if (loading) {
     return (

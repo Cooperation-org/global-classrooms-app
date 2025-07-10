@@ -97,66 +97,66 @@ export default function ImpactCharts({ projects }: ImpactChartsProps) {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Impact Over Time</h2>
         {chartData.length > 0 ? (
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorTrees" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4BA186" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#4BA186" stopOpacity={0.1}/>
-                  </linearGradient>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorTrees" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4BA186" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#4BA186" stopOpacity={0.1}/>
+                </linearGradient>
                   <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#60A5FA" stopOpacity={0.1}/>
-                  </linearGradient>
+                  <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#60A5FA" stopOpacity={0.1}/>
+                </linearGradient>
                   <linearGradient id="colorWaste" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="#9CA3AF" 
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#9CA3AF" 
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="trees" 
-                  stackId="1"
-                  stroke="#4BA186" 
-                  fill="url(#colorTrees)"
-                  name="Trees Planted"
-                />
-                <Area 
-                  type="monotone" 
+                  <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis 
+                dataKey="month" 
+                stroke="#9CA3AF" 
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                stroke="#9CA3AF" 
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area 
+                type="monotone" 
+                dataKey="trees" 
+                stackId="1"
+                stroke="#4BA186" 
+                fill="url(#colorTrees)"
+                name="Trees Planted"
+              />
+              <Area 
+                type="monotone" 
                   dataKey="students" 
-                  stackId="1"
-                  stroke="#60A5FA" 
+                stackId="1"
+                stroke="#60A5FA" 
                   fill="url(#colorStudents)"
                   name="Students Engaged"
-                />
-                <Area 
-                  type="monotone" 
+              />
+              <Area 
+                type="monotone" 
                   dataKey="waste" 
-                  stackId="1"
-                  stroke="#A78BFA" 
+                stackId="1"
+                stroke="#A78BFA" 
                   fill="url(#colorWaste)"
                   name="Waste Recycled (kg)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
         ) : (
           <div className="h-64 flex items-center justify-center text-gray-500">
             No impact data available
@@ -167,37 +167,37 @@ export default function ImpactCharts({ projects }: ImpactChartsProps) {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Cumulative Impact Trend</h2>
         {trendData.length > 0 ? (
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis 
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis 
                   dataKey="project" 
-                  stroke="#9CA3AF" 
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#9CA3AF" 
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="cumulative" 
-                  stroke="#4BA186" 
-                  strokeWidth={3}
-                  dot={{ fill: '#4BA186', strokeWidth: 2, r: 6 }}
-                  activeDot={{ r: 8, stroke: '#4BA186', strokeWidth: 2, fill: '#fff' }}
-                  name="Total Trees Planted"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+                stroke="#9CA3AF" 
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                stroke="#9CA3AF" 
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line 
+                type="monotone" 
+                dataKey="cumulative" 
+                stroke="#4BA186" 
+                strokeWidth={3}
+                dot={{ fill: '#4BA186', strokeWidth: 2, r: 6 }}
+                activeDot={{ r: 8, stroke: '#4BA186', strokeWidth: 2, fill: '#fff' }}
+                name="Total Trees Planted"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
         ) : (
           <div className="h-64 flex items-center justify-center text-gray-500">
             No project data available
