@@ -57,7 +57,7 @@ export default function HeroSection() {
             variants={fadeUp}
           >
             <span className="text-gray-900">Connecting children</span>
-            <span className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 bg-clip-text text-transparent">globally</span><br />
+            <span className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 bg-clip-text text-transparent"> globally</span><br />
             <span className="text-gray-700">for better tomorrow</span><br />
             
           </motion.h1>
