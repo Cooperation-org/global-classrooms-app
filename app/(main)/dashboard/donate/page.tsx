@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
 import Image from "next/image";
 import StripePaymentForm from "@/app/components/payments/StripePaymentForm";
 
 const DonationForm = () => {
-  const [paymentMode, setPaymentMode] = useState<'stripe' | 'wallet'>('stripe');
+  const [paymentMode, setPaymentMode] = useState<"stripe" | "wallet">("stripe");
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
-  const [customAmount, setCustomAmount] = useState('');
+  const [customAmount, setCustomAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -40,12 +41,26 @@ const DonationForm = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
-          <p className="text-gray-600 mb-4">Thank you for your donation of ${donationAmount.toFixed(2)}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Payment Successful!
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Thank you for your donation of ${donationAmount.toFixed(2)}
+          </p>
         </div>
       </div>
     );
@@ -157,18 +172,20 @@ const DonationForm = () => {
               height={32}
               className="mx-auto mb-2"
             />
-            <h2 className="text-2xl font-bold mb-2 text-center">Make a Donation</h2>
+            <h2 className="text-2xl font-bold mb-2 text-center">
+              Make a Donation
+            </h2>
             <div className="flex gap-2 w-full justify-center mb-2">
               <Button
-                variant={paymentMode === 'stripe' ? 'default' : 'outline'}
-                onClick={() => setPaymentMode('stripe')}
+                variant={paymentMode === "stripe" ? "default" : "outline"}
+                onClick={() => setPaymentMode("stripe")}
                 className="flex-1"
               >
                 Pay by Credit Card
               </Button>
               <Button
-                variant={paymentMode === 'wallet' ? 'default' : 'outline'}
-                onClick={() => setPaymentMode('wallet')}
+                variant={paymentMode === "wallet" ? "default" : "outline"}
+                onClick={() => setPaymentMode("wallet")}
                 className="flex-1"
               >
                 Pay with Wallet
@@ -181,8 +198,11 @@ const DonationForm = () => {
                 {[10, 25, 50, 100, 250, 500].map((amount) => (
                   <Button
                     key={amount}
-                    variant={selectedAmount === amount ? 'default' : 'outline'}
-                    onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
+                    variant={selectedAmount === amount ? "default" : "outline"}
+                    onClick={() => {
+                      setSelectedAmount(amount);
+                      setCustomAmount("");
+                    }}
                     className="w-full"
                   >
                     ${amount}
@@ -195,7 +215,10 @@ const DonationForm = () => {
                   min={1}
                   placeholder="Custom Amount"
                   value={customAmount}
-                  onChange={e => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    setSelectedAmount(null);
+                  }}
                   className="flex-1"
                 />
                 <span className="text-gray-500">USD</span>
@@ -203,8 +226,8 @@ const DonationForm = () => {
             </div>
 
             {/* Stripe Payment Form */}
-            {paymentMode === 'stripe' && getCurrentAmount() > 0 && (
-              <div >
+            {paymentMode === "stripe" && getCurrentAmount() > 0 && (
+              <div>
                 <StripePaymentForm
                   amount={getCurrentAmount()}
                   onSuccess={handlePaymentSuccess}
@@ -216,16 +239,25 @@ const DonationForm = () => {
             )}
 
             {/* Wallet Payment Button */}
-            {paymentMode === 'wallet' && getCurrentAmount() > 0 && (
+            {paymentMode === "wallet" && getCurrentAmount() > 0 && (
               <Button
                 className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-lg"
-                onClick={() => alert('Wallet payment coming soon!')}
+                onClick={() => alert("Wallet payment coming soon!")}
               >
-                Pay {getCurrentAmount().toLocaleString(undefined, { style: 'currency', currency: 'USD' })} with Wallet
+                Pay{" "}
+                {getCurrentAmount().toLocaleString(undefined, {
+                  style: "currency",
+                  currency: "USD",
+                })}{" "}
+                with Wallet
               </Button>
             )}
 
-            {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md my-2 w-full text-center">{error}</div>}
+            {error && (
+              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md my-2 w-full text-center">
+                {error}
+              </div>
+            )}
 
             <p className="text-center text-sm text-gray-400 mt-4">
               All donations are processed securely
