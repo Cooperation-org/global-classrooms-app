@@ -529,14 +529,12 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
     
-    const defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
+    const authHeaders = getAuthHeaders();
 
     const config: RequestInit = {
       ...options,
       headers: {
-        ...defaultHeaders,
+        ...authHeaders,
         ...options.headers,
       },
     };
@@ -547,13 +545,18 @@ class ApiService {
 
       // If the response is not ok (4xx, 5xx), handle it as an error response
       if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+          handleAuthError(data);
+        }
+        
         // Return the error response as-is, but mark it as unsuccessful
         return {
           success: false,
           error: data.details?.detail || data.message || data.error || 'An error occurred',
           message: data.message,
           details: data.details,
-          status_code: data.status_code,
+          status_code: response.status,
           timestamp: data.timestamp
         };
       }
