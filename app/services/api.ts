@@ -663,6 +663,44 @@ export async function fetchStudentProfiles(schoolId?: string, page: number = 1, 
   }
 }
 
+// User Profile API
+
+export async function fetchUserProfile(): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) handleAuthError(errorData);
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+}
+
+export async function updateUserProfile(data: unknown): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) handleAuthError(errorData);
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
