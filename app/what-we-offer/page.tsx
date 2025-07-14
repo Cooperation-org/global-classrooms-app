@@ -1,3 +1,4 @@
+'use client'
 import WhatWeOfferSection from '../components/sections/WhatWeOfferSection';
 import { motion, useViewportScroll, useTransform } from 'framer-motion';
 

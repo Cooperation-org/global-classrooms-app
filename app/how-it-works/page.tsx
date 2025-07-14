@@ -1,3 +1,4 @@
+'use client'
 import HowItWorksSection from '../components/sections/HowItWorksSection';
 import { motion, useViewportScroll, useTransform } from 'framer-motion';
 
