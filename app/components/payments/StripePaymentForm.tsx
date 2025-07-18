@@ -10,8 +10,10 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Initialize Stripe with validation
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 interface StripePaymentFormProps {
   amount: number;
@@ -90,6 +92,15 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if Stripe is configured
+  if (!stripePromise) {
+    return (
+      <div className="text-amber-600 text-sm bg-amber-50 p-3 rounded-md">
+        Payment service is not configured. Please contact support.
+      </div>
+    );
+  }
+
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
@@ -107,7 +118,8 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create payment intent");
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create payment intent");
         }
 
         const data = await response.json();

@@ -47,7 +47,7 @@ export default function EmpowerCTASection() {
               transition={{ delay: 0.2, duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <Link href="/join">
+              <Link href="/signin">
                 <button className="px-6 py-3 rounded-lg bg-black text-white font-semibold text-lg shadow hover:bg-gray-900 transition">
                   Join as a School
                 </button>

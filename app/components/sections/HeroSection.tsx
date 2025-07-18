@@ -1,7 +1,8 @@
 "use client";
 import Globe3D from '@/public/earth_globe/Globe3D';
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const containerVariants = {
   hidden: {},
@@ -21,8 +22,6 @@ const fadeUp = {
 
 
 export default function HeroSection() {
-  const [activeTab, setActiveTab] = useState('Earth');
-
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50 overflow-hidden relative">
       {/* Subtle background pattern */}
@@ -83,10 +82,12 @@ export default function HeroSection() {
             variants={fadeUp}
             transition={{ delay: 0.45 }}
           >
-            <button className="group px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
-              <span className="relative z-10">Get Started</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </button>
+            <Link href="/signin">
+              <button className="group px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden">
+                <span className="relative z-10">Get Started</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            </Link>
             
           </motion.div>
         </motion.div>
