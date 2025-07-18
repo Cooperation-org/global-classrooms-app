@@ -18,7 +18,7 @@ export default function AddTeacherPage() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto py-10 px-4">
+    <div className="w-full max-w-3xl  py-10 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-3xl font-bold mb-2 text-gray-900">Add New Teacher</h2>
         <p className="text-green-700 mb-8">Fill out the following details to register a new teacher. A one-time invitation link will be generated on successful submission.</p>
