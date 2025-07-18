@@ -92,15 +92,6 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if Stripe is configured
-  if (!stripePromise) {
-    return (
-      <div className="text-amber-600 text-sm bg-amber-50 p-3 rounded-md">
-        Payment service is not configured. Please contact support.
-      </div>
-    );
-  }
-
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
@@ -137,6 +128,15 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
       createPaymentIntent();
     }
   }, [props.amount, props.onError]);
+
+  // Check if Stripe is configured
+  if (!stripePromise) {
+    return (
+      <div className="text-amber-600 text-sm bg-amber-50 p-3 rounded-md">
+        Payment service is not configured. Please contact support.
+      </div>
+    );
+  }
 
   if (loading) {
     return (
