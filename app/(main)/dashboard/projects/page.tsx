@@ -1,13 +1,12 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { fetchProjects, Project } from '@/app/services/api';
-import { icons } from '../../../components/icons/icons';
+import React, { useState, useMemo } from 'react';
+import { useProjects } from '@/app/hooks/useSWR';
+import { ProjectCard } from '@/app/components/collaborations/ProjectCard';
 import Link from 'next/link';
 
 const TABS = [
   'All Projects',
   'Joined',
-
 ];
 
 function Tag({ children, color }: { children: React.ReactNode; color?: string }) {
@@ -16,95 +15,29 @@ function Tag({ children, color }: { children: React.ReactNode; color?: string })
   );
 }
 
-function ProjectCard({ project }: { project: Project }) {
-  // Get the first environmental theme as the main tag
-  const mainTheme = Object.keys(project.environmental_themes)[0] || 'Environmental';
-  
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  return (
-    <div className="rounded-lg border bg-white shadow-sm flex flex-col">
-      <div className="aspect-video overflow-hidden rounded-t-lg">
-        <img 
-          src={project.cover_image || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80'} 
-          alt={project.title} 
-          className="w-full h-full object-cover" 
-        />
-      </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <Tag color="bg-blue-100 text-blue-800">{mainTheme}</Tag>
-          <Tag color="bg-purple-100 text-purple-800">SDG 13</Tag>
-          <Tag color={getStatusColor(project.status)}>{project.status}</Tag>
-        </div>
-        <h3 className="font-semibold text-lg mb-1">{project.title}</h3>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{project.short_description}</p>
-        <div className="flex items-center justify-between mt-auto">
-          <span className="text-xs text-muted-foreground">{project.lead_school_name || 'Unknown School'}</span>
-          <Link href={`/dashboard/projects/${project.id}`} className="px-3 py-1 text-xs font-medium rounded bg-gray-100 hover:bg-gray-200 transition-colors">View Details</Link>
-        </div>
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            {icons.check} {icons.star} {icons.users}
-          </span>
-          <span className="text-xs text-muted-foreground ml-2">+{project.participating_schools_count || 0}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ProjectsPage() {
   const [activeTab, setActiveTab] = useState('All Projects');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('All Themes');
   const [selectedSDG, setSelectedSDG] = useState('All SDGs');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchProjects();
-        setProjects(response.results);
-        setFilteredProjects(response.results);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load projects');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProjects();
-  }, []);
+  // Use SWR hook for data fetching
+  const { projects, isLoading, error, totalCount } = useProjects(1, 100);
 
   // Filter projects based on active tab, search, and filters
-  useEffect(() => {
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+
     let filtered = projects;
 
     // Filter by active tab
     switch (activeTab) {
       case 'Joined':
-        filtered = filtered.filter(project => project.is_open_for_collaboration);
+        filtered = filtered.filter((project: any) => project.is_open_for_collaboration);
         break;
       case 'Collaborative':
-        filtered = filtered.filter(project => project.is_open_for_collaboration);
+        filtered = filtered.filter((project: any) => project.is_open_for_collaboration);
         break;
       default:
         // 'All Projects' - no additional filtering
@@ -113,7 +46,7 @@ export default function ProjectsPage() {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(project =>
+      filtered = filtered.filter((project: any) =>
         project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.short_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.lead_school_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -122,8 +55,8 @@ export default function ProjectsPage() {
 
     // Filter by theme
     if (selectedTheme !== 'All Themes') {
-      filtered = filtered.filter(project =>
-        Object.values(project.environmental_themes).some(theme =>
+      filtered = filtered.filter((project: any) =>
+        Object.values(project.environmental_themes).some((theme: any) =>
           theme.toLowerCase().includes(selectedTheme.toLowerCase())
         )
       );
@@ -131,20 +64,46 @@ export default function ProjectsPage() {
 
     // Filter by status
     if (selectedStatus !== 'All Status') {
-      filtered = filtered.filter(project => project.status === selectedStatus.toLowerCase());
+      filtered = filtered.filter((project: any) => project.status === selectedStatus.toLowerCase());
     }
 
-    setFilteredProjects(filtered);
+    return filtered;
   }, [projects, activeTab, searchTerm, selectedTheme, selectedSDG, selectedStatus]);
 
   // Get unique themes and statuses for filter options
-  const uniqueThemes = Array.from(new Set(
-    projects.flatMap(project => Object.values(project.environmental_themes))
-  )).sort();
+  const uniqueThemes = useMemo(() => {
+    if (!projects) return [];
+    return Array.from(new Set(
+      projects.flatMap((project: any) => Object.values(project.environmental_themes))
+    )).sort() as string[];
+  }, [projects]);
 
-  const uniqueStatuses = Array.from(new Set(projects.map(project => project.status))).sort();
+  const uniqueStatuses = useMemo(() => {
+    if (!projects) return [];
+    return Array.from(new Set(projects.map((project: any) => project.status))).sort() as string[];
+  }, [projects]);
 
-  if (loading) {
+  // Handle authentication errors
+  if (error && (error as { status?: number })?.status === 401) {
+    // Don't redirect immediately, let the SWR fetcher handle it
+    console.log('Authentication error detected in projects page');
+    return (
+      <div className="w-full max-w-5xl py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+          <p className="text-red-600 mb-4">Please log in to access this page.</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse">
@@ -173,7 +132,7 @@ export default function ProjectsPage() {
       <div className="p-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Environmental Projects</h1>
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{error instanceof Error ? error.message : 'Failed to load projects'}</p>
           <button 
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -219,7 +178,7 @@ export default function ProjectsPage() {
           onChange={(e) => setSelectedTheme(e.target.value)}
         >
           <option>All Themes</option>
-          {uniqueThemes.map(theme => (
+          {uniqueThemes.map((theme: string) => (
             <option key={theme} value={theme}>{theme}</option>
           ))}
         </select>
@@ -239,7 +198,7 @@ export default function ProjectsPage() {
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
           <option>All Status</option>
-          {uniqueStatuses.map(status => (
+          {uniqueStatuses.map((status: string) => (
             <option key={status} value={status}>{status}</option>
           ))}
         </select>
@@ -254,12 +213,12 @@ export default function ProjectsPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
           <p className="text-gray-500 mb-6">
-            {projects.length === 0 
+            {projects?.length === 0 
               ? 'Get started by creating your first environmental project'
               : 'No projects match your current filters'
             }
           </p>
-          {projects.length === 0 && (
+          {projects?.length === 0 && (
             <Link 
               href="/dashboard/collaborations/new"
               className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition"
@@ -270,7 +229,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
+          {filteredProjects.map((project: any) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>

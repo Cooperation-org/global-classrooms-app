@@ -1,101 +1,81 @@
 'use client';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { Project, fetchFeaturedProjects, fetchCompletedProjects, fetchOpenCollaborations } from '@/app/services/api';
+import { useFeaturedProjects, useCompletedProjects, useOpenCollaborations } from '@/app/hooks/useSWR';
 
 const placeholderImg = 'https://placehold.co/300x180?text=Image';
 
+// Extend Error type for custom properties
+interface ApiError extends Error {
+  status?: number;
+}
+
+// Project interface for type safety
+interface Project {
+  id: string;
+  title: string;
+  short_description: string;
+  cover_image?: string;
+  status: string;
+}
+
 export default function DashboardHome() {
-  const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
-  const [completedProjects, setCompletedProjects] = useState<Project[]>([]);
-  const [openCollaborations, setOpenCollaborations] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+
+  // Use SWR hooks for data fetching
+  const { projects: featuredProjects, isLoading: featuredLoading, error: featuredError } = useFeaturedProjects();
+  const { projects: completedProjects, isLoading: completedLoading, error: completedError } = useCompletedProjects();
+  const { projects: openCollaborations, isLoading: collaborationsLoading, error: collaborationsError } = useOpenCollaborations();
+
+  // Check if any data is loading
+  const isLoading = featuredLoading || completedLoading || collaborationsLoading;
+  
+  // Check if there are any errors
+  const error = featuredError || completedError || collaborationsError;
 
   useEffect(() => {
     const userData = localStorage.getItem('user_data');
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [featured, completed, collaborations] = await Promise.all([
-          fetchFeaturedProjects(),
-          fetchCompletedProjects(),
-          fetchOpenCollaborations(),
-        ]);
-
-        setFeaturedProjects(featured);
-        setCompletedProjects(completed);
-        setOpenCollaborations(collaborations);
-        
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
-          setUserName(parsedUser.full_name || parsedUser.email || parsedUser.username || 'User');
-        }
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        if (errorMessage.includes('401') || errorMessage.includes('Authentication')) {
-          // Redirect to login if authentication failed
-          window.location.href = '/signin';
-          return;
-        }
-        setError('Failed to load projects. Please try again later.');
-        console.error('Error loading dashboard data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUserName(parsedUser.full_name || parsedUser.email || parsedUser.username || 'User');
+    }
   }, []);
 
-  const ProjectCard = ({ project, showLeadSchool = false }: { project: Project; showLeadSchool?: boolean }) => (
-    <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center w-60">
-      <img
-        src={project.cover_image || placeholderImg}
-        alt={project.title}
-        className="rounded mb-2 w-full h-28 object-cover"
-      />
-      <span className="font-semibold text-center">{project.title}</span>
-      {showLeadSchool && (
-        <span className="text-xs text-gray-500 text-center">Lead School: {project.lead_school_name}</span>
-      )}
-      {project.short_description && (
-        <span className="text-xs text-gray-600 text-center mt-1 line-clamp-2">
-          {project.short_description}
-        </span>
-      )}
-    </div>
-  );
+  // Handle authentication errors
+  useEffect(() => {
+    if (error && (error as ApiError)?.status === 401) {
+      // Don't redirect immediately, let the SWR fetcher handle it
+      console.log('Authentication error detected in dashboard');
+    }
+  }, [error]);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex flex-col w-full max-w-7xl py-8 px-4 gap-10">
-        <div className="animate-pulse">
-          <div className="h-64 md:h-80 bg-gray-200 rounded-2xl mb-4"></div>
-          <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="flex gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-200 rounded-xl w-60 h-40"></div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && (error as ApiError)?.status !== 401) {
     return (
-      <div className="flex flex-col w-full max-w-7xl py-8 px-4 gap-10">
-        <div className="text-center py-8">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-900 transition"
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to load dashboard</h2>
+          <p className="text-gray-600 mb-4">Please try refreshing the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
           >
-            Try Again
+            Refresh Page
           </button>
         </div>
       </div>
@@ -103,114 +83,172 @@ export default function DashboardHome() {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-7xl py-8 px-4 gap-10">
-      {/* Hero Banner */}
-      <section className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden flex items-center mb-4">
-        <img
-          src="https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80"
-          alt="Environmental Education Banner"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 flex flex-col justify-center h-full pl-10">
-          <p className="text-white text-lg mb-2">Connect with schools worldwide to take real action for the planet.</p>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow mb-2">
-            Welcome to <span className="text-green-200">GlobalClassrooms</span>,<br />
-            {userName} <span className="inline-block">👋</span>
-          </h1>
-        </div>
-      </section>
-
-      {/* Completed Projects */}
-      {completedProjects.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Completed Projects</h2>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {completedProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} showLeadSchool={true} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Featured Environmental Projects */}
-      {featuredProjects.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Featured Environmental Projects</h2>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {featuredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Collaborations You Can Join */}
-      {openCollaborations.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Collaborations You Can Join</h2>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {openCollaborations.map((project) => (
-              <ProjectCard key={project.id} project={project} showLeadSchool={true} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Stats Section */}
-      <section>
-        <h2 className="text-2xl font-bold mb-4">What We&apos;re Achieving Together</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-green-50 rounded-xl p-6 flex flex-col items-center">
-            <span className="text-2xl font-bold">500</span>
-            <span className="text-gray-600 text-sm text-center">Total Schools Involved</span>
-          </div>
-          <div className="bg-green-50 rounded-xl p-6 flex flex-col items-center">
-            <span className="text-2xl font-bold">200</span>
-            <span className="text-gray-600 text-sm text-center">Total Environmental Projects</span>
-          </div>
-          <div className="bg-green-50 rounded-xl p-6 flex flex-col items-center">
-            <span className="text-2xl font-bold">100</span>
-            <span className="text-gray-600 text-sm text-center">Total Collaborations</span>
-          </div>
-          <div className="bg-green-50 rounded-xl p-6 flex flex-col items-center">
-            <span className="text-2xl font-bold">50</span>
-            <span className="text-gray-600 text-sm text-center">Total Countries Reached</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Welcome Section */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {userName}! 👋
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Here&apos;s what&apos;s happening in your global classroom community.
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href="/dashboard/projects/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Create Project
+              </Link>
+              <Link
+                href="/dashboard/schools/new"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Add School
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* See What Schools Are Doing */}
-      {/* <section>
-        <h2 className="text-2xl font-bold mb-4">See What Schools Are Doing</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col">
-            <img src={placeholderImg} alt="Project Update" className="rounded mb-2 w-full h-40 object-cover" />
-            <span className="font-semibold">Project &quote;Green Our School&quote; update submitted</span>
-            <span className="text-xs text-green-700">Maplewood Academy</span>
+      {/* Dashboard Content */}
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Featured Projects */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Featured Projects</h2>
+              <Link
+                href="/dashboard/projects"
+                className="text-green-600 hover:text-green-700 text-sm font-medium"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {featuredProjects.length > 0 ? (
+                featuredProjects.map((project: Project) => (
+                  <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-4">
+                      <img
+                        src={project.cover_image || placeholderImg}
+                        alt={project.title}
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {project.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {project.short_description}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {project.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No featured projects yet.</p>
+              )}
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4 flex flex-col">
-            <img src={placeholderImg} alt="Collaboration Message" className="rounded mb-2 w-full h-40 object-cover" />
-            <span className="font-semibold">Collaboration message from Ms. Evans</span>
-            <span className="text-xs text-green-700">Lakeside High</span>
+
+          {/* Completed Projects */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Recently Completed</h2>
+              <Link
+                href="/dashboard/projects"
+                className="text-green-600 hover:text-green-700 text-sm font-medium"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {completedProjects.length > 0 ? (
+                completedProjects.map((project: Project) => (
+                  <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-4">
+                      <img
+                        src={project.cover_image || placeholderImg}
+                        alt={project.title}
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {project.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {project.short_description}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Completed
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No completed projects yet.</p>
+              )}
+            </div>
           </div>
         </div>
-      </section> */}
 
-      {/* Call to Action */}
-      <section className="flex flex-col items-center justify-center py-12">
-        <h2 className="text-3xl font-extrabold mb-2 text-center">Ready to Create Your Next Impact?</h2>
-        <p className="text-lg text-gray-600 mb-6 text-center">Start a new project or join a collaboration today.</p>
-        <div className="flex gap-4">
-          <Link href="/dashboard/collaborations/new">
-            <button className="cursor-pointer bg-black text-white px-6 py-3 rounded-full font-semibold text-lg hover:bg-gray-900 transition">Start a Project</button>
-          </Link>
-          <Link href="/collaborations">
-            <button className="bg-green-50 text-black px-6 py-3 rounded-full font-semibold text-lg hover:bg-green-100 transition">View Collaborations</button>
-
-          </Link>
+        {/* Open Collaborations */}
+        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Open for Collaboration</h2>
+            <Link
+              href="/dashboard/projects"
+              className="text-green-600 hover:text-green-700 text-sm font-medium"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {openCollaborations.length > 0 ? (
+              openCollaborations.map((project: Project) => (
+                <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <img
+                    src={project.cover_image || placeholderImg}
+                    alt={project.title}
+                    className="w-full h-32 rounded-lg object-cover mb-4"
+                  />
+                  <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                    {project.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-3">
+                    {project.short_description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      Open
+                    </span>
+                    <Link
+                      href={`/dashboard/projects/${project.id}`}
+                      className="text-green-600 hover:text-green-700 text-sm font-medium"
+                    >
+                      Join →
+                    </Link>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-8 col-span-full">No open collaborations yet.</p>
+            )}
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 } 

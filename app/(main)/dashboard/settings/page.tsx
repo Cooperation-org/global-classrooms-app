@@ -1,91 +1,148 @@
-'use client';
+'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchSchools, School, fetchTeacherProfiles, TeacherProfile, fetchStudentProfiles, StudentProfile, fetchProjectsBySchool, Project } from '@/app/services/api';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useTeacherProfiles, useCreateTeacher } from '@/app/hooks/useSWR';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
-const TABS = ['Overview', 'Teachers', 'Students', 'Impact'];
+const TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Impact'];
+
+interface School {
+  id: string;
+  name: string;
+  overview: string;
+  city: string;
+  country: string;
+  logo?: string;
+  institution_type: string;
+  affiliation: string;
+  registration_number: string;
+  year_of_establishment: string;
+  address_line_1: string;
+  address_line_2?: string;
+  state: string;
+  postal_code: string;
+  phone_number: string;
+  email: string;
+  website: string;
+  principal_name: string;
+  principal_email: string;
+  principal_phone: string;
+  number_of_teachers: number;
+  number_of_students: number;
+  medium_of_instruction: string;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  short_description: string;
+  status: string;
+  is_open_for_collaboration: boolean;
+  total_impact?: {
+    trees_planted?: number;
+    students_engaged?: number;
+    waste_recycled?: number;
+  };
+}
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [school, setSchool] = useState<School | null>(null);
-  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
-  const [students, setStudents] = useState<StudentProfile[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [teachersLoading, setTeachersLoading] = useState(false);
-  const [studentsLoading, setStudentsLoading] = useState(false);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isAddingSubject, setIsAddingSubject] = useState(false);
+  const [newSubject, setNewSubject] = useState({ name: '', description: '', is_active: true });
+  const [isAddingTeacher, setIsAddingTeacher] = useState(false);
+  const [newTeacher, setNewTeacher] = useState({
+    user: '',
+    school: '',
+    teacher_role: 'class_teacher',
+    assigned_subjects: [] as number[],
+    assigned_classes: [] as number[],
+    status: 'active'
+  });
   const router = useRouter();
 
+  // Use SWR hooks for data fetching
+  const { schools, isLoading, error } = useSchools(1, 1); // Get first school
+  const { projects: swrProjects, isLoading: projectsLoading } = useProjects(1, 100);
+  const { subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects(school?.id);
+  const { teachers, isLoading: teachersLoading, error: teachersError } = useTeacherProfiles(school?.id);
+  const { createSubject } = useCreateSubject();
+  const { createTeacher } = useCreateTeacher();
+
+  // Update local state when SWR data changes
   useEffect(() => {
-    const loadSchool = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchSchools(1, 1); // Get first school
-        if (response.results.length > 0) {
-          const schoolData = response.results[0];
-          setSchool(schoolData);
-          
-          // Load teachers, students, and projects for this school
-          await Promise.all([
-            loadTeachers(schoolData.id),
-            loadStudents(schoolData.id),
-            loadProjects(schoolData.id)
-          ]);
-        } else {
-          setError('No school found');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load school data');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (schools && schools.length > 0) {
+      const schoolData = schools[0];
+      setSchool(schoolData);
+    }
+  }, [schools]);
 
-    const loadTeachers = async (schoolId: string) => {
-      try {
-        setTeachersLoading(true);
-        const response = await fetchTeacherProfiles(schoolId, 1, 50);
-        setTeachers(response.results);
-      } catch (err) {
-        console.error('Failed to load teachers:', err);
-        // Don't set main error, just log it
-      } finally {
-        setTeachersLoading(false);
-      }
-    };
+  useEffect(() => {
+    if (swrProjects) {
+      setProjects(swrProjects);
+    }
+  }, [swrProjects]);
 
-    const loadStudents = async (schoolId: string) => {
-      try {
-        setStudentsLoading(true);
-        const response = await fetchStudentProfiles(schoolId, 1, 50);
-        setStudents(response.results);
-      } catch (err) {
-        console.error('Failed to load students:', err);
-        // Don't set main error, just log it
-      } finally {
-        setStudentsLoading(false);
-      }
-    };
+  // Add new subject
+  const handleAddSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubject.name.trim() || !school) return;
 
-    const loadProjects = async (schoolId: string) => {
-      try {
-        setProjectsLoading(true);
-        const response = await fetchProjectsBySchool(schoolId, 1, 100);
-        setProjects(response.results);
-      } catch (err) {
-        console.error('Failed to load projects:', err);
-        // Don't set main error, just log it
-      } finally {
-        setProjectsLoading(false);
-      }
-    };
+    try {
+      await createSubject({
+        ...newSubject,
+        school: school.id,
+      });
+      
+      setNewSubject({ name: '', description: '', is_active: true });
+      setIsAddingSubject(false);
+    } catch (error) {
+      console.error('Failed to add subject:', error);
+    }
+  };
 
-    loadSchool();
-  }, []);
+  // Add new teacher
+  const handleAddTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!newTeacher.user.trim() || !newTeacher.teacher_role) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (!school) {
+      alert('No school selected');
+      return;
+    }
+
+    try {
+      await createTeacher({
+        user: newTeacher.user,
+        school: school.id,
+        teacher_role: newTeacher.teacher_role,
+        assigned_subjects: newTeacher.assigned_subjects,
+        assigned_classes: newTeacher.assigned_classes,
+        status: newTeacher.status
+      });
+      
+      // Reset form
+      setNewTeacher({
+        user: '',
+        school: '',
+        teacher_role: 'class_teacher',
+        assigned_subjects: [],
+        assigned_classes: [],
+        status: 'active'
+      });
+      setIsAddingTeacher(false);
+    } catch (error) {
+      console.error('Failed to add teacher:', error);
+      alert('Failed to add teacher. Please try again.');
+    }
+  };
 
   // Calculate cumulative impact
   const calculateCumulativeImpact = () => {
@@ -98,7 +155,65 @@ export default function SettingsPage() {
     }, { trees_planted: 0, students_engaged: 0, waste_recycled: 0 });
   };
 
-  if (loading) {
+  // Handle authentication errors
+  if (error && (error as { status?: number })?.status === 401) {
+    // Don't redirect immediately, let the SWR fetcher handle it
+    console.log('Authentication error detected in settings page');
+    return (
+      <div className="w-full max-w-5xl py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+          <p className="text-red-600 mb-4">Please log in to access this page.</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (subjectsError && (subjectsError as { status?: number })?.status === 401) {
+    // Don't redirect immediately, let the SWR fetcher handle it
+    console.log('Subjects authentication error detected');
+    return (
+      <div className="w-full max-w-5xl py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+          <p className="text-red-600 mb-4">Please log in to access this page.</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (teachersError && (teachersError as { status?: number })?.status === 401) {
+    // Don't redirect immediately, let the SWR fetcher handle it
+    console.log('Teachers authentication error detected');
+    return (
+      <div className="w-full max-w-5xl py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+          <p className="text-red-600 mb-4">Please log in to access this page.</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="w-full max-w-5xl py-8 px-4">
         <div className="flex items-center justify-center h-64">
@@ -116,7 +231,7 @@ export default function SettingsPage() {
       <div className="w-full max-w-5xl py-8 px-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading School Data</h1>
-          <p className="text-red-600 mb-4">{error || 'No school data available'}</p>
+          <p className="text-red-600 mb-4">{error instanceof Error ? error.message : 'No school data available'}</p>
           <button 
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
@@ -287,113 +402,227 @@ export default function SettingsPage() {
             <h3 className="text-2xl font-bold">Manage Teachers</h3>
             <button
               className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
-              onClick={() => router.push('/dashboard/settings/teachers-new')}
+              onClick={() => setIsAddingTeacher(true)}
             >
               + Add Teacher
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-4 flex items-center gap-4">
-            <input
-              type="text"
-              placeholder="Search by name, email, or subject"
-              className="w-full max-w-md px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200"
-            />
-          </div>
+          {isAddingTeacher ? (
+            <>
+              {/* Blurred Overlay */}
+              <div className="fixed inset-0 bg-transparent backdrop-blur-sm z-40" onClick={() => setIsAddingTeacher(false)} />
+              
+              {/* Modal */}
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Add New Teacher</h3>
+                      <p className="text-sm text-gray-500">Register a new teacher to your school</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddingTeacher(false)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
-          {/* Filter Dropdowns */}
-          <div className="mb-4 flex gap-3">
-            <select className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700">
-              <option>Department</option>
-            </select>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700">
-              <option>Subject</option>
-            </select>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700">
-              <option>Status</option>
-            </select>
-          </div>
+                  {/* Modal Body */}
+                  <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
+                    <div>
+                      <label htmlFor="newTeacherUser" className="block text-sm font-medium text-gray-700 mb-1">
+                        Teacher Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="newTeacherUser"
+                        value={newTeacher.user}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, user: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter teacher name"
+                        required
+                      />
+                    </div>
 
-          {/* Teachers Table */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            {teachersLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-gray-600 text-sm">Loading teachers...</p>
+                    <div>
+                      <label htmlFor="newTeacherRole" className="block text-sm font-medium text-gray-700 mb-1">
+                        Role *
+                      </label>
+                      <select
+                        id="newTeacherRole"
+                        value={newTeacher.teacher_role}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, teacher_role: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Select role</option>
+                        <option value="class_teacher">Class Teacher</option>
+                        <option value="subject_teacher">Subject Teacher</option>
+                        <option value="principal">Principal</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="newTeacherAssignedSubjects" className="block text-sm font-medium text-gray-700 mb-1">
+                        Assigned Subjects
+                      </label>
+                      <select
+                        id="newTeacherAssignedSubjects"
+                        multiple
+                        value={newTeacher.assigned_subjects.map(String)}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, assigned_subjects: Array.from(e.target.selectedOptions, option => parseInt(option.value)) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                      >
+                        {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
+                          <option key={subject.id} value={subject.id}>{subject.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="newTeacherAssignedClasses" className="block text-sm font-medium text-gray-700 mb-1">
+                        Assigned Classes
+                      </label>
+                      <select
+                        id="newTeacherAssignedClasses"
+                        multiple
+                        value={newTeacher.assigned_classes.map(String)}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, assigned_classes: Array.from(e.target.selectedOptions, option => parseInt(option.value)) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                      >
+                        <option value="1">Class 1</option>
+                        <option value="2">Class 2</option>
+                        <option value="3">Class 3</option>
+                        <option value="4">Class 4</option>
+                        <option value="5">Class 5</option>
+                        <option value="6">Class 6</option>
+                        <option value="7">Class 7</option>
+                        <option value="8">Class 8</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="newTeacherStatus"
+                        checked={newTeacher.status === 'active'}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))}
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="newTeacherStatus" className="text-sm text-gray-700">Active Status</label>
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingTeacher(false)}
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        Add Teacher
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-            ) : teachers.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No teachers found for this school.</p>
-                <button
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                  onClick={() => router.push('/dashboard/settings/teachers-new')}
-                >
-                  Add First Teacher
-                </button>
-              </div>
-            ) : (
-              <table className="min-w-full text-sm table-auto">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-700">
-                    <th className="px-4 py-3 text-left font-semibold">Profile</th>
-                    <th className="px-4 py-3 text-left font-semibold">Name</th>
-                    <th className="px-4 py-3 text-left font-semibold w-48 max-w-xs whitespace-nowrap">Email</th>
-                    <th className="px-4 py-3 text-left font-semibold">Phone</th>
-                    <th className="px-4 py-3 text-left font-semibold">Subject(s)</th>
-                    <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Role</th>
-                    <th className="px-4 py-3 text-left font-semibold">Status</th>
-                    <th className="px-4 py-3 text-left font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teachers.map((teacher) => (
-                    <tr key={teacher.id} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-600 font-semibold text-sm">
-                            {teacher.user_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-medium">{teacher.user_name}</td>
-                      <td className="px-4 py-3 text-green-700 w-48 max-w-xs whitespace-nowrap overflow-hidden">
-                        <span className="truncate block w-full" title="Email not available">-</span>
-                      </td>
-                      <td className="px-4 py-3">-</td>
-                      <td className="px-4 py-3">
-                        {teacher.assigned_subjects_data.length > 0 
-                          ? teacher.assigned_subjects_data.map(subject => subject.name).join(', ')
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs whitespace-nowrap font-semibold ${
-                          teacher.teacher_role === 'admin' ? 'bg-green-100 text-green-700' : 
-                          teacher.teacher_role === 'class_teacher' ? 'bg-blue-100 text-blue-700' : 
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {teacher.teacher_role.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          teacher.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-200 text-gray-500'
-                        }`}>
-                          {teacher.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="text-green-700 font-semibold hover:underline">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              {teachersLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading teachers...</p>
+                  </div>
+                </div>
+              ) : teachers.length === 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">No teachers found for this school.</p>
+                    <button
+                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                      onClick={() => setIsAddingTeacher(true)}
+                    >
+                      Add First Teacher
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {teachers.map((teacher: { id: string; user: { name: string }; teacher_role: string; status: string }) => (
+                        <tr key={teacher.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {teacher.user.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {teacher.teacher_role.replace('_', ' ').toUpperCase()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {teacher.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                // Implement edit functionality
+                                console.log('Edit teacher:', teacher);
+                              }}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Implement delete functionality
+                                console.log('Delete teacher:', teacher);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
       {activeTab === 'Students' && (
@@ -430,66 +659,172 @@ export default function SettingsPage() {
 
           {/* Students Table */}
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            {studentsLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-gray-600 text-sm">Loading students...</p>
-                </div>
-              </div>
-            ) : students.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No students found for this school.</p>
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No students found for this school.</p>
+              <button
+                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                onClick={() => router.push('/dashboard/settings/students-new')}
+              >
+                Add First Student
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {activeTab === 'Subjects' && (
+        <div>
+          <h3 className="text-2xl font-bold mb-2">Manage School Subjects</h3>
+          {school ? (
+            <>
+              <p className="text-gray-600 mb-4">Managing subjects for: <span className="font-semibold text-green-700">{school.name}</span></p>
+              <div className="flex justify-end mb-4">
                 <button
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                  onClick={() => router.push('/dashboard/settings/students-new')}
+                  className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
+                  onClick={() => setIsAddingSubject(true)}
                 >
-                  Add First Student
+                  + Add New Subject
                 </button>
               </div>
-            ) : (
-              <table className="min-w-full text-sm table-fixed">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-700">
-                    <th className="px-4 py-3 text-left font-semibold">Profile</th>
-                    <th className="px-4 py-3 text-left font-semibold">Name</th>
-                    <th className="px-4 py-3 text-left font-semibold w-48">Email</th>
-                    <th className="px-4 py-3 text-left font-semibold">Phone</th>
-                    <th className="px-4 py-3 text-left font-semibold">Class</th>
-                    <th className="px-4 py-3 text-left font-semibold">Status</th>
-                    <th className="px-4 py-3 text-left font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-600 font-semibold text-sm">
-                            {student.user_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-medium">{student.user_name}</td>
-                      <td className="px-4 py-3 text-green-700 w-48 whitespace-nowrap overflow-hidden">
-                        <span className="truncate block w-full" title="Email not available">-</span>
-                      </td>
-                      <td className="px-4 py-3">-</td>
-                      <td className="px-4 py-3">{student.class_name}</td>
-                      <td className="px-4 py-3">
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700">
-                          ACTIVE
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="text-green-700 font-semibold hover:underline">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No school selected. Please select a school first.</p>
+            </div>
+          )}
+
+          {school && (
+            <>
+              {isAddingSubject ? (
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Subject</h4>
+                  <form onSubmit={handleAddSubject} className="space-y-4">
+                    <div>
+                      <label htmlFor="newSubjectName" className="block text-sm font-medium text-gray-700">Subject Name</label>
+                      <input
+                        type="text"
+                        id="newSubjectName"
+                        value={newSubject.name}
+                        onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="newSubjectDescription" className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                      <textarea
+                        id="newSubjectDescription"
+                        value={newSubject.description}
+                        onChange={(e) => setNewSubject(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200"
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="newSubjectActive"
+                        checked={newSubject.is_active}
+                        onChange={(e) => setNewSubject(prev => ({ ...prev, is_active: e.target.checked }))}
+                        className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="newSubjectActive" className="text-sm text-gray-700">Is Active</label>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        Add Subject
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingSubject(false)}
+                        className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : subjectsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading subjects...</p>
+                  </div>
+                </div>
+              ) : subjects.length === 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">No subjects found for this school.</p>
+                    <button
+                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                      onClick={() => setIsAddingSubject(true)}
+                    >
+                      Add First Subject
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Description
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
+                        <tr key={subject.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {subject.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {subject.description}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subject.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {subject.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                // Implement edit functionality
+                                console.log('Edit subject:', subject);
+                              }}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Implement delete functionality
+                                console.log('Delete subject:', subject);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
       {activeTab === 'Impact' && (

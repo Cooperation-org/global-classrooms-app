@@ -148,9 +148,12 @@ const handleAuthError = (error: { status_code?: number; detail?: string }) => {
     sessionStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     
-    // Redirect to login
+    // Only redirect if we're not already on auth pages
     if (typeof window !== 'undefined') {
-      window.location.href = '/signin';
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/signin') && !currentPath.includes('/signup')) {
+        window.location.href = '/signin';
+      }
     }
   }
   throw error;

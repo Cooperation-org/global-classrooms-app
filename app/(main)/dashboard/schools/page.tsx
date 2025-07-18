@@ -1,38 +1,30 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { fetchSchools, School } from '@/app/services/api';
+import React, { useState, useMemo } from 'react';
+import { useSchools } from '@/app/hooks/useSWR';
 import { SchoolCard } from '@/app/components/schools/SchoolCard';
 import Link from 'next/link';
 
 export default function SchoolsPage() {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [schools, setSchools] = useState<any[]>([]);
+  const [filteredSchools, setFilteredSchools] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInstitutionType, setSelectedInstitutionType] = useState('All Types');
   const [selectedAffiliation, setSelectedAffiliation] = useState('All Affiliations');
   const [selectedCountry, setSelectedCountry] = useState('All Countries');
 
-  useEffect(() => {
-    const loadSchools = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchSchools();
-        setSchools(response.results);
-        setFilteredSchools(response.results);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load schools');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Use SWR hook for data fetching
+  const { schools: swrSchools, isLoading, error, totalCount } = useSchools(1, 100);
 
-    loadSchools();
-  }, []);
+  // Update local state when SWR data changes
+  React.useEffect(() => {
+    if (swrSchools) {
+      setSchools(swrSchools);
+      setFilteredSchools(swrSchools);
+    }
+  }, [swrSchools]);
 
   // Filter schools based on search and filters
-  useEffect(() => {
+  React.useEffect(() => {
     let filtered = schools;
 
     // Filter by search term
@@ -78,7 +70,27 @@ export default function SchoolsPage() {
 
   const uniqueCountries = Array.from(new Set(schools.map(school => school.country))).sort();
 
-  if (loading) {
+  // Handle authentication errors
+  if (error && (error as { status?: number })?.status === 401) {
+    // Don't redirect immediately, let the SWR fetcher handle it
+    console.log('Authentication error detected in schools page');
+    return (
+      <div className="w-full max-w-5xl py-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
+          <p className="text-red-600 mb-4">Please log in to access this page.</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-10">
         <div className="animate-pulse">
@@ -102,8 +114,8 @@ export default function SchoolsPage() {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Schools</h1>
-          <p className="text-red-600 mb-4">{error}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Schools</h1>
+          <p className="text-red-600 mb-4">{error instanceof Error ? error.message : 'Failed to load schools'}</p>
           <button 
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
