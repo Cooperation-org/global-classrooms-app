@@ -383,6 +383,104 @@ export const useCreateSubject = () => {
   return { createSubject };
 };
 
+export const useUpdateSubject = () => {
+  const { mutate } = useSWRConfig();
+
+  const updateSubject = async (id: number, subjectData: {
+    name: string;
+    description: string;
+    is_active: boolean;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subjects/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subjectData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to update subject');
+      }
+
+      const updatedSubject = await response.json();
+      
+      // Update the subjects list
+      mutate(
+        (key: string) => key.includes('/subjects/'),
+        (currentData: { subjects: Array<{ id: number; name: string; description: string; is_active: boolean }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            subjects: currentData.subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => 
+              subject.id === id ? updatedSubject : subject
+            ),
+          };
+        },
+        false
+      );
+
+      return updatedSubject;
+    } catch (error) {
+      console.error('Failed to update subject:', error);
+      throw error;
+    }
+  };
+
+  return { updateSubject };
+};
+
+export const useDeleteSubject = () => {
+  const { mutate } = useSWRConfig();
+
+  const deleteSubject = async (id: number) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subjects/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to delete subject');
+      }
+      
+      // Optimistically update the subjects list
+      mutate(
+        (key: string) => key.includes('/subjects/'),
+        (currentData: { subjects: Array<{ id: number; name: string; description: string; is_active: boolean }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            subjects: currentData.subjects.filter((subject: { id: number; name: string; description: string; is_active: boolean }) => subject.id !== id),
+            totalCount: (currentData.totalCount || 0) - 1,
+          };
+        },
+        false
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Failed to delete subject:', error);
+      throw error;
+    }
+  };
+
+  return { deleteSubject };
+};
+
 export const useCreateTeacher = () => {
   const { mutate } = useSWRConfig();
 

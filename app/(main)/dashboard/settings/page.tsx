@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useTeacherProfiles, useCreateTeacher } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher } from '@/app/hooks/useSWR';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
@@ -52,6 +52,8 @@ export default function SettingsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [newSubject, setNewSubject] = useState({ name: '', description: '', is_active: true });
+  const [isEditingSubject, setIsEditingSubject] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<{ id: number; name: string; description: string; is_active: boolean } | null>(null);
   const [isAddingTeacher, setIsAddingTeacher] = useState(false);
   const [newTeacher, setNewTeacher] = useState({
     user: '',
@@ -69,6 +71,8 @@ export default function SettingsPage() {
   const { subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects(school?.id);
   const { teachers, isLoading: teachersLoading, error: teachersError } = useTeacherProfiles(school?.id);
   const { createSubject } = useCreateSubject();
+  const { updateSubject } = useUpdateSubject();
+  const { deleteSubject } = useDeleteSubject();
   const { createTeacher } = useCreateTeacher();
 
   // Update local state when SWR data changes
@@ -91,15 +95,28 @@ export default function SettingsPage() {
     if (!newSubject.name.trim() || !school) return;
 
     try {
-      await createSubject({
-        ...newSubject,
-        school: school.id,
-      });
+      if (isEditingSubject && editingSubject) {
+        // Update existing subject
+        await updateSubject(editingSubject.id, {
+          name: newSubject.name,
+          description: newSubject.description,
+          is_active: newSubject.is_active,
+        });
+      } else {
+        // Create new subject
+        await createSubject({
+          ...newSubject,
+          school: school.id,
+        });
+      }
       
       setNewSubject({ name: '', description: '', is_active: true });
       setIsAddingSubject(false);
+      setIsEditingSubject(false);
+      setEditingSubject(null);
     } catch (error) {
-      console.error('Failed to add subject:', error);
+      console.error('Failed to add/update subject:', error);
+      alert('Failed to save subject. Please try again.');
     }
   };
 
@@ -680,7 +697,10 @@ export default function SettingsPage() {
               <div className="flex justify-end mb-4">
                 <button
                   className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
-                  onClick={() => setIsAddingSubject(true)}
+                  onClick={() => {
+                    setEditingSubject(null);
+                    setIsAddingSubject(true);
+                  }}
                 >
                   + Add New Subject
                 </button>
@@ -694,9 +714,11 @@ export default function SettingsPage() {
 
           {school && (
             <>
-              {isAddingSubject ? (
+              {isAddingSubject || isEditingSubject ? (
                 <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Subject</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                    {isAddingSubject ? 'Add New Subject' : 'Edit Subject'}
+                  </h4>
                   <form onSubmit={handleAddSubject} className="space-y-4">
                     <div>
                       <label htmlFor="newSubjectName" className="block text-sm font-medium text-gray-700">Subject Name</label>
@@ -733,11 +755,16 @@ export default function SettingsPage() {
                         type="submit"
                         className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
-                        Add Subject
+                        {isAddingSubject ? 'Add Subject' : 'Save Changes'}
                       </button>
                       <button
                         type="button"
-                        onClick={() => setIsAddingSubject(false)}
+                        onClick={() => {
+                          setIsAddingSubject(false);
+                          setIsEditingSubject(false);
+                          setEditingSubject(null);
+                          setNewSubject({ name: '', description: '', is_active: true });
+                        }}
                         className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
                       >
                         Cancel
@@ -758,7 +785,10 @@ export default function SettingsPage() {
                     <p className="text-gray-500 mb-4">No subjects found for this school.</p>
                     <button
                       className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                      onClick={() => setIsAddingSubject(true)}
+                      onClick={() => {
+                        setEditingSubject(null);
+                        setIsAddingSubject(true);
+                      }}
                     >
                       Add First Subject
                     </button>
@@ -800,8 +830,13 @@ export default function SettingsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => {
-                                // Implement edit functionality
-                                console.log('Edit subject:', subject);
+                                setEditingSubject(subject);
+                                setNewSubject({
+                                  name: subject.name,
+                                  description: subject.description,
+                                  is_active: subject.is_active,
+                                });
+                                setIsEditingSubject(true);
                               }}
                               className="text-indigo-600 hover:text-indigo-900 mr-3"
                             >
@@ -809,8 +844,9 @@ export default function SettingsPage() {
                             </button>
                             <button
                               onClick={() => {
-                                // Implement delete functionality
-                                console.log('Delete subject:', subject);
+                                if (window.confirm('Are you sure you want to delete this subject?')) {
+                                  deleteSubject(subject.id);
+                                }
                               }}
                               className="text-red-600 hover:text-red-900"
                             >
