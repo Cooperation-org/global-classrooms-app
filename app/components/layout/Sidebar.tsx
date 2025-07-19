@@ -74,7 +74,14 @@ const Sidebar = () => {
                   `}
                 >
                   <span className="mr-3 text-lg w-5 h-5 flex items-center justify-center">
-                    {icons[item.icon as keyof typeof icons]}
+                    {icons[item.icon as keyof typeof icons] || (
+                      item.icon === 'user' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M4 20c0-2.5 3.5-4 8-4s8 1.5 8 4" />
+                        </svg>
+                      ) : null
+                    )}
                   </span>
                   <span>{item.label}</span>
                   {item.badge && (
@@ -91,21 +98,23 @@ const Sidebar = () => {
       <div className="border-t border-gray-200 pt-4 mt-4">
         {user && (
           <div className="mb-4">
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                {user.full_name ? user.full_name.charAt(0).toUpperCase() : 
-                 user.email ? user.email.charAt(0).toUpperCase() : 
-                 user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+            <Link href="/dashboard/profile" className="block">
+              <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-green-50 cursor-pointer transition">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                  {user.full_name ? user.full_name.charAt(0).toUpperCase() : 
+                   user.email ? user.email.charAt(0).toUpperCase() : 
+                   user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user.full_name || user.email || user.username}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {user.role}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.full_name || user.email || user.username}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">
-                  {user.role}
-                </p>
-              </div>
-            </div>
+            </Link>
           </div>
         )}
         

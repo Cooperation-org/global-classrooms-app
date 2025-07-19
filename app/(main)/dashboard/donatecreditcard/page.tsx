@@ -1,7 +1,111 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import StripePaymentForm from "@/app/components/payments/StripePaymentForm";
+import { useConnect, useAccount, useSendTransaction } from 'wagmi';
 
-const DonationThankYouPage: React.FC = () => {
+const DONATION_WALLET_ADDRESS = '0xYourDonationWalletAddressHere'; // TODO: Replace with your actual donation address
+
+const DonationPage: React.FC = () => {
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [paymentMode, setPaymentMode] = useState("card");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sendECard, setSendECard] = useState(false);
+  const [purpose, setPurpose] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [donationAmount, setDonationAmount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const predefinedAmounts = [10, 25, 50, 100, 250, 500];
+  const { connect, connectors,  } = useConnect();
+  const {  isConnected } = useAccount();
+
+  const getCurrentAmount = () => {
+    if (selectedAmount) return selectedAmount;
+    if (customAmount) {
+      const parsed = parseFloat(customAmount);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+
+  // Prepare transaction (ETH, not ERC-20)
+  const { sendTransaction, isPending: isTxLoading, isSuccess: isTxSuccess, isError: isTxError, error: txError, data: txData } = useSendTransaction();
+
+  const handlePaymentSuccess = () => {
+    setPaymentSuccess(true);
+    setDonationAmount(getCurrentAmount());
+    console.log('Payment successful');
+    // You can redirect to thank you page or show success message
+    setTimeout(() => {
+      router.push('/dashboard/donatecreditcard/thank-you');
+    }, 2000);
+  };
+
+  const handlePaymentError = (error: string) => {
+    setError(error);
+    setIsLoading(false);
+  };
+
+  // Wallet payment handler
+  const handleWalletPayment = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      if (!isConnected) {
+        // Connect wallet
+        const connector = connectors[0];
+        if (!connector) throw new Error('No wallet connector found');
+        await connect({ connector });
+      }
+      // Send transaction
+      sendTransaction?.({
+        to: DONATION_WALLET_ADDRESS,
+        value: BigInt(Math.floor(getCurrentAmount() * 1e18)) // ETH to wei
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Wallet payment failed');
+      setIsLoading(false);
+    }
+  };
+
+  // Watch for transaction success
+  React.useEffect(() => {
+    if (isTxSuccess && txData) {
+      setPaymentSuccess(true);
+      setDonationAmount(getCurrentAmount());
+      setTimeout(() => {
+        router.push('/dashboard/donatecreditcard/thank-you');
+      }, 2000);
+    }
+    if (isTxError && txError) {
+      setError(txError.message);
+      setIsLoading(false);
+    }
+  }, [isTxSuccess, isTxError, txError, txData]);
+
+  if (paymentSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+          <p className="text-gray-600 mb-4">Thank you for your donation of ${donationAmount.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">Redirecting to thank you page...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -335,224 +439,370 @@ const DonationThankYouPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Section - Thank You Card */}
+        {/* Right Section - Payment Form */}
         <div
           style={{
             backgroundColor: "white",
-            padding: "60px 40px 40px 40px",
+            padding: "40px",
             borderRadius: "12px",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             position: "sticky",
             top: "20px",
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "500px",
           }}
         >
-          {/* Success Icon */}
-          <div
-            style={{
-              width: "120px",
-              height: "120px",
-              backgroundColor: "#ffc107",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "30px",
-              position: "relative",
-            }}
-          >
-            {/* Hands/Tree Icon */}
-            <svg
-              width="60"
-              height="60"
-              viewBox="0 0 60 60"
-              fill="none"
-              style={{ color: "white" }}
-            >
-              <path
-                d="M30 10 L25 25 L15 20 L20 35 L30 30 L40 35 L45 20 L35 25 Z"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path d="M30 30 L30 50" stroke="currentColor" strokeWidth="3" />
-              <path d="M25 45 L35 45" stroke="currentColor" strokeWidth="2" />
-            </svg>
-
-            {/* Radiating lines around the circle */}
+          {/* Make a Donation Header */}
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
             <div
               style={{
-                position: "absolute",
-                width: "160px",
-                height: "160px",
-                top: "-20px",
-                left: "-20px",
-              }}
-            >
-              {Array.from({ length: 12 }, (_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    width: "3px",
-                    height: "15px",
-                    backgroundColor: "#ffc107",
-                    borderRadius: "2px",
-                    top: "10px",
-                    left: "50%",
-                    transformOrigin: "50% 70px",
-                    transform: `translateX(-50%) rotate(${i * 30}deg)`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Thank You Message */}
-          <h1
-            style={{
-              fontSize: "2rem",
-              fontWeight: "bold",
-              color: "#333",
-              marginBottom: "15px",
-              lineHeight: 1.2,
-            }}
-          >
-            Thank you for your donation
-          </h1>
-
-          <p
-            style={{
-              color: "#666",
-              fontSize: "1rem",
-              marginBottom: "30px",
-            }}
-          >
-            A receipt has been sent to your email
-          </p>
-
-          {/* Donation Amount Display */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              backgroundColor: "#f8f9fa",
-              padding: "20px 30px",
-              borderRadius: "10px",
-              border: "1px solid #e9ecef",
-              marginBottom: "30px",
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                backgroundColor: "#e9ecef",
+                width: "50px",
+                height: "50px",
+                backgroundColor: "#fee",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                margin: "0 auto 15px",
+                fontSize: "24px",
               }}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-              >
-                <path d="M12 1v22" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
+              ❤️
             </div>
-            <span
+            <h2
               style={{
                 fontSize: "1.5rem",
                 fontWeight: "bold",
                 color: "#333",
+                marginBottom: "8px",
               }}
             >
-              $100
-            </span>
+              Make a Donation
+            </h2>
+            <p style={{ color: "#666", fontSize: "0.9rem" }}>
+              Choose an amount to donate
+            </p>
           </div>
 
-          {/* Download Buttons */}
-          <div
+          {/* Amount Selection */}
+          <div style={{ marginBottom: "25px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "10px",
+                marginBottom: "15px",
+              }}
+            >
+              {predefinedAmounts.map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => {
+                    setSelectedAmount(amount);
+                    setCustomAmount("");
+                  }}
+                  style={{
+                    padding: "12px",
+                    border:
+                      selectedAmount === amount
+                        ? "2px solid #4caf50"
+                        : "1px solid #ddd",
+                    backgroundColor:
+                      selectedAmount === amount ? "#f0f8f0" : "white",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    color: selectedAmount === amount ? "#4caf50" : "#333",
+                  }}
+                >
+                  ${amount}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.9rem",
+                  fontWeight: "bold",
+                  color: "#333",
+                  marginBottom: "8px",
+                }}
+              >
+                Custom Amount
+              </label>
+              <input
+                type="number"
+                placeholder="Custom Amount"
+                value={customAmount}
+                onChange={(e) => {
+                  setCustomAmount(e.target.value);
+                  setSelectedAmount(null);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Payment Mode */}
+          <div style={{ marginBottom: "25px" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.9rem",
+                fontWeight: "bold",
+                color: "#333",
+                marginBottom: "15px",
+              }}
+            >
+              Payment Mode
+            </label>
+
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  value="card"
+                  checked={paymentMode === "card"}
+                  onChange={(e) => setPaymentMode(e.target.value)}
+                />
+                <div>
+                  <div style={{ fontWeight: "bold", color: "#333" }}>Card</div>
+                  <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                    Pay securely with Visa, Mastercard, Amex or Discover
+                  </div>
+                </div>
+              </label>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  value="goodcollective"
+                  checked={paymentMode === "goodcollective"}
+                  onChange={(e) => setPaymentMode(e.target.value)}
+                />
+                <div>
+                  <div style={{ fontWeight: "bold", color: "#333" }}>
+                    Pay with GoodCollective
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                    Connect your GoodDollar wallet to donate with G$
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Stripe Payment Form - only if Card selected */}
+          {paymentMode === "card" && getCurrentAmount() > 0 && (
+            <div style={{ marginBottom: "25px" }}>
+              <StripePaymentForm
+                amount={getCurrentAmount()}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
+            </div>
+          )}
+
+          {/* Pay with Wallet Button - only if Wallet selected */}
+          {paymentMode === "goodcollective" && (
+            <div style={{ marginBottom: "25px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.9rem",
+                  fontWeight: "bold",
+                  color: "#333",
+                  marginBottom: "8px",
+                }}
+              >
+                Connect GoodCollective Wallet
+              </label>
+              <button
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  backgroundColor: isTxLoading || isLoading ? "#888" : "#333",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                  cursor: isTxLoading || isLoading ? "not-allowed" : "pointer",
+                }}
+                onClick={handleWalletPayment}
+                disabled={isTxLoading || isLoading || getCurrentAmount() <= 0}
+              >
+                {isTxLoading || isLoading ? 'Processing...' : isConnected ? 'Pay with Wallet' : 'Connect Wallet'}
+              </button>
+              {isTxSuccess && txData && (
+                <div style={{ color: 'green', marginTop: 8 }}>
+                  Transaction successful!
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#fee",
+                color: "#c33",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "0.9rem",
+                marginBottom: "15px",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Dedicate Donation */}
+          <div style={{ marginBottom: "25px" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.9rem",
+                fontWeight: "bold",
+                color: "#333",
+                marginBottom: "15px",
+              }}
+            >
+              Dedicate this Donation (optional)
+            </label>
+
+            <select
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                marginBottom: "15px",
+              }}
+            >
+              <option value="">Purpose</option>
+              <option value="memorial">In Memory Of</option>
+              <option value="honor">In Honor Of</option>
+              <option value="celebration">In Celebration Of</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Recipient Name"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                marginBottom: "15px",
+              }}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "15px",
+              }}
+            >
+              <input
+                type="checkbox"
+                id="sendECard"
+                checked={sendECard}
+                onChange={(e) => setSendECard(e.target.checked)}
+              />
+              <label
+                htmlFor="sendECard"
+                style={{
+                  fontSize: "0.9rem",
+                  color: "#333",
+                }}
+              >
+                Send an E-card?
+              </label>
+            </div>
+
+            {sendECard && (
+              <input
+                type="email"
+                placeholder="Recipient Email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  fontSize: "1rem",
+                  marginBottom: "15px",
+                }}
+              />
+            )}
+
+            <textarea
+              placeholder="Message on Card (Optional)"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              style={{
+                width: "100%",
+                padding: "12px",
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          <p
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "15px",
-              width: "100%",
-              maxWidth: "300px",
+              textAlign: "center",
+              fontSize: "0.8rem",
+              color: "#666",
             }}
           >
-            {/* Download Receipt Button */}
-            <button
-              onClick={() => {
-                // Handle download receipt functionality
-                console.log("Download receipt clicked");
-              }}
-              style={{
-                width: "100%",
-                padding: "15px 20px",
-                backgroundColor: "#333",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "1rem",
-                fontWeight: "bold",
-                cursor: "pointer",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#555";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#333";
-              }}
-            >
-              Download Receipt
-            </button>
-
-            {/* Download Certificate of Honor Button */}
-            <button
-              onClick={() => {
-                // Handle download certificate functionality
-                console.log("Download certificate of honor clicked");
-              }}
-              style={{
-                width: "100%",
-                padding: "15px 20px",
-                backgroundColor: "#333",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "1rem",
-                fontWeight: "bold",
-                cursor: "pointer",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#555";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#333";
-              }}
-            >
-              Download Certificate of Honor
-            </button>
-          </div>
+            All donations are processed securely
+          </p>
         </div>
       </div>
     </div>
   );
 };
 
-export default DonationThankYouPage;
+export default DonationPage;

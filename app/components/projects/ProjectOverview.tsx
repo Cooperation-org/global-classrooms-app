@@ -165,7 +165,7 @@ function DiscussionSection({ discussion }: { discussion: Project['discussion'] }
                 <Slack className="w-4 h-4" />
                 Join Slack Channel
               </a>
-            </div>
+          </div>
           </div>
         </div>
       </div>

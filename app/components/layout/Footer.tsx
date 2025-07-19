@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { icons } from "../icons/icons";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -35,8 +35,8 @@ export default function Footer() {
                 <a
                   href="#features"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   Features
                 </a>
@@ -45,8 +45,8 @@ export default function Footer() {
                 <a
                   href="#how-it-works"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   How It Works
                 </a>
@@ -55,8 +55,8 @@ export default function Footer() {
                 <a
                   href="#impact"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   Impact
                 </a>
@@ -65,8 +65,8 @@ export default function Footer() {
                 <a
                   href="#gooddollar"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   GoodDollar
                 </a>
@@ -89,8 +89,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   HomeBiogas
                 </a>
@@ -101,8 +101,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   LinkedTrust
                 </a>
@@ -113,8 +113,8 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => (e.target.style.color = "#10b981")}
-                  onMouseLeave={(e) => (e.target.style.color = "#d1d5db")}
+                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
+                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
                 >
                   GoodCollective
                 </a>
@@ -133,14 +133,16 @@ export default function Footer() {
             <p className="text-gray-300 text-sm mb-4">
               Ready to bring Global Classrooms to your education center?
             </p>
-            <button
-              className="text-white px-6 py-3 rounded-full font-medium transition"
-              style={{ backgroundColor: "#10b981" }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#059669")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#10b981")}
-            >
-              Get Started Today
-            </button>
+            <Link href="/signin">
+              <button
+                className="text-white px-6 py-3 rounded-full font-medium transition"
+                style={{ backgroundColor: "#10b981" }}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.backgroundColor = "#059669")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.backgroundColor = "#10b981")}
+              >
+                Get Started Today
+              </button>
+            </Link>
           </div>
         </div>
 

@@ -23,12 +23,16 @@ const Header: React.FC = () => {
           </Link>
         </nav>
         <div className="ml-auto flex items-center space-x-4">
-          <Button variant="outline" size="sm">
-            Sign In
-          </Button>
-          <Button size="sm">
-            Get Started
-          </Button>
+          <Link href="/signin">
+            <Button variant="outline" size="sm">
+              Sign In
+            </Button>
+          </Link>
+          <Link href="/signin">
+            <Button size="sm">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
