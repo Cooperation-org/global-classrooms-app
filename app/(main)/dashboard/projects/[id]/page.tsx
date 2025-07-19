@@ -86,12 +86,14 @@ export default function ProjectDetailsPage() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'overview':
+      case "overview":
         return (
           <div className="space-y-8">
             <div>
               <div className="px-3 py-5 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900">Project Overview</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Project Overview
+                </h2>
               </div>
               <div className="p-2">
                 <p className="text-gray-700 text-sm leading-relaxed">{project.detailed_description}</p>
@@ -137,7 +139,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProjectHeader title={project.title} description={project.short_description} />
         <ProjectTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         {renderTabContent()}

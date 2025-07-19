@@ -4,7 +4,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'super_admin';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,7 +78,7 @@ export interface RegistrationUser {
   first_name: string;
   last_name: string;
   full_name: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'super_admin';
   mobile_number: string | null;
   gender: string | null;
   date_of_birth: string | null;

@@ -7,11 +7,26 @@ import Link from 'next/link';
 const TABS = [
   'All Projects',
   'Joined',
+  'Featured',
+  'HomeBiogas',
+  'Collaborative',
 ];
 
-function Tag({ children, color }: { children: React.ReactNode; color?: string }) {
+function Tag({
+  children,
+  color,
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) {
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${color || 'bg-blue-100 text-blue-800'}`}>{children}</span>
+    <span
+      className={`px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${
+        color || "bg-blue-100 text-blue-800"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -148,14 +163,17 @@ export default function ProjectsPage() {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-2">Environmental Projects</h1>
       <p className="text-muted-foreground mb-6">Explore and join projects aligned with UN Sustainable Development Goals</p>
-      
       {/* Tabs */}
       <div className="flex space-x-2 mb-6 border-b">
-        {TABS.map(tab => (
+        {TABS.map((tab) => (
           <button
             key={tab}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors focus:outline-none
-              ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}
+              ${
+                activeTab === tab
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-primary"
+              }`}
             onClick={() => setActiveTab(tab)}
             type="button"
           >
@@ -236,4 +254,4 @@ export default function ProjectsPage() {
       )}
     </div>
   );
-} 
+}
