@@ -86,26 +86,26 @@ export default function DashboardHome() {
     <div className="min-h-screen bg-gray-50">
       {/* Welcome Section */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 Welcome back, {userName}! 👋
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-gray-600 text-sm md:text-base">
                 Here&apos;s what&apos;s happening in your global classroom community.
               </p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
               <Link
                 href="/dashboard/projects/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="inline-flex items-center justify-center w-full md:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 Create Project
               </Link>
               <Link
                 href="/dashboard/schools/new"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="inline-flex items-center justify-center w-full md:w-auto px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 Add School
               </Link>
@@ -116,11 +116,11 @@ export default function DashboardHome() {
 
       {/* Dashboard Content */}
       <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Featured Projects */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Featured Projects</h2>
+          <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-2 md:gap-0">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Featured Projects</h2>
               <Link
                 href="/dashboard/projects"
                 className="text-green-600 hover:text-green-700 text-sm font-medium"
@@ -161,9 +161,9 @@ export default function DashboardHome() {
           </div>
 
           {/* Completed Projects */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Recently Completed</h2>
+          <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-2 md:gap-0">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">Recently Completed</h2>
               <Link
                 href="/dashboard/projects"
                 className="text-green-600 hover:text-green-700 text-sm font-medium"
@@ -205,9 +205,9 @@ export default function DashboardHome() {
         </div>
 
         {/* Open Collaborations */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Open for Collaboration</h2>
+        <div className="mt-8 bg-white rounded-lg shadow-sm border p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-2 md:gap-0">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900">Open for Collaboration</h2>
             <Link
               href="/dashboard/projects"
               className="text-green-600 hover:text-green-700 text-sm font-medium"
@@ -215,7 +215,7 @@ export default function DashboardHome() {
               View all →
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {openCollaborations.length > 0 ? (
               openCollaborations.map((project: Project) => (
                 <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">

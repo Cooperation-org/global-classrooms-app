@@ -120,7 +120,7 @@ export default function ImpactPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Global Impact</h1>
             <p className="mt-2 text-gray-600">
@@ -131,7 +131,7 @@ export default function ImpactPage() {
       </div>
 
       {/* Impact Metrics */}
-      <div className="max-w-7xl  px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm border p-6">
