@@ -12,6 +12,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -76,8 +77,28 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="ml-64 min-h-screen">
+      {/* Mobile Header */}
+      <div className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-100 flex items-center h-14 px-4">
+        <button
+          className="mr-3 text-gray-700 hover:text-green-700 focus:outline-none"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? 'Close sidebar menu' : 'Open sidebar menu'}
+        >
+          {sidebarOpen ? (
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+        <span className="font-bold text-lg text-green-800">Global Classrooms</span>
+      </div>
+      {/* Sidebar (responsive) */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <main className="md:ml-64 min-h-screen">
         {children}
       </main>
     </div>
