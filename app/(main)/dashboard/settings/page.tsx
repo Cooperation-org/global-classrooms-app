@@ -267,30 +267,30 @@ export default function SettingsPage() {
         <span className="text-green-700 font-semibold">Settings</span> / <span>Overview</span>
       </div>
 
+      {/* School Card */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+        <img src={school.logo || placeholderImg} alt={school.name} className="w-24 h-24 rounded-lg object-cover border" />
+        <div className="flex-1 w-full">
+          <h2 className="text-xl md:text-2xl font-bold">{school.name}</h2>
+          <p className="text-green-700 text-sm">{school.overview}</p>
+          <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
+        </div>
+        <button className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto">
+          EDIT <span className="text-lg">→</span>
+        </button>
+      </div>
+
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6 gap-8">
+      <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 mb-6 gap-2 md:gap-8">
         {TABS.map(tab => (
           <button
             key={tab}
-            className={`pb-2 px-2 text-lg font-medium transition border-b-2 ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-700'}`}
+            className={`pb-2 px-2 text-base md:text-lg font-medium transition border-b-2 ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-700'}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
           </button>
         ))}
-      </div>
-
-      {/* School Card */}
-      <div className="flex items-center gap-4 mb-6">
-        <img src={school.logo || placeholderImg} alt={school.name} className="w-24 h-24 rounded-lg object-cover border" />
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold">{school.name}</h2>
-          <p className="text-green-700 text-sm">{school.overview}</p>
-          <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
-        </div>
-        <button className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition">
-          EDIT <span className="text-lg">→</span>
-        </button>
       </div>
 
       {/* Tab Content */}
@@ -432,7 +432,7 @@ export default function SettingsPage() {
               
               {/* Modal */}
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-full md:max-w-md mx-auto">
                   {/* Modal Header */}
                   <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
@@ -771,28 +771,6 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   </form>
-                </div>
-              ) : subjectsLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading subjects...</p>
-                  </div>
-                </div>
-              ) : subjects.length === 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">No subjects found for this school.</p>
-                    <button
-                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                      onClick={() => {
-                        setEditingSubject(null);
-                        setIsAddingSubject(true);
-                      }}
-                    >
-                      Add First Subject
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
