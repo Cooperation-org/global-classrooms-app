@@ -90,7 +90,7 @@ async function sendDonationToAPI(session: Stripe.Checkout.Session) {
     };
 
     // Send to your donations API
-    const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:8000'}/api/donations/`, {
+    const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:8000'}/donations/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
