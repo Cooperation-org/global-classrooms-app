@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 const DonationForm = () => {
   const [paymentMode, setPaymentMode] = useState<'stripe' | 'wallet'>('stripe');
@@ -213,13 +214,16 @@ const DonationForm = () => {
               >
                 Pay by Credit Card
               </Button>
+              <Link href='https://goodcollective.xyz/collective/0xf3d629a2c198fc91d7d3f18217684166c83c7312' target="_blank">
               <Button
                 variant={paymentMode === 'wallet' ? 'default' : 'outline'}
                 onClick={() => setPaymentMode('wallet')}
                 className="flex-1"
               >
-                Pay with Wallet
+                Pay with $GoodDollar
               </Button>
+              </Link>
+             
             </div>
 
             {/* Unified Amount Selection */}
