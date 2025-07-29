@@ -161,7 +161,7 @@ const Sidebar = () => {
           </div>
           <div>
             <div className="font-bold text-lg text-green-800">
-              Global Classrooms
+              EGR Educating Global Resilience
             </div>
             <div className="text-xs text-green-600">
               Environmental Education

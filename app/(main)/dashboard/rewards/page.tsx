@@ -7,8 +7,8 @@ import {
   Cross2Icon,
   ExternalLinkIcon,
 } from "@radix-ui/react-icons";
-import RewardDistributionPanel from '@/app/components/admin/RewardDistributionPanel';
-import { RegistrationUser } from '@/app/types';
+import RewardDistributionPanel from "@/app/components/admin/RewardDistributionPanel";
+import { RegistrationUser } from "@/app/types";
 
 const RewardsSection: React.FC = () => {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -16,12 +16,12 @@ const RewardsSection: React.FC = () => {
 
   useEffect(() => {
     // Get user data from localStorage
-    const userData = localStorage.getItem('user_data');
+    const userData = localStorage.getItem("user_data");
     if (userData) {
       try {
         setUser(JSON.parse(userData));
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        console.error("Error parsing user data:", error);
       }
     }
   }, []);
@@ -50,14 +50,20 @@ const RewardsSection: React.FC = () => {
     },
   ];
 
-  // Show admin panel for super_admin users only  
-  if (user?.role === 'super_admin') {
+  // Show admin panel for super_admin users only
+  if (user?.role === "super_admin") {
     return <RewardDistributionPanel />;
   }
 
   // Show rewards section for students, teachers, and regular admins
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "0 16px" }}>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "0 auto",
+        padding: "60px 16px 0 16px",
+      }}
+    >
       {/* Header Section */}
       <div
         style={{
