@@ -160,9 +160,7 @@ const Sidebar = () => {
             </svg>
           </div>
           <div>
-            <div className="font-bold text-lg text-green-800">
-              EGR Educating Global Resilience
-            </div>
+            <div className="font-bold text-lg text-green-800">EGR</div>
             <div className="text-xs text-green-600">
               Environmental Education
               <br />
