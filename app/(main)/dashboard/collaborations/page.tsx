@@ -63,7 +63,7 @@ export default function CollaborationsPage() {
   return (
     <div className="min-h-screen bg-[#F6FCF8]">
       <div className="max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4 md:gap-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Future Projects</h1>
             <p className="text-gray-500">Discover upcoming and ongoing environmental projects you can join</p>
@@ -73,7 +73,7 @@ export default function CollaborationsPage() {
             Start New Project
           </Link>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center gap-6 px-8 py-6 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-6 px-4 md:px-8 py-6 mb-8">
           <div className="flex items-center justify-center w-14 h-14 rounded-full bg-[#E6F4EA]">
             <svg width="32" height="32" fill="none" viewBox="0 0 32 32">
               <circle cx="16" cy="16" r="14" stroke="#4BA186" strokeWidth="2" fill="#F6FCF8" />

@@ -644,6 +644,164 @@ export const useDeleteTeacher = () => {
   return { deleteTeacher };
 };
 
+export const useCreateStudent = () => {
+  const { mutate } = useSWRConfig();
+
+  const createStudent = async (studentData: {
+    user: string;
+    school: string;
+    student_id: string;
+    current_class: number;
+    parent_name: string;
+    parent_email: string;
+    parent_phone: string;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student-profiles/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(studentData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to create student');
+      }
+
+      const newStudent = await response.json();
+      
+      // Optimistically update the students list
+      mutate(
+        (key: string) => key.includes('/student-profiles/'),
+        (currentData: { students: Array<{ id: string; user_name: string; student_id: string; current_class: number }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            students: [...(currentData.students || []), newStudent],
+            totalCount: (currentData.totalCount || 0) + 1,
+          };
+        },
+        false
+      );
+
+      return newStudent;
+    } catch (error) {
+      console.error('Failed to create student:', error);
+      throw error;
+    }
+  };
+
+  return { createStudent };
+};
+
+export const useUpdateStudent = () => {
+  const { mutate } = useSWRConfig();
+
+  const updateStudent = async (id: string, studentData: {
+    user: string;
+    school: string;
+    student_id: string;
+    current_class: number;
+    parent_name: string;
+    parent_email: string;
+    parent_phone: string;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student-profiles/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(studentData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to update student');
+      }
+
+      const updatedStudent = await response.json();
+      
+      // Update the students list
+      mutate(
+        (key: string) => key.includes('/student-profiles/'),
+        (currentData: { students: Array<{ id: string; user_name: string; student_id: string; current_class: number }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            students: currentData.students.map((student: { id: string; user_name: string; student_id: string; current_class: number }) => 
+              student.id === id ? updatedStudent : student
+            ),
+          };
+        },
+        false
+      );
+
+      return updatedStudent;
+    } catch (error) {
+      console.error('Failed to update student:', error);
+      throw error;
+    }
+  };
+
+  return { updateStudent };
+};
+
+export const useDeleteStudent = () => {
+  const { mutate } = useSWRConfig();
+
+  const deleteStudent = async (id: string) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student-profiles/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to delete student');
+      }
+      
+      // Optimistically update the students list
+      mutate(
+        (key: string) => key.includes('/student-profiles/'),
+        (currentData: { students: Array<{ id: string; user_name: string; student_id: string; current_class: number }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            students: currentData.students.filter((student: { id: string; user_name: string; student_id: string; current_class: number }) => student.id !== id),
+            totalCount: (currentData.totalCount || 0) - 1,
+          };
+        },
+        false
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Failed to delete student:', error);
+      throw error;
+    }
+  };
+
+  return { deleteStudent };
+};
+
 // Utility function to revalidate all data
 export const revalidateAll = () => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
