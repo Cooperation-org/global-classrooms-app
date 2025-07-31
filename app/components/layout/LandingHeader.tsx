@@ -19,7 +19,21 @@ const LandingHeader: React.FC = () => {
       <div className="container mx-auto flex items-center justify-between py-3 px-4">
         {/* Logo and subtitle */}
         <Link href="/" className="flex items-center space-x-3">
-          <span className="text-green-600 text-2xl">{icons.globe}</span>
+          <div className="w-8 h-8">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#22c55e"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-8 h-8"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </div>
           <div className="flex flex-col leading-tight">
             <span className="font-bold text-lg text-gray-900">EGR</span>
             <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>
@@ -72,7 +86,21 @@ const LandingHeader: React.FC = () => {
               </svg>
             </button>
             <div className="flex items-center space-x-3 mb-8 mt-2">
-              <span className="text-green-600 text-2xl">{icons.globe}</span>
+              <div className="w-8 h-8">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#22c55e"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-8 h-8"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </div>
               <div className="flex flex-col leading-tight">
                 <span className="font-bold text-lg text-gray-900">EGR</span>
                 <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>

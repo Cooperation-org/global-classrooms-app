@@ -1,5 +1,5 @@
 // Application constants
-export const APP_NAME = 'EGR';
+export const APP_NAME = 'EGR - Educating Global Resilience';
 export const APP_DESCRIPTION = 'Connecting students worldwide through innovative online learning experiences';
 
 // API endpoints

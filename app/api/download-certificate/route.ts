@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       </head>
       <body>
         <div class="certificate">
-          <div class="logo">EGR</div>
+          <div class="logo">EGR - Educating Global Resilience</div>
           
           <div class="ornament">❋ ❋ ❋</div>
           

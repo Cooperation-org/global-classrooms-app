@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency,
             product_data: {
-              name: 'EGR Donation',
+              name: 'EGR - Educating Global Resilience Donation',
               description: 'Supporting environmental education and student projects',
             //   images: ['https://your-domain.com/logo.png'], // Add your logo URL
             },
