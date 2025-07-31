@@ -147,7 +147,7 @@ const DonationPage: React.FC = () => {
               }}
               className="md:text-2xl"
             >
-              Support Global Classrooms
+              Support EGR - Educating Global Resilience
             </h1>
             <p
               style={{

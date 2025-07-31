@@ -94,7 +94,7 @@ export default function DashboardLayout({
             </svg>
           )}
         </button>
-        <span className="font-bold text-lg text-green-800">Global Classrooms</span>
+        <span className="font-bold text-lg text-green-800">EGR - Educating Global Resilience</span>
       </div>
       {/* Sidebar (responsive) */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />

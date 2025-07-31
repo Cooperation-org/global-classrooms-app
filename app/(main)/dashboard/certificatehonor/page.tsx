@@ -80,7 +80,7 @@ const DonationCertificate: React.FC = () => {
                 lineHeight: 1.1,
               }}
             >
-              Global Classrooms
+              EGR
             </h1>
             <p
               style={{
@@ -90,7 +90,7 @@ const DonationCertificate: React.FC = () => {
                 fontWeight: "normal",
               }}
             >
-              Environmental Education Platform
+              Educating Global Resilience
             </p>
           </div>
         </div>
@@ -222,7 +222,7 @@ const DonationCertificate: React.FC = () => {
             margin: "0 auto",
           }}
         >
-          You have received this message because a donation to Global Classroom
+          You have received this message because a donation to EGR
           pool was dedicated to you through our platform.
         </p>
       </div>

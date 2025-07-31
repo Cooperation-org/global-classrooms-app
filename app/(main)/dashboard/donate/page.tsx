@@ -105,7 +105,7 @@ const DonationForm = () => {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-semibold mb-2">
-              Support Global Classrooms
+              Support EGR - Educating Global Resilience
             </h1>
             <p className="text-gray-600">
               Help us empower students to create environmental change

@@ -8,13 +8,13 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          {/* Global Classrooms */}
+          {/* EGR */}
           <div className="text-center md:text-left">
             <h3
               className="text-xl font-semibold mb-4"
               style={{ color: "#10b981" }}
             >
-              Global Classrooms
+              EGR - Educating Global Resilience
             </h3>
             <p className="text-gray-300 text-sm leading-relaxed">
               Transforming environmental education through technology,
@@ -131,7 +131,7 @@ export default function Footer() {
               Contact
             </h4>
             <p className="text-gray-300 text-sm mb-4">
-              Ready to bring Global Classrooms to your education center?
+              Ready to bring EGR to your education center?
             </p>
             <Link href="/signin">
               <button
@@ -150,7 +150,7 @@ export default function Footer() {
         <div className="border-t border-gray-700 pt-8">
           <div className="text-center">
             <p className="text-gray-400 text-sm">
-              © 2025 Global Classrooms. Building sustainable futures through
+              © 2025 EGR. Building sustainable futures through
               education.
             </p>
           </div>

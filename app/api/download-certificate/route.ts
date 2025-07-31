@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       </head>
       <body>
         <div class="certificate">
-          <div class="logo">Global Classrooms</div>
+          <div class="logo">EGR - Educating Global Resilience</div>
           
           <div class="ornament">❋ ❋ ❋</div>
           
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div class="footer">
-            <p>Global Classrooms | Environmental Education Platform</p>
+            <p>EGR | Educating Global Resilience</p>
             <p>Transaction ID: ${sessionId}</p>
           </div>
         </div>
