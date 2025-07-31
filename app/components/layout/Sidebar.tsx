@@ -164,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false, onClose }) => {
         </button>
 
         <div className="mb-10">
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8">
               <svg
                 viewBox="0 0 24 24"

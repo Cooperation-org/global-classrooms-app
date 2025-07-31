@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function AuthLayout({
   children,
@@ -10,7 +11,7 @@ export default function AuthLayout({
       {/* Navigation */}
       <nav className="w-full p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center space-x-3">
             <div className="w-8 h-8">
               <svg
                 viewBox="0 0 24 24"
@@ -30,7 +31,7 @@ export default function AuthLayout({
               <span className="text-xl font-semibold text-gray-900">EGR</span>
               <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>
             </div>
-          </div>
+          </Link>
           
           {/* Navigation items can be added here if needed */}
           <div className="hidden md:flex items-center space-x-6">
