@@ -1,7 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent } from '@/app/hooks/useSWR';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
@@ -63,17 +62,41 @@ export default function SettingsPage() {
     assigned_classes: [] as number[],
     status: 'active'
   });
-  const router = useRouter();
+  const [editingTeacher, setEditingTeacher] = useState<{ id: string; user: string; teacher_role: string; assigned_subjects: number[]; assigned_classes: number[]; status: string } | null>(null);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    user: '',
+    school: '',
+    student_id: '',
+    current_class: 0,
+    parent_name: '',
+    parent_email: '',
+    parent_phone: ''
+  });
+  const [editingStudent, setEditingStudent] = useState<{ id: string; user: string; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string } | null>(null);
 
   // Use SWR hooks for data fetching
   const { schools, isLoading, error } = useSchools(1, 1); // Get first school
   const { projects: swrProjects, isLoading: projectsLoading } = useProjects(1, 100);
-  const { subjects, isLoading: subjectsLoading, error: subjectsError } = useSubjects(school?.id);
-  const { teachers, isLoading: teachersLoading, error: teachersError } = useTeacherProfiles(school?.id);
+  const { subjects, error: subjectsError } = useSubjects(school?.id);
+  const { teachers, isLoading: teachersLoading } = useTeacherProfiles();
   const { createSubject } = useCreateSubject();
   const { updateSubject } = useUpdateSubject();
   const { deleteSubject } = useDeleteSubject();
   const { createTeacher } = useCreateTeacher();
+  const { updateTeacher } = useUpdateTeacher();
+  const { deleteTeacher } = useDeleteTeacher();
+  const { students, isLoading: studentsLoading } = useStudentProfiles();
+  const { createStudent } = useCreateStudent();
+  const { updateStudent } = useUpdateStudent();
+  const { deleteStudent } = useDeleteStudent();
+  
+  // Mock users data - in real app, you'd fetch this from your API
+  const availableUsers = [
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", name: "John Doe", email: "john@example.com" },
+    { id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", name: "Jane Smith", email: "jane@example.com" },
+    { id: "5fa85f64-5717-4562-b3fc-2c963f66afa8", name: "Bob Johnson", email: "bob@example.com" },
+  ];
 
   // Update local state when SWR data changes
   useEffect(() => {
@@ -125,7 +148,7 @@ export default function SettingsPage() {
     e.preventDefault();
     
     // Validate required fields
-    if (!newTeacher.user.trim() || !newTeacher.teacher_role) {
+    if (!newTeacher.user || !newTeacher.teacher_role) {
       alert('Please fill in all required fields');
       return;
     }
@@ -136,14 +159,27 @@ export default function SettingsPage() {
     }
 
     try {
-      await createTeacher({
-        user: newTeacher.user,
-        school: school.id,
-        teacher_role: newTeacher.teacher_role,
-        assigned_subjects: newTeacher.assigned_subjects,
-        assigned_classes: newTeacher.assigned_classes,
-        status: newTeacher.status
-      });
+      if (editingTeacher) {
+        // Update existing teacher
+        await updateTeacher(editingTeacher.id, {
+          user: newTeacher.user,
+          school: school.id,
+          teacher_role: newTeacher.teacher_role,
+          assigned_subjects: newTeacher.assigned_subjects,
+          assigned_classes: newTeacher.assigned_classes,
+          status: newTeacher.status
+        });
+      } else {
+        // Create new teacher
+        await createTeacher({
+          user: newTeacher.user,
+          school: school.id,
+          teacher_role: newTeacher.teacher_role,
+          assigned_subjects: newTeacher.assigned_subjects,
+          assigned_classes: newTeacher.assigned_classes,
+          status: newTeacher.status
+        });
+      }
       
       // Reset form
       setNewTeacher({
@@ -155,10 +191,138 @@ export default function SettingsPage() {
         status: 'active'
       });
       setIsAddingTeacher(false);
+      setEditingTeacher(null);
     } catch (error) {
-      console.error('Failed to add teacher:', error);
-      alert('Failed to add teacher. Please try again.');
+      console.error('Failed to add/update teacher:', error);
+      alert('Failed to save teacher. Please try again.');
     }
+  };
+
+  // Handle teacher deletion
+  const handleDeleteTeacher = async (teacherId: string) => {
+    if (window.confirm('Are you sure you want to delete this teacher?')) {
+      try {
+        await deleteTeacher(teacherId);
+      } catch (error) {
+        console.error('Failed to delete teacher:', error);
+        alert('Failed to delete teacher. Please try again.');
+      }
+    }
+  };
+
+  // Handle teacher edit
+  const handleEditTeacher = (teacher: { id: string; user: { id: string; name: string } | string; teacher_role: string; assigned_subjects?: number[]; assigned_classes?: number[]; status: string }) => {
+    setEditingTeacher({
+      id: teacher.id,
+      user: typeof teacher.user === 'string' ? teacher.user : teacher.user.id,
+      teacher_role: teacher.teacher_role,
+      assigned_subjects: teacher.assigned_subjects || [],
+      assigned_classes: teacher.assigned_classes || [],
+      status: teacher.status
+    });
+    setNewTeacher({
+      user: typeof teacher.user === 'string' ? teacher.user : teacher.user.id,
+      school: school?.id || '',
+      teacher_role: teacher.teacher_role,
+      assigned_subjects: teacher.assigned_subjects || [],
+      assigned_classes: teacher.assigned_classes || [],
+      status: teacher.status
+    });
+    setIsAddingTeacher(true);
+  };
+
+  // Add new student
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!newStudent.user || !newStudent.student_id) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (!school) {
+      alert('No school selected');
+      return;
+    }
+
+    try {
+      if (editingStudent) {
+        // Update existing student
+        await updateStudent(editingStudent.id, {
+          user: newStudent.user,
+          school: school.id,
+          student_id: newStudent.student_id,
+          current_class: newStudent.current_class,
+          parent_name: newStudent.parent_name,
+          parent_email: newStudent.parent_email,
+          parent_phone: newStudent.parent_phone
+        });
+      } else {
+        // Create new student
+        await createStudent({
+          user: newStudent.user,
+          school: school.id,
+          student_id: newStudent.student_id,
+          current_class: newStudent.current_class,
+          parent_name: newStudent.parent_name,
+          parent_email: newStudent.parent_email,
+          parent_phone: newStudent.parent_phone
+        });
+      }
+      
+      // Reset form
+      setNewStudent({
+        user: '',
+        school: '',
+        student_id: '',
+        current_class: 0,
+        parent_name: '',
+        parent_email: '',
+        parent_phone: ''
+      });
+      setIsAddingStudent(false);
+      setEditingStudent(null);
+    } catch (error) {
+      console.error('Failed to add/update student:', error);
+      alert('Failed to save student. Please try again.');
+    }
+  };
+
+  // Handle student deletion
+  const handleDeleteStudent = async (studentId: string) => {
+    if (window.confirm('Are you sure you want to delete this student?')) {
+      try {
+        await deleteStudent(studentId);
+      } catch (error) {
+        console.error('Failed to delete student:', error);
+        alert('Failed to delete student. Please try again.');
+      }
+    }
+  };
+
+  // Handle student edit
+  const handleEditStudent = (student: { id: string; user: { id: string; name: string } | string; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string }) => {
+    setEditingStudent({
+      id: student.id,
+      user: typeof student.user === 'string' ? student.user : student.user.id,
+      school: student.school,
+      student_id: student.student_id,
+      current_class: student.current_class,
+      parent_name: student.parent_name,
+      parent_email: student.parent_email,
+      parent_phone: student.parent_phone
+    });
+    setNewStudent({
+      user: typeof student.user === 'string' ? student.user : student.user.id,
+      school: student.school,
+      student_id: student.student_id,
+      current_class: student.current_class,
+      parent_name: student.parent_name,
+      parent_email: student.parent_email,
+      parent_phone: student.parent_phone
+    });
+    setIsAddingStudent(true);
   };
 
   // Calculate cumulative impact
@@ -195,25 +359,6 @@ export default function SettingsPage() {
   if (subjectsError && (subjectsError as { status?: number })?.status === 401) {
     // Don't redirect immediately, let the SWR fetcher handle it
     console.log('Subjects authentication error detected');
-    return (
-      <div className="w-full max-w-5xl py-8 px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
-          <p className="text-red-600 mb-4">Please log in to access this page.</p>
-          <button 
-            onClick={() => window.location.href = '/signin'}
-            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          >
-            Go to Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (teachersError && (teachersError as { status?: number })?.status === 401) {
-    // Don't redirect immediately, let the SWR fetcher handle it
-    console.log('Teachers authentication error detected');
     return (
       <div className="w-full max-w-5xl py-8 px-4">
         <div className="text-center">
@@ -267,30 +412,30 @@ export default function SettingsPage() {
         <span className="text-green-700 font-semibold">Settings</span> / <span>Overview</span>
       </div>
 
+      {/* School Card */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+        <img src={school.logo || placeholderImg} alt={school.name} className="w-24 h-24 rounded-lg object-cover border" />
+        <div className="flex-1 w-full">
+          <h2 className="text-xl md:text-2xl font-bold">{school.name}</h2>
+          <p className="text-green-700 text-sm">{school.overview}</p>
+          <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
+        </div>
+        <button className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto">
+          EDIT <span className="text-lg">→</span>
+        </button>
+      </div>
+
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6 gap-8">
+      <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 mb-6 gap-2 md:gap-8">
         {TABS.map(tab => (
           <button
             key={tab}
-            className={`pb-2 px-2 text-lg font-medium transition border-b-2 ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-700'}`}
+            className={`pb-2 px-2 text-base md:text-lg font-medium transition border-b-2 ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-700'}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
           </button>
         ))}
-      </div>
-
-      {/* School Card */}
-      <div className="flex items-center gap-4 mb-6">
-        <img src={school.logo || placeholderImg} alt={school.name} className="w-24 h-24 rounded-lg object-cover border" />
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold">{school.name}</h2>
-          <p className="text-green-700 text-sm">{school.overview}</p>
-          <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
-        </div>
-        <button className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition">
-          EDIT <span className="text-lg">→</span>
-        </button>
       </div>
 
       {/* Tab Content */}
@@ -432,15 +577,30 @@ export default function SettingsPage() {
               
               {/* Modal */}
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-full md:max-w-md mx-auto">
                   {/* Modal Header */}
                   <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Add New Teacher</h3>
-                      <p className="text-sm text-gray-500">Register a new teacher to your school</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {editingTeacher ? 'Update teacher information' : 'Register a new teacher to your school'}
+                      </p>
                     </div>
                     <button
-                      onClick={() => setIsAddingTeacher(false)}
+                      onClick={() => {
+                        setIsAddingTeacher(false);
+                        setEditingTeacher(null);
+                        setNewTeacher({
+                          user: '',
+                          school: '',
+                          teacher_role: 'class_teacher',
+                          assigned_subjects: [],
+                          assigned_classes: [],
+                          status: 'active'
+                        });
+                      }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,15 +615,18 @@ export default function SettingsPage() {
                       <label htmlFor="newTeacherUser" className="block text-sm font-medium text-gray-700 mb-1">
                         Teacher Name *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         id="newTeacherUser"
                         value={newTeacher.user}
                         onChange={(e) => setNewTeacher(prev => ({ ...prev, user: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter teacher name"
                         required
-                      />
+                      >
+                        <option value="">Select teacher</option>
+                        {availableUsers.map(user => (
+                          <option key={user.id} value={user.id}>{user.name}</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
@@ -488,43 +651,116 @@ export default function SettingsPage() {
                       <label htmlFor="newTeacherAssignedSubjects" className="block text-sm font-medium text-gray-700 mb-1">
                         Assigned Subjects
                       </label>
-                      <select
-                        id="newTeacherAssignedSubjects"
-                        multiple
-                        value={newTeacher.assigned_subjects.map(String)}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, assigned_subjects: Array.from(e.target.selectedOptions, option => parseInt(option.value)) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
-                      >
-                        {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
-                          <option key={subject.id} value={subject.id}>{subject.name}</option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                      <div className="relative">
+                        <select
+                          id="newTeacherAssignedSubjects"
+                          onChange={(e) => {
+                            const subjectId = parseInt(e.target.value);
+                            if (subjectId && !newTeacher.assigned_subjects.includes(subjectId)) {
+                              setNewTeacher(prev => ({ 
+                                ...prev, 
+                                assigned_subjects: [...prev.assigned_subjects, subjectId] 
+                              }));
+                            }
+                            e.target.value = '';
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select subjects to assign</option>
+                          {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
+                            <option key={subject.id} value={subject.id}>{subject.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* Selected Subjects Display */}
+                      {newTeacher.assigned_subjects.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {newTeacher.assigned_subjects.map(subjectId => {
+                            const subject = subjects.find((s: { id: number; name: string }) => s.id === subjectId);
+                            return subject ? (
+                              <span
+                                key={subjectId}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                              >
+                                {subject.name}
+                                <button
+                                  type="button"
+                                  onClick={() => setNewTeacher(prev => ({
+                                    ...prev,
+                                    assigned_subjects: prev.assigned_subjects.filter(id => id !== subjectId)
+                                  }))}
+                                  className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
+                                >
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     <div>
                       <label htmlFor="newTeacherAssignedClasses" className="block text-sm font-medium text-gray-700 mb-1">
                         Assigned Classes
                       </label>
-                      <select
-                        id="newTeacherAssignedClasses"
-                        multiple
-                        value={newTeacher.assigned_classes.map(String)}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, assigned_classes: Array.from(e.target.selectedOptions, option => parseInt(option.value)) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
-                      >
-                        <option value="1">Class 1</option>
-                        <option value="2">Class 2</option>
-                        <option value="3">Class 3</option>
-                        <option value="4">Class 4</option>
-                        <option value="5">Class 5</option>
-                        <option value="6">Class 6</option>
-                        <option value="7">Class 7</option>
-                        <option value="8">Class 8</option>
-                        <option value="9">Class 9</option>
-                        <option value="10">Class 10</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                      <div className="relative">
+                        <select
+                          id="newTeacherAssignedClasses"
+                          onChange={(e) => {
+                            const classId = parseInt(e.target.value);
+                            if (classId && !newTeacher.assigned_classes.includes(classId)) {
+                              setNewTeacher(prev => ({ 
+                                ...prev, 
+                                assigned_classes: [...prev.assigned_classes, classId] 
+                              }));
+                            }
+                            e.target.value = '';
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select classes to assign</option>
+                          <option value="1">Class 1</option>
+                          <option value="2">Class 2</option>
+                          <option value="3">Class 3</option>
+                          <option value="4">Class 4</option>
+                          <option value="5">Class 5</option>
+                          <option value="6">Class 6</option>
+                          <option value="7">Class 7</option>
+                          <option value="8">Class 8</option>
+                          <option value="9">Class 9</option>
+                          <option value="10">Class 10</option>
+                        </select>
+                      </div>
+                      
+                      {/* Selected Classes Display */}
+                      {newTeacher.assigned_classes.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {newTeacher.assigned_classes.map(classId => (
+                            <span
+                              key={classId}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                            >
+                              Class {classId}
+                              <button
+                                type="button"
+                                onClick={() => setNewTeacher(prev => ({
+                                  ...prev,
+                                  assigned_classes: prev.assigned_classes.filter(id => id !== classId)
+                                }))}
+                                className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center">
@@ -542,7 +778,18 @@ export default function SettingsPage() {
                     <div className="flex gap-3 pt-4 border-t border-gray-200">
                       <button
                         type="button"
-                        onClick={() => setIsAddingTeacher(false)}
+                        onClick={() => {
+                          setIsAddingTeacher(false);
+                          setEditingTeacher(null);
+                          setNewTeacher({
+                            user: '',
+                            school: '',
+                            teacher_role: 'class_teacher',
+                            assigned_subjects: [],
+                            assigned_classes: [],
+                            status: 'active'
+                          });
+                        }}
                         className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                       >
                         Cancel
@@ -551,7 +798,7 @@ export default function SettingsPage() {
                         type="submit"
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
-                        Add Teacher
+                        {editingTeacher ? 'Update Teacher' : 'Add Teacher'}
                       </button>
                     </div>
                   </form>
@@ -599,7 +846,7 @@ export default function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {teachers.map((teacher: { id: string; user: { name: string }; teacher_role: string; status: string }) => (
+                      {teachers.map((teacher: { id: string; user: { id: string; name: string }; teacher_role: string; status: string }) => (
                         <tr key={teacher.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {teacher.user.name}
@@ -614,19 +861,13 @@ export default function SettingsPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
-                              onClick={() => {
-                                // Implement edit functionality
-                                console.log('Edit teacher:', teacher);
-                              }}
+                              onClick={() => handleEditTeacher(teacher)}
                               className="text-indigo-600 hover:text-indigo-900 mr-3"
                             >
                               Edit
                             </button>
                             <button
-                              onClick={() => {
-                                // Implement delete functionality
-                                console.log('Delete teacher:', teacher);
-                              }}
+                              onClick={() => handleDeleteTeacher(teacher.id)}
                               className="text-red-600 hover:text-red-900"
                             >
                               Delete
@@ -649,43 +890,279 @@ export default function SettingsPage() {
             <h3 className="text-2xl font-bold">Manage Students</h3>
             <button
               className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
-              onClick={() => router.push('/dashboard/settings/students-new')}
+              onClick={() => setIsAddingStudent(true)}
             >
               + Add Student
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-4 flex items-center gap-4">
-            <input
-              type="text"
-              placeholder="Search by name, email, or student ID"
-              className="w-full max-w-md px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200"
-            />
-          </div>
+          {isAddingStudent ? (
+            <>
+              {/* Blurred Overlay */}
+              <div className="fixed inset-0 bg-transparent backdrop-blur-sm z-40" onClick={() => setIsAddingStudent(false)} />
+              
+              {/* Modal */}
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-full md:max-w-md mx-auto">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {editingStudent ? 'Edit Student' : 'Add New Student'}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {editingStudent ? 'Update student information' : 'Register a new student to your school'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsAddingStudent(false);
+                        setEditingStudent(null);
+                        setNewStudent({
+                          user: '',
+                          school: '',
+                          student_id: '',
+                          current_class: 0,
+                          parent_name: '',
+                          parent_email: '',
+                          parent_phone: ''
+                        });
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
-          {/* Filter Dropdowns */}
-          <div className="mb-4 flex gap-3">
-            <select className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700">
-              <option>Class</option>
-            </select>
-            <select className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700">
-              <option>Status</option>
-            </select>
-          </div>
+                  {/* Modal Body */}
+                  <form onSubmit={handleAddStudent} className="p-6 space-y-4">
+                    <div>
+                      <label htmlFor="newStudentUser" className="block text-sm font-medium text-gray-700 mb-1">
+                        Student Name *
+                      </label>
+                      <select
+                        id="newStudentUser"
+                        value={newStudent.user}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, user: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Select student</option>
+                        {availableUsers.map(user => (
+                          <option key={user.id} value={user.id}>{user.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-          {/* Students Table */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No students found for this school.</p>
-              <button
-                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                onClick={() => router.push('/dashboard/settings/students-new')}
-              >
-                Add First Student
-              </button>
-            </div>
-          </div>
+                    <div>
+                      <label htmlFor="newStudentStudentId" className="block text-sm font-medium text-gray-700 mb-1">
+                        Student ID *
+                      </label>
+                      <input
+                        type="text"
+                        id="newStudentStudentId"
+                        value={newStudent.student_id}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, student_id: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentCurrentClass" className="block text-sm font-medium text-gray-700 mb-1">
+                        Current Class *
+                      </label>
+                      <select
+                        id="newStudentCurrentClass"
+                        value={newStudent.current_class}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, current_class: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">Select class</option>
+                        <option value="1">Class 1</option>
+                        <option value="2">Class 2</option>
+                        <option value="3">Class 3</option>
+                        <option value="4">Class 4</option>
+                        <option value="5">Class 5</option>
+                        <option value="6">Class 6</option>
+                        <option value="7">Class 7</option>
+                        <option value="8">Class 8</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentParentName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Parent Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="newStudentParentName"
+                        value={newStudent.parent_name}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentParentEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                        Parent Email *
+                      </label>
+                      <input
+                        type="email"
+                        id="newStudentParentEmail"
+                        value={newStudent.parent_email}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_email: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentParentPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Parent Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        id="newStudentParentPhone"
+                        value={newStudent.parent_phone}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_phone: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingStudent(false);
+                          setEditingStudent(null);
+                          setNewStudent({
+                            user: '',
+                            school: '',
+                            student_id: '',
+                            current_class: 0,
+                            parent_name: '',
+                            parent_email: '',
+                            parent_phone: ''
+                          });
+                        }}
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        {editingStudent ? 'Update Student' : 'Add Student'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {studentsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading students...</p>
+                  </div>
+                </div>
+              ) : students.length === 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">No students found for this school.</p>
+                    <button
+                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+                      onClick={() => setIsAddingStudent(true)}
+                    >
+                      Add First Student
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student ID
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Class
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Parent Name
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Parent Email
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Parent Phone
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {students.map((student: { id: string; user: { id: string; name: string }; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string }) => (
+                        <tr key={student.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {student.user.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.student_id}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                              Class {student.current_class}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.parent_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.parent_email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.parent_phone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleEditStudent(student)}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(student.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
       {activeTab === 'Subjects' && (
@@ -771,28 +1248,6 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   </form>
-                </div>
-              ) : subjectsLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading subjects...</p>
-                  </div>
-                </div>
-              ) : subjects.length === 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">No subjects found for this school.</p>
-                    <button
-                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-                      onClick={() => {
-                        setEditingSubject(null);
-                        setIsAddingSubject(true);
-                      }}
-                    >
-                      Add First Subject
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">

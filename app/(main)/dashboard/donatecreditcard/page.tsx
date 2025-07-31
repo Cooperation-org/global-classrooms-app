@@ -112,7 +112,7 @@ const DonationPage: React.FC = () => {
         fontFamily: "system-ui, sans-serif",
         backgroundColor: "#f8f9fa",
         minHeight: "100vh",
-        padding: "20px",
+        padding: "16px",
       }}
     >
       <div
@@ -120,57 +120,63 @@ const DonationPage: React.FC = () => {
           maxWidth: "1200px",
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "40px",
+          gridTemplateColumns: "1fr",
+          gap: "20px",
           alignItems: "start",
         }}
+        className="md:grid-cols-2 md:gap-10"
       >
         {/* Left Section */}
         <div
           style={{
             backgroundColor: "white",
-            padding: "40px",
+            padding: "20px",
             borderRadius: "12px",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
           }}
+          className="md:p-10"
         >
           {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ textAlign: "center", marginBottom: "30px" }} className="md:mb-10">
             <h1
               style={{
-                fontSize: "2rem",
+                fontSize: "1.5rem",
                 fontWeight: "bold",
                 color: "#333",
                 marginBottom: "8px",
               }}
+              className="md:text-2xl"
             >
               Support Global Classrooms
             </h1>
             <p
               style={{
                 color: "#666",
-                fontSize: "1rem",
+                fontSize: "0.9rem",
               }}
+              className="md:text-base"
             >
               Help us empower students to create environmental change
             </p>
           </div>
 
           {/* Why Donate Section */}
-          <div style={{ marginBottom: "40px" }}>
+          <div style={{ marginBottom: "30px" }} className="md:mb-10">
             <h2
               style={{
-                fontSize: "1.5rem",
+                fontSize: "1.2rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "20px",
+                marginBottom: "15px",
               }}
+              className="md:text-xl md:mb-5"
             >
               Why Donate?
             </h2>
 
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+              className="md:gap-5"
             >
               <div
                 style={{
@@ -289,14 +295,15 @@ const DonationPage: React.FC = () => {
           </div>
 
           {/* Our Impact So Far */}
-          <div style={{ marginBottom: "40px" }}>
+          <div style={{ marginBottom: "30px" }} className="md:mb-10">
             <h2
               style={{
-                fontSize: "1.5rem",
+                fontSize: "1.2rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "20px",
+                marginBottom: "15px",
               }}
+              className="md:text-xl md:mb-5"
             >
               Our Impact So Far
             </h2>
@@ -305,8 +312,9 @@ const DonationPage: React.FC = () => {
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
+                gap: "15px",
               }}
+              className="md:gap-5"
             >
               <div style={{ textAlign: "center" }}>
                 <div
@@ -374,17 +382,19 @@ const DonationPage: React.FC = () => {
           <div>
             <h2
               style={{
-                fontSize: "1.5rem",
+                fontSize: "1.2rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "20px",
+                marginBottom: "15px",
               }}
+              className="md:text-xl md:mb-5"
             >
               Featured Projects Needing Support
             </h2>
 
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+              className="md:gap-4"
             >
               {[
                 { name: "Water Conservation System", amount: "$2,500" },
@@ -443,54 +453,58 @@ const DonationPage: React.FC = () => {
         <div
           style={{
             backgroundColor: "white",
-            padding: "40px",
+            padding: "20px",
             borderRadius: "12px",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             position: "sticky",
             top: "20px",
           }}
+          className="md:p-10"
         >
           {/* Make a Donation Header */}
-          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <div style={{ textAlign: "center", marginBottom: "25px" }} className="md:mb-8">
             <div
               style={{
-                width: "50px",
-                height: "50px",
+                width: "40px",
+                height: "40px",
                 backgroundColor: "#fee",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: "0 auto 15px",
-                fontSize: "24px",
+                margin: "0 auto 12px",
+                fontSize: "20px",
               }}
+              className="md:w-12 md:h-12 md:text-2xl md:mb-4"
             >
               ❤️
             </div>
             <h2
               style={{
-                fontSize: "1.5rem",
+                fontSize: "1.3rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "8px",
+                marginBottom: "6px",
               }}
+              className="md:text-xl"
             >
               Make a Donation
             </h2>
-            <p style={{ color: "#666", fontSize: "0.9rem" }}>
+            <p style={{ color: "#666", fontSize: "0.85rem" }} className="md:text-sm">
               Choose an amount to donate
             </p>
           </div>
 
           {/* Amount Selection */}
-          <div style={{ marginBottom: "25px" }}>
+          <div style={{ marginBottom: "20px" }} className="md:mb-6">
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "10px",
-                marginBottom: "15px",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "8px",
+                marginBottom: "12px",
               }}
+              className="md:grid-cols-3 md:gap-3 md:mb-4"
             >
               {predefinedAmounts.map((amount) => (
                 <button
@@ -523,11 +537,12 @@ const DonationPage: React.FC = () => {
               <label
                 style={{
                   display: "block",
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   fontWeight: "bold",
                   color: "#333",
-                  marginBottom: "8px",
+                  marginBottom: "6px",
                 }}
+                className="md:text-sm md:mb-2"
               >
                 Custom Amount
               </label>
@@ -541,31 +556,34 @@ const DonationPage: React.FC = () => {
                 }}
                 style={{
                   width: "100%",
-                  padding: "12px",
+                  padding: "10px",
                   border: "1px solid #ddd",
                   borderRadius: "8px",
-                  fontSize: "1rem",
+                  fontSize: "0.9rem",
                 }}
+                className="md:p-3 md:text-base"
               />
             </div>
           </div>
 
           {/* Payment Mode */}
-          <div style={{ marginBottom: "25px" }}>
+          <div style={{ marginBottom: "20px" }} className="md:mb-6">
             <label
               style={{
                 display: "block",
-                fontSize: "0.9rem",
+                fontSize: "0.85rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "15px",
+                marginBottom: "12px",
               }}
+              className="md:text-sm md:mb-4"
             >
               Payment Mode
             </label>
 
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+              className="md:gap-3"
             >
               <label
                 style={{
@@ -619,7 +637,7 @@ const DonationPage: React.FC = () => {
 
           {/* Stripe Payment Form - only if Card selected */}
           {paymentMode === "card" && getCurrentAmount() > 0 && (
-            <div style={{ marginBottom: "25px" }}>
+            <div style={{ marginBottom: "20px" }} className="md:mb-6">
               <StripePaymentForm
                 amount={getCurrentAmount()}
                 onSuccess={handlePaymentSuccess}
@@ -632,30 +650,32 @@ const DonationPage: React.FC = () => {
 
           {/* Pay with Wallet Button - only if Wallet selected */}
           {paymentMode === "goodcollective" && (
-            <div style={{ marginBottom: "25px" }}>
+            <div style={{ marginBottom: "20px" }} className="md:mb-6">
               <label
                 style={{
                   display: "block",
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   fontWeight: "bold",
                   color: "#333",
-                  marginBottom: "8px",
+                  marginBottom: "6px",
                 }}
+                className="md:text-sm md:mb-2"
               >
                 Connect GoodCollective Wallet
               </label>
               <button
                 style={{
                   width: "100%",
-                  padding: "12px",
+                  padding: "10px",
                   backgroundColor: isTxLoading || isLoading ? "#888" : "#333",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
-                  fontSize: "1rem",
+                  fontSize: "0.9rem",
                   fontWeight: "bold",
                   cursor: isTxLoading || isLoading ? "not-allowed" : "pointer",
                 }}
+                className="md:p-3 md:text-base"
                 onClick={handleWalletPayment}
                 disabled={isTxLoading || isLoading || getCurrentAmount() <= 0}
               >
@@ -675,41 +695,47 @@ const DonationPage: React.FC = () => {
               style={{
                 backgroundColor: "#fee",
                 color: "#c33",
-                padding: "12px",
+                padding: "10px",
                 borderRadius: "8px",
-                fontSize: "0.9rem",
-                marginBottom: "15px",
+                fontSize: "0.85rem",
+                marginBottom: "12px",
               }}
+              className="md:p-3 md:text-sm md:mb-4"
             >
               {error}
             </div>
           )}
 
           {/* Dedicate Donation */}
-          <div style={{ marginBottom: "25px" }}>
+          <div style={{ marginBottom: "20px" }} className="md:mb-6">
             <label
               style={{
                 display: "block",
-                fontSize: "0.9rem",
+                fontSize: "0.85rem",
                 fontWeight: "bold",
                 color: "#333",
-                marginBottom: "15px",
+                marginBottom: "12px",
               }}
+              className="md:text-sm md:mb-4"
             >
               Dedicate this Donation (optional)
             </label>
+            <p style={{ color: "#666", fontSize: "0.8rem", marginBottom: "12px" }} className="md:text-sm md:mb-4">
+              You can dedicate this donation and share an e-certificate with someone you'd like to honour.
+            </p>
 
             <select
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px",
                 border: "1px solid #ddd",
                 borderRadius: "8px",
-                fontSize: "1rem",
-                marginBottom: "15px",
+                fontSize: "0.9rem",
+                marginBottom: "12px",
               }}
+              className="md:p-3 md:text-base md:mb-4"
             >
               <option value="">Purpose</option>
               <option value="memorial">In Memory Of</option>
@@ -724,21 +750,23 @@ const DonationPage: React.FC = () => {
               onChange={(e) => setRecipientName(e.target.value)}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px",
                 border: "1px solid #ddd",
                 borderRadius: "8px",
-                fontSize: "1rem",
-                marginBottom: "15px",
+                fontSize: "0.9rem",
+                marginBottom: "12px",
               }}
+              className="md:p-3 md:text-base md:mb-4"
             />
 
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                marginBottom: "15px",
+                gap: "8px",
+                marginBottom: "12px",
               }}
+              className="md:gap-3 md:mb-4"
             >
               <input
                 type="checkbox"
@@ -749,9 +777,10 @@ const DonationPage: React.FC = () => {
               <label
                 htmlFor="sendECard"
                 style={{
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   color: "#333",
                 }}
+                className="md:text-sm"
               >
                 Send an E-card?
               </label>
@@ -765,12 +794,13 @@ const DonationPage: React.FC = () => {
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "12px",
+                  padding: "10px",
                   border: "1px solid #ddd",
                   borderRadius: "8px",
-                  fontSize: "1rem",
-                  marginBottom: "15px",
+                  fontSize: "0.9rem",
+                  marginBottom: "12px",
                 }}
+                className="md:p-3 md:text-base md:mb-4"
               />
             )}
 
@@ -778,24 +808,26 @@ const DonationPage: React.FC = () => {
               placeholder="Message on Card (Optional)"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={4}
+              rows={3}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px",
                 border: "1px solid #ddd",
                 borderRadius: "8px",
-                fontSize: "1rem",
+                fontSize: "0.9rem",
                 resize: "vertical",
               }}
+              className="md:p-3 md:text-base md:rows-4"
             />
           </div>
 
           <p
             style={{
               textAlign: "center",
-              fontSize: "0.8rem",
+              fontSize: "0.75rem",
               color: "#666",
             }}
+            className="md:text-sm"
           >
             All donations are processed securely
           </p>

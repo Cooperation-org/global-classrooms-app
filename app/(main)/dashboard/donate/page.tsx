@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import StripePaymentForm from "@/app/components/payments/StripePaymentForm";
+import Link from "next/link";
 
 const DonationForm = () => {
   const [paymentMode, setPaymentMode] = useState<'stripe' | 'wallet'>('stripe');
@@ -15,6 +15,13 @@ const DonationForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [donationAmount, setDonationAmount] = useState(0);
+  
+  // Dedication state
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sendECard, setSendECard] = useState(false);
+  const [purpose, setPurpose] = useState("");
 
   const getCurrentAmount = () => {
     if (selectedAmount) return selectedAmount;
@@ -25,14 +32,54 @@ const DonationForm = () => {
     return 0;
   };
 
-  const handlePaymentSuccess = () => {
-    setPaymentSuccess(true);
-    setDonationAmount(getCurrentAmount());
+  const handleStripeCheckout = async () => {
+    const amount = getCurrentAmount();
+    if (amount <= 0) {
+      setError('Please select or enter a valid amount');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Math.round(amount * 100), // Convert to cents
+          donorName: 'Anonymous', // You can get this from user profile or form
+          donorEmail: 'donor@example.com', // You can get this from user profile or form
+          purpose,
+          recipientName,
+          recipientEmail,
+          message,
+          sendECard,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setIsLoading(false);
+    }
   };
 
-  const handlePaymentError = (error: string) => {
-    setError(error);
-    setIsLoading(false);
+  const handleWalletPayment = () => {
+    alert('Wallet payment coming soon!');
   };
 
   if (paymentSuccess) {
@@ -158,6 +205,7 @@ const DonationForm = () => {
               className="mx-auto mb-2"
             />
             <h2 className="text-2xl font-bold mb-2 text-center">Make a Donation</h2>
+            
             <div className="flex gap-2 w-full justify-center mb-2">
               <Button
                 variant={paymentMode === 'stripe' ? 'default' : 'outline'}
@@ -166,13 +214,16 @@ const DonationForm = () => {
               >
                 Pay by Credit Card
               </Button>
+              <Link href='https://goodcollective.xyz/collective/0xf3d629a2c198fc91d7d3f18217684166c83c7312' target="_blank">
               <Button
                 variant={paymentMode === 'wallet' ? 'default' : 'outline'}
                 onClick={() => setPaymentMode('wallet')}
                 className="flex-1"
               >
-                Pay with Wallet
+                Pay with $GoodDollar
               </Button>
+              </Link>
+             
             </div>
 
             {/* Unified Amount Selection */}
@@ -202,28 +253,97 @@ const DonationForm = () => {
               </div>
             </div>
 
-            {/* Stripe Payment Form */}
+            {/* Payment Buttons */}
             {paymentMode === 'stripe' && getCurrentAmount() > 0 && (
-              <div >
-                <StripePaymentForm
-                  amount={getCurrentAmount()}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                  isLoading={isLoading}
-                  setIsLoading={setIsLoading}
-                />
-              </div>
+              <Button
+                onClick={handleStripeCheckout}
+                disabled={isLoading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-lg"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  `Proceed to Checkout - $${getCurrentAmount().toFixed(2)}`
+                )}
+              </Button>
             )}
 
-            {/* Wallet Payment Button */}
             {paymentMode === 'wallet' && getCurrentAmount() > 0 && (
               <Button
                 className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-lg"
-                onClick={() => alert('Wallet payment coming soon!')}
+                onClick={handleWalletPayment}
               >
                 Pay {getCurrentAmount().toLocaleString(undefined, { style: 'currency', currency: 'USD' })} with Wallet
               </Button>
             )}
+
+            {/* Dedicate Donation Section */}
+            <div className="w-full space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Dedicate this Donation (optional)</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  You can dedicate this donation and share an e-certificate with someone you&apos;d like to honour.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <select
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">Purpose</option>
+                  <option value="memorial">In Memory Of</option>
+                  <option value="honor">In Honor Of</option>
+                  <option value="celebration">In Celebration Of</option>
+                </select>
+
+                <Input
+                  type="text"
+                  placeholder="Recipient Name"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="w-full"
+                />
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="sendECard"
+                    checked={sendECard}
+                    onChange={(e) => setSendECard(e.target.checked)}
+                    className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="sendECard"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Send an E-card?
+                  </label>
+                </div>
+
+                {sendECard && (
+                  <Input
+                    type="email"
+                    placeholder="Recipient Email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    className="w-full"
+                  />
+                )}
+
+                <textarea
+                  placeholder="Message on Card (Optional)"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-vertical"
+                />
+              </div>
+            </div>
 
             {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md my-2 w-full text-center">{error}</div>}
 
