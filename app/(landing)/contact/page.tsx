@@ -10,8 +10,9 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Contact Form */}
+        <div className="grid md:grid-cols-1 gap-12">
+          {/* Contact Form - Commented out until backend is ready */}
+          {/* 
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a message</h2>
             <form className="space-y-6">
@@ -75,6 +76,7 @@ export default function ContactPage() {
               </button>
             </form>
           </div>
+          */}
 
           {/* Contact Information */}
           <div className="space-y-8">
@@ -90,7 +92,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">Email</h3>
-                    <p className="text-gray-600">contact@egr.org</p>
+                    <p className="text-gray-600">
+                      <a href="mailto:yair@homebiogas.com" className="hover:text-green-600 transition-colors">
+                        yair@homebiogas.com
+                      </a>
+                    </p>
                   </div>
                 </div>
                 

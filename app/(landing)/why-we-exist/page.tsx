@@ -1,4 +1,4 @@
-import WhyWeExistSection from '../components/sections/WhyWeExistSection';
+import WhyWeExistSection from '../../components/sections/WhyWeExistSection';
 
 export default function WhyWeExistPage() {
   return (
