@@ -12,12 +12,12 @@ const stats = [
   },
   {
     icon: icons.schools,
-    value: '2',
+    value: '5',
     label: 'Schools Participated',
   },
   {
     icon: icons.collaborations, // Replace with a globe icon if available
-    value: '1',
+    value: '3',
     label: 'Countries Engaged',
   },
   {

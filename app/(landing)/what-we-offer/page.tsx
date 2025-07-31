@@ -1,4 +1,17 @@
-import WhatWeOfferSection from '../../components/sections/WhatWeOfferSection';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+// Lazy load the heavy component
+const WhatWeOfferSection = dynamic(
+  () => import('../../components/sections/WhatWeOfferSection'),
+  {
+    loading: () => (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ),
+  }
+);
 
 export default function WhatWeOfferPage() {
   return (
@@ -13,7 +26,13 @@ export default function WhatWeOfferPage() {
         }}
       />
       <div className="relative z-10">
-        <WhatWeOfferSection />
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          </div>
+        }>
+          <WhatWeOfferSection />
+        </Suspense>
       </div>
     </main>
   );

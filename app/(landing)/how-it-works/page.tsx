@@ -1,4 +1,17 @@
-import HowItWorksSection from '../../components/sections/HowItWorksSection';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+// Lazy load the heavy component
+const HowItWorksSection = dynamic(
+  () => import('../../components/sections/HowItWorksSection'),
+  {
+    loading: () => (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ),
+  }
+);
 
 export default function HowItWorksPage() {
   return (
@@ -13,7 +26,13 @@ export default function HowItWorksPage() {
         }}
       />
       <div className="relative z-10">
-        <HowItWorksSection />
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          </div>
+        }>
+          <HowItWorksSection />
+        </Suspense>
       </div>
     </main>
   );
