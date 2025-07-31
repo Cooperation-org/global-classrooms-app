@@ -21,8 +21,8 @@ const LandingHeader: React.FC = () => {
         <Link href="/" className="flex items-center space-x-3">
           <span className="text-green-600 text-2xl">{icons.globe}</span>
           <div className="flex flex-col leading-tight">
-            <span className="font-bold text-lg text-gray-900">Global Classrooms</span>
-            <span className="text-xs text-green-700 -mt-1">Environmental Education Platform</span>
+            <span className="font-bold text-lg text-gray-900">EGR</span>
+            <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>
           </div>
         </Link>
         {/* Nav links (desktop) */}
@@ -74,8 +74,8 @@ const LandingHeader: React.FC = () => {
             <div className="flex items-center space-x-3 mb-8 mt-2">
               <span className="text-green-600 text-2xl">{icons.globe}</span>
               <div className="flex flex-col leading-tight">
-                <span className="font-bold text-lg text-gray-900">Global Classrooms</span>
-                <span className="text-xs text-green-700 -mt-1">Environmental Education Platform</span>
+                <span className="font-bold text-lg text-gray-900">EGR</span>
+                <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>
               </div>
             </div>
             <div className="flex flex-col space-y-4 mb-8">

@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Classrooms - Online Learning Platform",
+  title: "EGR - Educating Global Resilience",
   description: "Connecting students worldwide through innovative online learning experiences",
   keywords: ["online learning", "education", "courses", "global classrooms"],
-  authors: [{ name: "Global Classrooms Team" }],
+  authors: [{ name: "EGR Team" }],
 };
 
 export const viewport: Viewport = {

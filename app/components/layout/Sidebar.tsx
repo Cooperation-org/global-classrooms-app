@@ -183,9 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false, onClose }) => {
             <div>
               <div className="font-bold text-lg text-green-800">EGR</div>
               <div className="text-xs text-green-600">
-                Environmental Education
-                <br />
-                Platform
+                Educating Global Resilience
               </div>
             </div>
           </Link>

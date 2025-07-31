@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       <body>
         <div class="receipt">
           <div class="header">
-            <div class="logo">Global Classrooms</div>
+            <div class="logo">EGR</div>
             <h1>Donation Receipt</h1>
             <p>Thank you for your generous contribution</p>
           </div>
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div class="footer">
-            <p>This receipt serves as proof of your charitable donation to Global Classrooms.</p>
+            <p>This receipt serves as proof of your charitable donation to EGR.</p>
             <p>Your contribution supports environmental education and student projects worldwide.</p>
             <p>For questions, contact: support@globalclassrooms.org</p>
           </div>

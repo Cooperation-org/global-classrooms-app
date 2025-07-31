@@ -52,7 +52,7 @@ const DonationPage: React.FC = () => {
                 marginBottom: "8px",
               }}
             >
-              Support Global Classrooms
+              Support EGR - Educating Global Resilience
             </h1>
             <p
               style={{

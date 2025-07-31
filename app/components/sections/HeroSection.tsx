@@ -48,7 +48,7 @@ export default function HeroSection() {
             className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-6"
             variants={fadeUp}
           >
-            🌍 Global Environmental Education Platform
+            🌍 EGR - Educating Global Resilience
           </motion.div>
 
           <motion.h1
