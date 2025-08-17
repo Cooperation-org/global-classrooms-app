@@ -2,6 +2,19 @@ import React from 'react';
 import Link from 'next/link';
 import Button from '../ui/Button';
 
+// Utility function for smooth scrolling with header offset
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    const headerHeight = 56; // Height of the sticky header
+    const elementPosition = element.offsetTop - headerHeight;
+    window.scrollTo({
+      top: elementPosition,
+      behavior: 'smooth'
+    });
+  }
+};
+
 const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -27,15 +40,27 @@ const Header: React.FC = () => {
           </Link>
         </div>
         <nav className="flex items-center space-x-6 text-sm font-medium">
-          <Link href="/about" className="transition-colors hover:text-foreground/80">
-            About
-          </Link>
-          <Link href="/courses" className="transition-colors hover:text-foreground/80">
-            Courses
-          </Link>
-          <Link href="/contact" className="transition-colors hover:text-foreground/80">
-            Contact
-          </Link>
+          <button 
+            onClick={() => scrollToSection('why-we-exist')}
+            className="relative transition-all duration-200 hover:text-green-600 hover:scale-105 cursor-pointer font-medium group"
+          >
+            Why We Exist
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all duration-200 group-hover:w-full"></span>
+          </button>
+          <button 
+            onClick={() => scrollToSection('how-it-works')}
+            className="relative transition-all duration-200 hover:text-green-600 hover:scale-105 cursor-pointer font-medium group"
+          >
+            How It Works
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all duration-200 group-hover:w-full"></span>
+          </button>
+          <button 
+            onClick={() => scrollToSection('what-we-offer')}
+            className="relative transition-all duration-200 hover:text-green-600 hover:scale-105 cursor-pointer font-medium group"
+          >
+            What We Offer
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all duration-200 group-hover:w-full"></span>
+          </button>
         </nav>
         <div className="ml-auto flex items-center space-x-4">
           <Link href="/signin">

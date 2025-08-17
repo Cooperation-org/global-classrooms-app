@@ -1,14 +1,34 @@
 'use client'
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { icons } from '../icons/icons';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/why-we-exist', label: 'Why We Exist' },
-  { href: '/how-it-works', label: 'How It Works' },
-  { href: '/what-we-offer', label: 'What We Offer' },
-  { href: '/contact', label: 'Contact' },
+// Utility function for smooth scrolling with header offset
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    const headerHeight = 72; // Height of the sticky header
+    const elementPosition = element.offsetTop - headerHeight;
+    window.scrollTo({
+      top: elementPosition,
+      behavior: 'smooth'
+    });
+  }
+};
+
+interface NavLink {
+  href?: string;
+  sectionId?: string;
+  label: string;
+  type: 'link' | 'scroll';
+}
+
+const navLinks: NavLink[] = [
+  { href: '/', label: 'Home', type: 'link' },
+  { sectionId: 'why-we-exist', label: 'Why We Exist', type: 'scroll' },
+  { sectionId: 'how-it-works', label: 'How It Works', type: 'scroll' },
+  { sectionId: 'what-we-offer', label: 'What We Offer', type: 'scroll' },
+  { href: '/projects', label: 'Projects', type: 'link' },
+  { href: '/contact', label: 'Contact', type: 'link' },
 ];
 
 const LandingHeader: React.FC = () => {
@@ -42,9 +62,19 @@ const LandingHeader: React.FC = () => {
         {/* Nav links (desktop) */}
         <nav className="hidden md:flex items-center space-x-8 mx-auto">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} className="text-gray-700 font-medium hover:text-green-700 transition">
-              {link.label}
-            </Link>
+            link.type === 'scroll' ? (
+              <button
+                key={link.sectionId}
+                onClick={() => scrollToSection(link.sectionId!)}
+                className="text-gray-700 font-medium hover:text-green-700 transition"
+              >
+                {link.label}
+              </button>
+            ) : (
+              <Link key={link.href} href={link.href!} className="text-gray-700 font-medium hover:text-green-700 transition">
+                {link.label}
+              </Link>
+            )
           ))}
         </nav>
         {/* Buttons (desktop) */}
@@ -108,14 +138,27 @@ const LandingHeader: React.FC = () => {
             </div>
             <div className="flex flex-col space-y-4 mb-8">
               {navLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-gray-700 font-medium hover:text-green-700 transition text-lg"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                link.type === 'scroll' ? (
+                  <button
+                    key={link.sectionId}
+                    onClick={() => {
+                      scrollToSection(link.sectionId!);
+                      setMobileOpen(false);
+                    }}
+                    className="text-gray-700 font-medium hover:text-green-700 transition text-lg text-left"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href!}
+                    className="text-gray-700 font-medium hover:text-green-700 transition text-lg"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
             </div>
             <div className="flex flex-col space-y-3 mt-auto">

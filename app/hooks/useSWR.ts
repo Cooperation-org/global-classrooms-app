@@ -94,6 +94,74 @@ const fetcher = async (url: string) => {
   return response.json();
 };
 
+// Public fetcher function without authentication (for public pages)
+const publicFetcher = async (url: string) => {
+  console.log('Public Fetcher: Making request to:', url);
+  
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // Try direct request first
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.log('Public Fetcher: Direct request failed with status:', response.status, 'for URL:', url);
+      
+      // If it's a CORS issue in development, try with a CORS proxy
+      if (isDevelopment && response.status === 0) {
+        throw new Error('CORS_ERROR');
+      }
+      
+      const error = new Error('An error occurred while fetching the data.') as ApiError;
+      try {
+        error.info = await response.json();
+      } catch {
+        error.info = { detail: 'Failed to parse error response' };
+      }
+      error.status = response.status;
+      throw error;
+    }
+
+    console.log('Public Fetcher: Direct request successful for:', url);
+    return response.json();
+  } catch (error) {
+    // In development, if we have CORS issues, try with a proxy
+    if (isDevelopment && (error as Error).message === 'CORS_ERROR') {
+      console.log('Public Fetcher: Trying with CORS proxy for:', url);
+      const corsProxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?',
+      ];
+      
+      for (const proxy of corsProxies) {
+        try {
+          const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
+          const response = await fetch(proxyUrl, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            console.log('Public Fetcher: CORS proxy request successful for:', url);
+            return response.json();
+          }
+        } catch (proxyError) {
+          console.log('Public Fetcher: CORS proxy failed:', proxyError);
+          continue;
+        }
+      }
+    }
+    
+    console.error('Public Fetcher: All requests failed for:', url, error);
+    throw error;
+  }
+};
+
 // Custom hooks for different data types
 export const useProjects = (page: number = 1, limit: number = 10) => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -101,6 +169,27 @@ export const useProjects = (page: number = 1, limit: number = 10) => {
     isValidToken() ? `${API_BASE_URL}/projects/?page=${page}&limit=${limit}` : null,
     fetcher,
     swrConfig
+  );
+
+  return {
+    projects: data?.results || [],
+    totalCount: data?.count || 0,
+    isLoading,
+    error,
+    mutate: mutateProjects,
+  };
+};
+
+// Public projects hook for landing page (no authentication required)
+export const usePublicProjects = (page: number = 1, limit: number = 100) => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const { data, error, isLoading, mutate: mutateProjects } = useSWR(
+    `${API_BASE_URL}/projects/?page=${page}&limit=${limit}`,
+    publicFetcher,
+    {
+      ...swrConfig,
+      errorRetryCount: 2, // Allow more retries for public endpoint
+    }
   );
 
   return {

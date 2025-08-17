@@ -33,17 +33,23 @@ export default function Home() {
         <HeroSection />
       </Suspense>
       
-      <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
-        <WhyWeExistSection />
-      </Suspense>
+      <div id="why-we-exist" className="scroll-mt-16">
+        <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
+          <WhyWeExistSection />
+        </Suspense>
+      </div>
       
-      <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
-        <HowItWorksSection />
-      </Suspense>
+      <div id="how-it-works" className="scroll-mt-16">
+        <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
+          <HowItWorksSection />
+        </Suspense>
+      </div>
       
-      <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
-        <WhatWeOfferSection />
-      </Suspense>
+      <div id="what-we-offer" className="scroll-mt-16">
+        <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
+          <WhatWeOfferSection />
+        </Suspense>
+      </div>
       
       <Suspense fallback={<div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>}>
         <GlobalImpactSection />
