@@ -22,17 +22,61 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useLocalStorage<User | null>(STORAGE_KEYS.USER_PROFILE, null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check for both access_token and user_data like the dashboard does
   const isAuthenticated = !!user;
 
   useEffect(() => {
     // Check if user is authenticated on app load
     const checkAuth = async () => {
       try {
-        // Here you would typically validate the token with your backend
-        // For now, we'll just set loading to false
+        const accessToken = localStorage.getItem('access_token');
+        const userData = localStorage.getItem('user_data');
+        
+        console.log('AuthContext - Checking auth:');
+        console.log('Access token exists:', !!accessToken);
+        console.log('User data exists:', !!userData);
+        
+        if (!accessToken || !userData) {
+          console.log('No auth data found in AuthContext');
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Validate and parse user data
+        try {
+          const parsedUser = JSON.parse(userData);
+          console.log('Parsed user data in AuthContext:', parsedUser);
+          
+          // Check for either email (email users) or username (wallet users)
+          if (!parsedUser.id || (!parsedUser.email && !parsedUser.username)) {
+            throw new Error('Invalid user data in AuthContext');
+          }
+          
+          // Convert to our User type format if needed
+          const user: User = {
+            id: parsedUser.id,
+            email: parsedUser.email || parsedUser.username,
+            name: parsedUser.full_name || parsedUser.first_name + ' ' + parsedUser.last_name || parsedUser.username,
+            role: parsedUser.role || 'student',
+            createdAt: new Date(parsedUser.date_joined || Date.now()),
+            updatedAt: new Date(),
+          };
+          
+          console.log('AuthContext: User data is valid, setting user');
+          setUser(user);
+        } catch (parseError) {
+          console.error('Invalid user data in AuthContext:', parseError);
+          // Clear invalid data
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user_data');
+          setUser(null);
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -42,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkAuth();
-  }, [setUser]);
+  }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -59,6 +103,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date(),
       };
 
+      // Store in localStorage like the real login does
+      const mockLoginData = {
+        id: '1',
+        email,
+        full_name: 'John Doe',
+        role: 'student',
+        date_joined: new Date().toISOString(),
+      };
+      
+      localStorage.setItem('access_token', 'mock_access_token');
+      localStorage.setItem('refresh_token', 'mock_refresh_token');
+      localStorage.setItem('user_data', JSON.stringify(mockLoginData));
+      
       setUser(mockUser);
       return true;
     } catch (error) {
@@ -71,7 +128,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    // Clear any stored tokens here
+    // Clear all auth data from localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    console.log('AuthContext: User logged out, cleared all auth data');
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -89,6 +150,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date(),
       };
 
+      // Store in localStorage like the real registration does
+      const mockRegData = {
+        id: '1',
+        email,
+        full_name: name,
+        role: 'student',
+        date_joined: new Date().toISOString(),
+      };
+      
+      localStorage.setItem('access_token', 'mock_access_token');
+      localStorage.setItem('refresh_token', 'mock_refresh_token');
+      localStorage.setItem('user_data', JSON.stringify(mockRegData));
+      
       setUser(mockUser);
       return true;
     } catch (error) {

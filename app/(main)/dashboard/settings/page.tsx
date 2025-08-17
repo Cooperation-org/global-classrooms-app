@@ -102,7 +102,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (schools && schools.length > 0) {
       const schoolData = schools[0];
-      setSchool(schoolData);
+          setSchool(schoolData);
     }
   }, [schools]);
 
@@ -125,7 +125,7 @@ export default function SettingsPage() {
           description: newSubject.description,
           is_active: newSubject.is_active,
         });
-      } else {
+        } else {
         // Create new subject
         await createSubject({
           ...newSubject,
@@ -607,7 +607,7 @@ export default function SettingsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                  </div>
+          </div>
 
                   {/* Modal Body */}
                   <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
@@ -626,7 +626,7 @@ export default function SettingsPage() {
                         {availableUsers.map(user => (
                           <option key={user.id} value={user.id}>{user.name}</option>
                         ))}
-                      </select>
+            </select>
                     </div>
 
                     <div>
@@ -644,7 +644,7 @@ export default function SettingsPage() {
                         <option value="class_teacher">Class Teacher</option>
                         <option value="subject_teacher">Subject Teacher</option>
                         <option value="principal">Principal</option>
-                      </select>
+            </select>
                     </div>
 
                     <div>
@@ -670,9 +670,9 @@ export default function SettingsPage() {
                           {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
                             <option key={subject.id} value={subject.id}>{subject.name}</option>
                           ))}
-                        </select>
-                      </div>
-                      
+            </select>
+          </div>
+
                       {/* Selected Subjects Display */}
                       {newTeacher.assigned_subjects.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -807,26 +807,26 @@ export default function SettingsPage() {
             </>
           ) : (
             <>
-              {teachersLoading ? (
+            {teachersLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
+                <div className="text-center">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
                     <p className="text-gray-600 font-medium">Loading teachers...</p>
-                  </div>
                 </div>
-              ) : teachers.length === 0 ? (
+              </div>
+            ) : teachers.length === 0 ? (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">No teachers found for this school.</p>
-                    <button
-                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+              <div className="text-center py-12">
+                <p className="text-gray-500 mb-4">No teachers found for this school.</p>
+                <button
+                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
                       onClick={() => setIsAddingTeacher(true)}
-                    >
-                      Add First Teacher
-                    </button>
+                >
+                  Add First Teacher
+                </button>
                   </div>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -843,22 +843,22 @@ export default function SettingsPage() {
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
-                      </tr>
-                    </thead>
+                  </tr>
+                </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {teachers.map((teacher: { id: string; user: { id: string; name: string }; teacher_role: string; status: string }) => (
                         <tr key={teacher.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {teacher.user.name}
-                          </td>
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {teacher.teacher_role.replace('_', ' ').toUpperCase()}
-                          </td>
+                          {teacher.teacher_role.replace('_', ' ').toUpperCase()}
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                               {teacher.status}
-                            </span>
-                          </td>
+                        </span>
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => handleEditTeacher(teacher)}
@@ -872,15 +872,15 @@ export default function SettingsPage() {
                             >
                               Delete
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
                 </div>
               )}
             </>
-          )}
+            )}
         </div>
       )}
       {activeTab === 'Students' && (
@@ -960,15 +960,15 @@ export default function SettingsPage() {
                       <label htmlFor="newStudentStudentId" className="block text-sm font-medium text-gray-700 mb-1">
                         Student ID *
                       </label>
-                      <input
-                        type="text"
+            <input
+              type="text"
                         id="newStudentStudentId"
                         value={newStudent.student_id}
                         onChange={(e) => setNewStudent(prev => ({ ...prev, student_id: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
-                      />
-                    </div>
+            />
+          </div>
 
                     <div>
                       <label htmlFor="newStudentCurrentClass" className="block text-sm font-medium text-gray-700 mb-1">
@@ -992,8 +992,8 @@ export default function SettingsPage() {
                         <option value="8">Class 8</option>
                         <option value="9">Class 9</option>
                         <option value="10">Class 10</option>
-                      </select>
-                    </div>
+            </select>
+          </div>
 
                     <div>
                       <label htmlFor="newStudentParentName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1071,26 +1071,26 @@ export default function SettingsPage() {
             </>
           ) : (
             <>
-              {studentsLoading ? (
+            {studentsLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
+                <div className="text-center">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
                     <p className="text-gray-600 font-medium">Loading students...</p>
-                  </div>
                 </div>
-              ) : students.length === 0 ? (
+              </div>
+            ) : students.length === 0 ? (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">No students found for this school.</p>
-                    <button
-                      className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+              <div className="text-center py-12">
+                <p className="text-gray-500 mb-4">No students found for this school.</p>
+                <button
+                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
                       onClick={() => setIsAddingStudent(true)}
-                    >
-                      Add First Student
-                    </button>
+                >
+                  Add First Student
+                </button>
                   </div>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -1116,8 +1116,8 @@ export default function SettingsPage() {
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
-                      </tr>
-                    </thead>
+                  </tr>
+                </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {students.map((student: { id: string; user: { id: string; name: string }; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string }) => (
                         <tr key={student.id}>
@@ -1130,7 +1130,7 @@ export default function SettingsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
                               Class {student.current_class}
-                            </span>
+                          </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {student.parent_name}
@@ -1159,7 +1159,7 @@ export default function SettingsPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                        </div>
               )}
             </>
           )}
@@ -1273,15 +1273,15 @@ export default function SettingsPage() {
                         <tr key={subject.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {subject.name}
-                          </td>
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {subject.description}
-                          </td>
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subject.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                               {subject.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
+                        </span>
+                      </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => {
@@ -1307,15 +1307,15 @@ export default function SettingsPage() {
                             >
                               Delete
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
                 </div>
               )}
             </>
-          )}
+            )}
         </div>
       )}
       {activeTab === 'Impact' && (
