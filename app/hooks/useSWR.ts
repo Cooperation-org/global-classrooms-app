@@ -201,6 +201,27 @@ export const usePublicProjects = (page: number = 1, limit: number = 100) => {
   };
 };
 
+// Public schools hook for landing page (no authentication required)
+export const usePublicSchools = (page: number = 1, limit: number = 100) => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const { data, error, isLoading, mutate: mutateSchools } = useSWR(
+    `${API_BASE_URL}/schools/?page=${page}&limit=${limit}`,
+    publicFetcher,
+    {
+      ...swrConfig,
+      errorRetryCount: 2, // Allow more retries for public endpoint
+    }
+  );
+
+  return {
+    schools: data?.results || [],
+    totalCount: data?.count || 0,
+    isLoading,
+    error,
+    mutate: mutateSchools,
+  };
+};
+
 export const useFeaturedProjects = () => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const { data, error, isLoading, mutate } = useSWR(

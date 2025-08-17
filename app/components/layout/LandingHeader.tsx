@@ -28,6 +28,7 @@ const navLinks: NavLink[] = [
   { sectionId: 'how-it-works', label: 'How It Works', type: 'scroll' },
   { sectionId: 'what-we-offer', label: 'What We Offer', type: 'scroll' },
   { href: '/projects', label: 'Projects', type: 'link' },
+  { href: '/impact', label: 'Impact', type: 'link' },
   { href: '/contact', label: 'Contact', type: 'link' },
 ];
 
