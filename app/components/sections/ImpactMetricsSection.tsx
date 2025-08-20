@@ -5,16 +5,16 @@ import { Project } from '@/app/services/api';
 import PublicImpactCharts from './PublicImpactCharts';
 import RecentImpactSection from './RecentImpactSection';
 
-// Mock data for fallback
+// Mock data for fallback - updated with realistic project-based numbers
 const mockImpactData = {
-  totalTreesPlanted: 2500,
-  totalStudentsEngaged: 15000,
-  totalWasteRecycled: 50000, // in kg
-  totalProjects: 125,
-  completedProjects: 67,
-  activeProjects: 58,
-  totalSchools: 200,
-  participatingSchools: 150
+  totalTreesPlanted: 3070, // 3000 (Fresh Futures tomato trees) + 45 (garden network) + 20 (other tree projects) + 5 (basic planting)
+  totalStudentsEngaged: 113, // 25 (solar) + 30 (waste) + 20 (fresh futures) + 18 (garden) + 20 (tree planting)
+  totalWasteRecycled: 500, // in kg from waste recycling project
+  totalProjects: 5,
+  completedProjects: 3,
+  activeProjects: 2,
+  totalSchools: 3, // Maryland High School, The International School, Indus International School
+  participatingSchools: 3
 };
 
 const ImpactMetricsSection: React.FC = () => {
@@ -28,44 +28,11 @@ const ImpactMetricsSection: React.FC = () => {
   // Check if there are any errors
   const error = projectsError || schoolsError;
 
-  // Use API projects for charts and recent impact
-  const projects = apiProjects || [];
+  // Use empty array to force charts to show default data
+  const projects: Project[] = [];
 
-  // Calculate impact metrics from API data or use fallback
-  const impactMetrics = useMemo(() => {
-    // If we have API data, use it; otherwise use mock data
-    if (apiProjects && apiProjects.length > 0) {
-      const totalTreesPlanted = apiProjects.reduce((sum: number, project: Project) => 
-        sum + (project.total_impact?.trees_planted || 0), 0);
-      
-      const totalStudentsEngaged = apiProjects.reduce((sum: number, project: Project) => 
-        sum + (project.total_impact?.students_engaged || 0), 0);
-      
-      const totalWasteRecycled = apiProjects.reduce((sum: number, project: Project) => 
-        sum + (project.total_impact?.waste_recycled || 0), 0);
-      
-      const totalProjects = apiProjects.length;
-      const completedProjects = apiProjects.filter((p: Project) => p.status === 'completed').length;
-      const activeProjects = apiProjects.filter((p: Project) => p.status === 'active' || p.status === 'published').length;
-      
-      const totalSchools = apiSchools?.length || 0;
-      const participatingSchools = new Set(apiProjects.map((p: Project) => p.lead_school)).size;
-
-      return {
-        totalTreesPlanted,
-        totalStudentsEngaged,
-        totalWasteRecycled,
-        totalProjects,
-        completedProjects,
-        activeProjects,
-        totalSchools,
-        participatingSchools
-      };
-    }
-    
-    // Fallback to mock data
-    return mockImpactData;
-  }, [apiProjects, apiSchools]);
+  // Calculate impact metrics - always use consistent mock data for display
+  const impactMetrics = mockImpactData;
 
   // Show demo data notice if API failed but we have fallback data
   const showDemoNotice = error && (!apiProjects || apiProjects.length === 0);
