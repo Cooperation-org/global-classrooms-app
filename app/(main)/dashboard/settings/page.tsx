@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent } from '@/app/hooks/useSWR';
+import Image from 'next/image';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool } from '@/app/hooks/useSWR';
+import { useAuth } from '@/app/context/AuthContext';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
@@ -74,9 +76,66 @@ export default function SettingsPage() {
     parent_phone: ''
   });
   const [editingStudent, setEditingStudent] = useState<{ id: string; user: string; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string } | null>(null);
+  
+  // School edit state
+  const [isEditingSchool, setIsEditingSchool] = useState(false);
+  const [schoolFormData, setSchoolFormData] = useState<{
+    name: string;
+    overview: string;
+    institution_type: 'primary' | 'secondary' | 'higher_secondary' | 'university' | 'vocational' | 'special_needs';
+    affiliation: 'government' | 'private' | 'aided' | 'international' | 'religious';
+    registration_number: string;
+    year_of_establishment: number;
+    address_line_1: string;
+    address_line_2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+    phone_number: string;
+    email: string;
+    website: string;
+    principal_name: string;
+    principal_email: string;
+    principal_phone: string;
+    number_of_students: number;
+    number_of_teachers: number;
+    medium_of_instruction: 'english' | 'local' | 'bilingual' | 'multilingual';
+    logo: string;
+    is_verified: boolean;
+    is_active: boolean;
+  }>({
+    name: '',
+    overview: '',
+    institution_type: 'primary',
+    affiliation: 'government',
+    registration_number: '',
+    year_of_establishment: new Date().getFullYear(),
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+    phone_number: '',
+    email: '',
+    website: '',
+    principal_name: '',
+    principal_email: '',
+    principal_phone: '',
+    number_of_students: 0,
+    number_of_teachers: 0,
+    medium_of_instruction: 'english',
+    logo: '',
+    is_verified: false,
+    is_active: true,
+  });
+  const [isSubmittingSchool, setIsSubmittingSchool] = useState(false);
 
   // Use SWR hooks for data fetching
   const { schools, isLoading, error } = useSchools(1, 1); // Get first school
+  const { updateSchool } = useUpdateSchool();
+  const { user } = useAuth();
   const { projects: swrProjects, isLoading: projectsLoading } = useProjects(1, 100);
   const { subjects, error: subjectsError } = useSubjects(school?.id);
   const { teachers, isLoading: teachersLoading } = useTeacherProfiles();
@@ -97,6 +156,107 @@ export default function SettingsPage() {
     { id: "4fa85f64-5717-4562-b3fc-2c963f66afa7", name: "Jane Smith", email: "jane@example.com" },
     { id: "5fa85f64-5717-4562-b3fc-2c963f66afa8", name: "Bob Johnson", email: "bob@example.com" },
   ];
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
+  // School edit handlers
+  const handleEditSchool = () => {
+    if (!school || !isAdmin) return;
+    
+    const schoolData = school as School & { 
+      is_verified?: boolean; 
+      is_active?: boolean; 
+      institution_type?: 'primary' | 'secondary' | 'higher_secondary' | 'university' | 'vocational' | 'special_needs';
+      affiliation?: 'government' | 'private' | 'aided' | 'international' | 'religious';
+      medium_of_instruction?: 'english' | 'local' | 'bilingual' | 'multilingual';
+    };
+    
+    setSchoolFormData({
+      name: schoolData.name || '',
+      overview: schoolData.overview || '',
+      institution_type: schoolData.institution_type || 'primary',
+      affiliation: schoolData.affiliation || 'government',
+      registration_number: schoolData.registration_number || '',
+      year_of_establishment: parseInt(schoolData.year_of_establishment) || new Date().getFullYear(),
+      address_line_1: schoolData.address_line_1 || '',
+      address_line_2: schoolData.address_line_2 || '',
+      city: schoolData.city || '',
+      state: schoolData.state || '',
+      postal_code: schoolData.postal_code || '',
+      country: schoolData.country || '',
+      phone_number: schoolData.phone_number || '',
+      email: schoolData.email || '',
+      website: schoolData.website || '',
+      principal_name: schoolData.principal_name || '',
+      principal_email: schoolData.principal_email || '',
+      principal_phone: schoolData.principal_phone || '',
+      number_of_students: schoolData.number_of_students || 0,
+      number_of_teachers: schoolData.number_of_teachers || 0,
+      medium_of_instruction: schoolData.medium_of_instruction || 'english',
+      logo: schoolData.logo || '',
+      is_verified: schoolData.is_verified || false,
+      is_active: schoolData.is_active !== undefined ? schoolData.is_active : true,
+    });
+    setIsEditingSchool(true);
+  };
+
+  const handleCloseSchoolEdit = () => {
+    setIsEditingSchool(false);
+    setSchoolFormData({
+      name: '',
+      overview: '',
+      institution_type: 'primary' as const,
+      affiliation: 'government' as const,
+      registration_number: '',
+      year_of_establishment: new Date().getFullYear(),
+      address_line_1: '',
+      address_line_2: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      country: '',
+      phone_number: '',
+      email: '',
+      website: '',
+      principal_name: '',
+      principal_email: '',
+      principal_phone: '',
+      number_of_students: 0,
+      number_of_teachers: 0,
+      medium_of_instruction: 'english' as const,
+      logo: '',
+      is_verified: false,
+      is_active: true,
+    });
+  };
+
+  const handleSubmitSchoolEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!school || !isAdmin) return;
+
+    setIsSubmittingSchool(true);
+    try {
+      await updateSchool(school.id, schoolFormData);
+      handleCloseSchoolEdit();
+      // The cache will be updated automatically by the SWR hook
+    } catch (error) {
+      console.error('Error updating school:', error);
+      alert('Failed to update school. Please try again.');
+    } finally {
+      setIsSubmittingSchool(false);
+    }
+  };
+
+  const handleSchoolInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setSchoolFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseInt(value) || 0 : 
+              type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+              value
+    }));
+  };
 
   // Update local state when SWR data changes
   useEffect(() => {
@@ -414,15 +574,26 @@ export default function SettingsPage() {
 
       {/* School Card */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-        <img src={school.logo || placeholderImg} alt={school.name} className="w-24 h-24 rounded-lg object-cover border" />
+        <Image 
+          src={school.logo || placeholderImg} 
+          alt={school.name} 
+          width={96} 
+          height={96} 
+          className="w-24 h-24 rounded-lg object-cover border" 
+        />
         <div className="flex-1 w-full">
           <h2 className="text-xl md:text-2xl font-bold">{school.name}</h2>
           <p className="text-green-700 text-sm">{school.overview}</p>
           <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
         </div>
-        <button className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto">
-          EDIT <span className="text-lg">→</span>
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={handleEditSchool}
+            className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto"
+          >
+            EDIT <span className="text-lg">→</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -1423,6 +1594,441 @@ export default function SettingsPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* School Edit Modal */}
+      {isEditingSchool && (
+        <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Edit School</h2>
+              <button
+                onClick={handleCloseSchoolEdit}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitSchoolEdit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* School Name */}
+                <div className="md:col-span-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    School Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={schoolFormData.name}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Enter school name"
+                  />
+                </div>
+
+                {/* Overview */}
+                <div className="md:col-span-2">
+                  <label htmlFor="overview" className="block text-sm font-medium text-gray-700 mb-2">
+                    Overview *
+                  </label>
+                  <textarea
+                    id="overview"
+                    name="overview"
+                    value={schoolFormData.overview}
+                    onChange={handleSchoolInputChange}
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Brief description of the school"
+                  />
+                </div>
+
+                {/* Institution Type */}
+                <div>
+                  <label htmlFor="institution_type" className="block text-sm font-medium text-gray-700 mb-2">
+                    Institution Type *
+                  </label>
+                  <select
+                    id="institution_type"
+                    name="institution_type"
+                    value={schoolFormData.institution_type}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="primary">Primary</option>
+                    <option value="secondary">Secondary</option>
+                    <option value="higher_secondary">Higher Secondary</option>
+                    <option value="university">University</option>
+                    <option value="vocational">Vocational</option>
+                    <option value="special_needs">Special Needs</option>
+                  </select>
+                </div>
+
+                {/* Affiliation */}
+                <div>
+                  <label htmlFor="affiliation" className="block text-sm font-medium text-gray-700 mb-2">
+                    Affiliation *
+                  </label>
+                  <select
+                    id="affiliation"
+                    name="affiliation"
+                    value={schoolFormData.affiliation}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="government">Government</option>
+                    <option value="private">Private</option>
+                    <option value="aided">Aided</option>
+                    <option value="international">International</option>
+                    <option value="religious">Religious</option>
+                  </select>
+                </div>
+
+                {/* Registration Number */}
+                <div>
+                  <label htmlFor="registration_number" className="block text-sm font-medium text-gray-700 mb-2">
+                    Registration Number *
+                  </label>
+                  <input
+                    type="text"
+                    id="registration_number"
+                    name="registration_number"
+                    value={schoolFormData.registration_number}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="School registration number"
+                  />
+                </div>
+
+                {/* Year of Establishment */}
+                <div>
+                  <label htmlFor="year_of_establishment" className="block text-sm font-medium text-gray-700 mb-2">
+                    Year of Establishment *
+                  </label>
+                  <input
+                    type="number"
+                    id="year_of_establishment"
+                    name="year_of_establishment"
+                    value={schoolFormData.year_of_establishment}
+                    onChange={handleSchoolInputChange}
+                    required
+                    min="1800"
+                    max={new Date().getFullYear()}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                {/* Address Line 1 */}
+                <div>
+                  <label htmlFor="address_line_1" className="block text-sm font-medium text-gray-700 mb-2">
+                    Address Line 1 *
+                  </label>
+                  <input
+                    type="text"
+                    id="address_line_1"
+                    name="address_line_1"
+                    value={schoolFormData.address_line_1}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Street address"
+                  />
+                </div>
+
+                {/* Address Line 2 */}
+                <div>
+                  <label htmlFor="address_line_2" className="block text-sm font-medium text-gray-700 mb-2">
+                    Address Line 2
+                  </label>
+                  <input
+                    type="text"
+                    id="address_line_2"
+                    name="address_line_2"
+                    value={schoolFormData.address_line_2}
+                    onChange={handleSchoolInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Apartment, suite, etc."
+                  />
+                </div>
+
+                {/* City */}
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={schoolFormData.city}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="City"
+                  />
+                </div>
+
+                {/* State */}
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    id="state"
+                    name="state"
+                    value={schoolFormData.state}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="State/Province"
+                  />
+                </div>
+
+                {/* Postal Code */}
+                <div>
+                  <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 mb-2">
+                    Postal Code *
+                  </label>
+                  <input
+                    type="text"
+                    id="postal_code"
+                    name="postal_code"
+                    value={schoolFormData.postal_code}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="ZIP/Postal code"
+                  />
+                </div>
+
+                {/* Country */}
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country *
+                  </label>
+                  <input
+                    type="text"
+                    id="country"
+                    name="country"
+                    value={schoolFormData.country}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Country"
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value={schoolFormData.phone_number}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="School phone number"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    School Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={schoolFormData.email}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="school@example.com"
+                  />
+                </div>
+
+                {/* Website */}
+                <div>
+                  <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    id="website"
+                    name="website"
+                    value={schoolFormData.website}
+                    onChange={handleSchoolInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="https://www.school.com"
+                  />
+                </div>
+
+                {/* Principal Name */}
+                <div>
+                  <label htmlFor="principal_name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Principal Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="principal_name"
+                    name="principal_name"
+                    value={schoolFormData.principal_name}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Principal's full name"
+                  />
+                </div>
+
+                {/* Principal Email */}
+                <div>
+                  <label htmlFor="principal_email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Principal Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="principal_email"
+                    name="principal_email"
+                    value={schoolFormData.principal_email}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="principal@example.com"
+                  />
+                </div>
+
+                {/* Principal Phone */}
+                <div>
+                  <label htmlFor="principal_phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Principal Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    id="principal_phone"
+                    name="principal_phone"
+                    value={schoolFormData.principal_phone}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Principal's phone number"
+                  />
+                </div>
+
+                {/* Number of Students */}
+                <div>
+                  <label htmlFor="number_of_students" className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Students *
+                  </label>
+                  <input
+                    type="number"
+                    id="number_of_students"
+                    name="number_of_students"
+                    value={schoolFormData.number_of_students}
+                    onChange={handleSchoolInputChange}
+                    required
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Total number of students"
+                  />
+                </div>
+
+                {/* Number of Teachers */}
+                <div>
+                  <label htmlFor="number_of_teachers" className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Teachers *
+                  </label>
+                  <input
+                    type="number"
+                    id="number_of_teachers"
+                    name="number_of_teachers"
+                    value={schoolFormData.number_of_teachers}
+                    onChange={handleSchoolInputChange}
+                    required
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Total number of teachers"
+                  />
+                </div>
+
+                {/* Medium of Instruction */}
+                <div>
+                  <label htmlFor="medium_of_instruction" className="block text-sm font-medium text-gray-700 mb-2">
+                    Medium of Instruction *
+                  </label>
+                  <select
+                    id="medium_of_instruction"
+                    name="medium_of_instruction"
+                    value={schoolFormData.medium_of_instruction}
+                    onChange={handleSchoolInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="english">English</option>
+                    <option value="local">Local Language</option>
+                    <option value="bilingual">Bilingual</option>
+                    <option value="multilingual">Multilingual</option>
+                  </select>
+                </div>
+
+                {/* Logo URL */}
+                <div>
+                  <label htmlFor="logo" className="block text-sm font-medium text-gray-700 mb-2">
+                    Logo URL
+                  </label>
+                  <input
+                    type="url"
+                    id="logo"
+                    name="logo"
+                    value={schoolFormData.logo}
+                    onChange={handleSchoolInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="https://example.com/logo.png"
+                  />
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseSchoolEdit}
+                  disabled={isSubmittingSchool}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingSchool}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSubmittingSchool ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    'Update School'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

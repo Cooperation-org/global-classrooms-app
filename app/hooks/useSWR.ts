@@ -303,6 +303,73 @@ export const useSchoolById = (id: string) => {
   };
 };
 
+// Update school hook
+export const useUpdateSchool = () => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  
+  const updateSchool = async (id: string, schoolData: {
+    name: string;
+    overview: string;
+    institution_type: 'primary' | 'secondary' | 'higher_secondary' | 'university' | 'vocational' | 'special_needs';
+    affiliation: 'government' | 'private' | 'aided' | 'international' | 'religious';
+    registration_number: string;
+    year_of_establishment: number;
+    address_line_1: string;
+    address_line_2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+    phone_number: string;
+    email: string;
+    website?: string;
+    principal_name: string;
+    principal_email: string;
+    principal_phone: string;
+    number_of_students: number;
+    number_of_teachers: number;
+    medium_of_instruction: 'english' | 'local' | 'bilingual' | 'multilingual';
+    logo?: string;
+    is_verified?: boolean;
+    is_active?: boolean;
+    admin?: string;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/schools/${id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(schoolData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Update failed' }));
+        throw new Error(errorData.detail || 'Failed to update school');
+      }
+
+      const updatedSchool = await response.json();
+      
+      // Update the cache optimistically
+      mutate(`${API_BASE_URL}/schools/${id}/`, updatedSchool, false);
+      mutate(`${API_BASE_URL}/schools/`);
+      
+      return updatedSchool;
+    } catch (error) {
+      console.error('Error updating school:', error);
+      throw error;
+    }
+  };
+
+  return { updateSchool };
+};
+
 export const useProjectById = (id: string) => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const { data, error, isLoading, mutate } = useSWR(
