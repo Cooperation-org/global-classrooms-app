@@ -157,7 +157,7 @@ const ProjectsGridSection: React.FC = () => {
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Demo Data Notice */}
-        {showDemoNotice && (
+        {/* {showDemoNotice && (
           <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center">
               <div className="text-blue-400 mr-3">
@@ -171,7 +171,7 @@ const ProjectsGridSection: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
         
         {/* Search and Filter Bar */}
         <div className="mb-12">

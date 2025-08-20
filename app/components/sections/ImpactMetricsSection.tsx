@@ -86,7 +86,7 @@ const ImpactMetricsSection: React.FC = () => {
     <section id="metrics" className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Demo Data Notice */}
-        {showDemoNotice && (
+        {/* {showDemoNotice && (
           <div className="mb-12 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center">
               <div className="text-blue-400 mr-3">
@@ -100,7 +100,7 @@ const ImpactMetricsSection: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Header */}
         <div className="text-center mb-16">
