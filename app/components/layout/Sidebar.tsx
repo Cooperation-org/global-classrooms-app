@@ -8,7 +8,6 @@ import { RegistrationUser } from "@/app/types";
 import { useDisconnect } from "wagmi";
 
 const navItems = [
-  { label: "Home", icon: "home", href: "/dashboard" },
   { label: "Live Projects", icon: "projects", href: "/dashboard/projects" },
   { label: "Schools", icon: "schools", href: "/dashboard/schools" },
   {
@@ -194,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false, onClose }) => {
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href ||
+                (pathname === "/dashboard" && item.href === "/dashboard/projects") ||
                 (item.href !== "/dashboard" && pathname.startsWith(item.href));
               return (
                 <li key={item.label}>
