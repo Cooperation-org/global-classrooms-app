@@ -8,7 +8,7 @@ import { RegistrationUser } from "@/app/types";
 import { useDisconnect } from "wagmi";
 
 const navItems = [
-  { label: "Live Projects", icon: "projects", href: "/dashboard/projects" },
+  { label: "Projects", icon: "projects", href: "/dashboard/projects" },
   { label: "Schools", icon: "schools", href: "/dashboard/schools" },
   {
     label: "Collaborations",

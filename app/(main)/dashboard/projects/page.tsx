@@ -161,8 +161,18 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-xl md:text-2xl font-bold mb-2">Environmental Projects</h1>
-      <p className="text-muted-foreground mb-6 text-sm md:text-base">Explore and join projects aligned with UN Sustainable Development Goals</p>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4 md:gap-0">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold mb-2">Environmental Projects</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Explore and join projects aligned with UN Sustainable Development Goals</p>
+        </div>
+        <Link 
+          href="/dashboard/collaborations/new"
+          className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition w-full md:w-auto text-center"
+        >
+          Start New Project
+        </Link>
+      </div>
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6 border-b">
         {TABS.map((tab) => (

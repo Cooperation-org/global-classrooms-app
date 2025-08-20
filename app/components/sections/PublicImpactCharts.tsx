@@ -11,14 +11,14 @@ interface PublicImpactChartsProps {
 // Generate chart data from projects or mock data
 const generateChartData = (projects: Project[]) => {
   if (!projects || projects.length === 0) {
-    // Mock data for demonstration when no API data
+    // Mock data consistent with landing page totals (3500 trees, 150 students)
     return [
-      { month: 'Jan', trees: 100, students: 800, waste: 2500 },
-      { month: 'Feb', trees: 180, students: 1200, waste: 4200 },
-      { month: 'Mar', trees: 320, students: 1800, waste: 6800 },
-      { month: 'Apr', trees: 480, students: 2800, waste: 9200 },
-      { month: 'May', trees: 650, students: 4200, waste: 12800 },
-      { month: 'Jun', trees: 850, students: 6800, waste: 18500 }
+      { month: 'Jan', trees: 200, students: 10, waste: 50 },
+      { month: 'Feb', trees: 450, students: 18, waste: 80 },
+      { month: 'Mar', trees: 780, students: 35, waste: 120 },
+      { month: 'Apr', trees: 1200, students: 55, waste: 180 },
+      { month: 'May', trees: 2100, students: 90, waste: 250 },
+      { month: 'Jun', trees: 3500, students: 150, waste: 300 }
     ];
   }
 
@@ -42,7 +42,7 @@ const generateChartData = (projects: Project[]) => {
   return Object.entries(monthlyData).map(([month, data]) => ({
     month,
     trees: data.trees,
-    students: Math.round(data.students / 100), // Scale down for better chart visualization
+    students: data.students, // Keep actual student numbers
     waste: Math.round(data.waste)
   }));
 };
@@ -64,10 +64,9 @@ const CustomTooltip = ({ active, payload, label }: {
           if (entry.dataKey === 'trees') {
             unit = ' trees';
           } else if (entry.dataKey === 'students') {
-            displayValue = entry.value * 100; // Scale back up for display
             unit = ' students';
           } else if (entry.dataKey === 'waste') {
-            unit = ' tons';
+            unit = ' kg';
           }
           
           return (

@@ -6,8 +6,8 @@ import { icons } from '../icons/icons';
 
 const stats = [
   {
-    icon: icons.impact, // Replace with a tree icon if available
-    value: '3500+',
+    icon: icons.impact,
+    value: '3,500+',
     label: 'Trees Planted',
   },
   {
@@ -16,21 +16,20 @@ const stats = [
     label: 'Schools Participated',
   },
   {
-    icon: icons.collaborations, // Replace with a globe icon if available
+    icon: icons.collaborations,
     value: '3',
     label: 'Countries Engaged',
   },
   {
-    icon: icons.projects, // Replace with a teacher icon if available
+    icon: icons.projects,
     value: '50+',
     label: 'Teachers Onboarded',
   },
   {
-    icon: icons.rewards, // Replace with a graduate icon if available
+    icon: icons.rewards,
     value: '150+',
     label: 'Students Impacted',
   },
-  
 ];
 
 const containerVariants = {
