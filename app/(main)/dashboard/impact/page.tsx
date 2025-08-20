@@ -74,7 +74,7 @@ export default function ImpactPage() {
     console.log('Authentication error detected in impact page');
     return (
       <div className="w-full max-w-5xl py-8 px-4">
-        <div className="text-center">
+            <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h1>
           <p className="text-red-600 mb-4">Please log in to access this page.</p>
           <button 
@@ -102,15 +102,15 @@ export default function ImpactPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+          <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Global Impact</h1>
           <p className="text-red-600 mb-4">{error instanceof Error ? error.message : 'Failed to load impact data'}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          >
-            Try Again
-          </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+            >
+              Try Again
+            </button>
         </div>
       </div>
     );
@@ -121,7 +121,7 @@ export default function ImpactPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div>
+              <div>
             <h1 className="text-3xl font-bold text-gray-900">Global Impact</h1>
             <p className="mt-2 text-gray-600">
               Track the environmental impact of our global classroom community
@@ -191,7 +191,7 @@ export default function ImpactPage() {
             </div>
           </div>
         </div>
-
+        
         {/* Project Statistics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -238,7 +238,7 @@ export default function ImpactPage() {
                     ? Math.round((impactMetrics.participatingSchools / impactMetrics.totalSchools) * 100)
                     : 0}%
                 </span>
-              </div>
+                </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Average Students per Project</span>
                 <span className="text-lg font-semibold text-gray-900">
