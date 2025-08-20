@@ -35,38 +35,56 @@ export default function Footer() {
                 <a
                   href="#features"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   Features
                 </a>
               </li>
               <li>
                 <a
-                  href="#how-it-works"
+                  href="/how-it-works"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   How It Works
                 </a>
               </li>
               <li>
                 <a
-                  href="#impact"
+                  href="/impact"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   Impact
                 </a>
               </li>
               <li>
                 <a
-                  href="#gooddollar"
+                  href="https://www.gooddollar.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   GoodDollar
                 </a>
@@ -89,8 +107,12 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   HomeBiogas
                 </a>
@@ -101,8 +123,12 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   LinkedTrust
                 </a>
@@ -113,8 +139,12 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 transition text-sm"
-                  onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#10b981")}
-                  onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#d1d5db")}
+                  onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.color = "#10b981")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.color = "#d1d5db")
+                  }
                 >
                   GoodCollective
                 </a>
@@ -137,8 +167,12 @@ export default function Footer() {
               <button
                 className="text-white px-6 py-3 rounded-full font-medium transition"
                 style={{ backgroundColor: "#10b981" }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.backgroundColor = "#059669")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.backgroundColor = "#10b981")}
+                onMouseEnter={(e) =>
+                  ((e.target as HTMLElement).style.backgroundColor = "#059669")
+                }
+                onMouseLeave={(e) =>
+                  ((e.target as HTMLElement).style.backgroundColor = "#10b981")
+                }
               >
                 Get Started Today
               </button>
@@ -150,8 +184,7 @@ export default function Footer() {
         <div className="border-t border-gray-700 pt-8">
           <div className="text-center">
             <p className="text-gray-400 text-sm">
-              © 2025 EGR. Building sustainable futures through
-              education.
+              © 2025 EGR. Building sustainable futures through education.
             </p>
           </div>
         </div>
