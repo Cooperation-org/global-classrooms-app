@@ -61,7 +61,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#impact"
+                  href="/impact"
                   className="text-gray-300 transition text-sm"
                   onMouseEnter={(e) =>
                     ((e.target as HTMLElement).style.color = "#10b981")
