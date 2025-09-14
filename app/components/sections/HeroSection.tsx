@@ -55,7 +55,7 @@ export default function HeroSection() {
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-8 leading-[0.9] text-center"
             variants={fadeUp}
           >
-            <span className="text-gray-900">Connecting children</span>
+            <span className="text-gray-900">Connecting students</span>
             <span className="bg-gradient-to-r from-green-600 via-green-500 to-emerald-500 bg-clip-text text-transparent"> globally</span><br />
             <span className="text-gray-700">for a better tomorrow</span><br />
             
