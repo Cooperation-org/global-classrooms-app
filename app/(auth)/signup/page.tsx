@@ -8,7 +8,7 @@ import { useConnect, useAccount } from "wagmi";
 
 const SignUpPage = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("");
+  // const [selectedRole, setSelectedRole] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,10 +45,10 @@ const SignUpPage = () => {
     e.preventDefault();
 
     // Validation
-    if (!selectedRole) {
-      setError("Please select a role");
-      return;
-    }
+    // if (!selectedRole) {
+    //   setError("Please select a role");
+    //   return;
+    // }
 
     if (!formData.email || !formData.password || !formData.password_confirm) {
       setError("Please fill in all fields");
@@ -80,7 +80,7 @@ const SignUpPage = () => {
         email: formData.email,
         password: formData.password,
         password_confirm: formData.password_confirm,
-        role: selectedRole,
+        // role: selectedRole,
       });
 
       if (response.success) {
@@ -127,7 +127,7 @@ const SignUpPage = () => {
             password: "",
             password_confirm: "",
           });
-          setSelectedRole("");
+          // setSelectedRole("");
           setShowEmailForm(false);
         }
       } else {
@@ -146,10 +146,10 @@ const SignUpPage = () => {
     setError("");
     setSuccess("");
 
-    if (!selectedRole) {
-      setError("Please select a role before connecting your wallet.");
-      return;
-    }
+    // if (!selectedRole) {
+    //   setError("Please select a role before connecting your wallet.");
+    //   return;
+    // }
 
     setIsWalletLoading(true);
     setPendingWalletRegistration(true);
@@ -188,17 +188,19 @@ const SignUpPage = () => {
 
   // Handle wallet registration after connection
   useEffect(() => {
-    if (isConnected && address && selectedRole && pendingWalletRegistration) {
+    // if (isConnected && address && selectedRole && pendingWalletRegistration) {
+    if (isConnected && address && pendingWalletRegistration) {
       handleWalletRegistration(address);
       setPendingWalletRegistration(false);
     }
-  }, [isConnected, address, selectedRole, pendingWalletRegistration]);
+  // }, [isConnected, address, selectedRole, pendingWalletRegistration]);
+  }, [isConnected, address, pendingWalletRegistration]);
 
   const handleWalletRegistration = async (walletAddress: string) => {
     try {
       const response = await apiService.post("/auth/wallet-register/", {
         wallet_address: walletAddress,
-        role: selectedRole,
+        // role: selectedRole,
       });
 
       if (response.success) {
@@ -243,7 +245,7 @@ const SignUpPage = () => {
         }
 
         // Reset form
-        setSelectedRole("");
+        // setSelectedRole("");
       } else {
         setError(response.error || "Wallet registration failed.");
       }
@@ -271,13 +273,14 @@ const SignUpPage = () => {
         </div>
 
         {/* Role Selection */}
-        <div>
+        
+        {/* <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Select your role:
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4"> */}
             {/* Student Role */}
-            <button
+            {/* <button
               type="button"
               onClick={() => setSelectedRole("student")}
               className={`p-4 rounded-lg border-2 transition-all ${
@@ -289,10 +292,10 @@ const SignUpPage = () => {
               <div className="flex flex-col items-center">
                 <span className="font-semibold text-gray-900">Student</span>
               </div>
-            </button>
+            </button> */}
 
             {/* Teacher Role */}
-            <button
+            {/* <button
               type="button"
               onClick={() => setSelectedRole("teacher")}
               className={`p-4 rounded-lg border-2 transition-all ${
@@ -306,7 +309,7 @@ const SignUpPage = () => {
               </div>
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Error and Success Messages */}
         {error && (
