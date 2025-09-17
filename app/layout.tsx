@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
+import { GlobalStateProvider } from "./context/GlobalStateContext";
 import { WagmiProviders } from "@/components/providers/WagmiProviders";
 import SWRProvider from "./providers/SWRProvider";
 
@@ -39,9 +40,11 @@ export default function RootLayout({
       >
         <WagmiProviders>
           <SWRProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <GlobalStateProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </GlobalStateProvider>
           </SWRProvider>
         </WagmiProviders>
       </body>

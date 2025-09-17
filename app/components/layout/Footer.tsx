@@ -1,10 +1,13 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { useGlobalState } from "@/app/context/GlobalStateContext";
 
 export default function Footer() {
+  const { state } = useGlobalState()
+
   return (
-    <footer className="bg-slate-800 text-white py-16">
+    <footer className="bg-slate-800 text-white py-16 relative">
       <div className="container mx-auto px-4">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -183,10 +186,32 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 pt-8">
           <div className="text-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm pb-3 sm:pb-0">
               © 2025 EGR. Building sustainable futures through education.
             </p>
           </div>
+          {/* Vecteezy Attributions */}
+          {
+            state.isLandingPage && (
+              <div className="flex flex-col absolute right-1 bottom-1">
+                <small>
+                  <a href="https://www.vecteezy.com/free-png/rabbit" target="_blank" rel="noopener noreferrer">
+                    Rabbit PNGs by Vecteezy
+                  </a>
+                </small>
+                <small>
+                  <a href="https://www.vecteezy.com/free-png/fauna" target="_blank" rel="noopener noreferrer">
+                    Fauna PNGs by Vecteezy
+                  </a>
+                </small>
+                <small>
+                  <a href="https://www.vecteezy.com/free-png/flying-birds" target="_blank" rel="noopener noreferrer">
+                    Flying Birds PNGs by Vecteezy
+                  </a>
+                </small>
+              </div>
+            )
+          }
         </div>
       </div>
     </footer>
