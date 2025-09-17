@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiService } from "@/app/services/api";
 import { API_ENDPOINTS } from "@/app/utils/constants";
 import { isValidEmail, isValidPassword } from "@/app/utils/validation";
 import { useConnect, useAccount } from "wagmi";
 
-const SignUpPage = () => {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+const SignUpForm = () => {
   const searchParams = useSearchParams();
   const [showEmailForm, setShowEmailForm] = useState(false);
   // const [selectedRole, setSelectedRole] = useState("");
@@ -602,6 +603,22 @@ const SignUpPage = () => {
         </p>
       </div>
     </div>
+  );
+};
+
+// Main component with Suspense wrapper
+const SignUpPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   );
 };
 
