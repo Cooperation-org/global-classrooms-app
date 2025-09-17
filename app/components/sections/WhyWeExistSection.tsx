@@ -58,6 +58,95 @@ export default function WhyWeExistSection() {
           filter: 'blur(1.5px) saturate(1.1)',
         }}
       />
+      <motion.div
+        className='opacity-18'
+      >
+        <motion.img
+          src="/vecteezy-flock-of-birds.png"
+          alt="Cut out flock of birds flying"
+          style={{
+            position: 'absolute',
+            bottom: '85%',
+            right: '80%',
+            width: '150px',
+            // height: '80px',
+            objectFit: 'cover',
+            zIndex: 5,
+            pointerEvents: 'none'
+          }}
+        />
+        <motion.img
+          src="/vecteezy-white-arctic-hare-rabbit.png"
+          alt="White hare"
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            right: '90%',
+            width: '75px',
+            // height: '80px',
+            objectFit: 'cover',
+            zIndex: 5,
+            pointerEvents: 'none'
+          }}
+        />
+        <motion.img
+          src="/vecteezy-hornbill.png"
+          alt="Hornbill side profile"
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            right: '40%',
+            width: '100px',
+            // height: '80px',
+            objectFit: 'cover',
+            zIndex: 4,
+            pointerEvents: 'none'
+          }}
+        />
+        <motion.img
+          src="/vecteezy-small-monkey.png"
+          alt="Small monkey side profile in 3D"
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            right: '30%',
+            width: '80px',
+            // height: '80px',
+            objectFit: 'cover',
+            zIndex: 3,
+            pointerEvents: 'none'
+          }}
+        />
+        <motion.img
+          src="/vecteezy-deer.png"
+          alt="Adult male deer side profile in 3D"
+          style={{
+            position: 'absolute',
+            bottom: '38%',
+            right: '10%',
+            width: '250px',
+            height: '250px',
+            objectFit: 'cover',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}
+        />
+        <motion.img
+          src="/vecteezy-young-deer.png"
+          alt="Little fawn side profile in 3D"
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            right: '19%',
+            width: '116px',
+            height: '116px',
+            objectFit: 'cover',
+            zIndex: 2,
+            pointerEvents: 'none'
+          }}
+        />
+      </motion.div>
+      
       {/* Animated SVG eco background */}
       <motion.svg
         className="absolute left-0 top-0 w-full h-full z-0 pointer-events-none"
