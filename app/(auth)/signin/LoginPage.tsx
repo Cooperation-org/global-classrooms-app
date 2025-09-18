@@ -118,7 +118,7 @@ const LoginPage = () => {
         console.log("Response details:", response.details);
         console.log("Full response object:", JSON.stringify(response, null, 2));
 
-        // Check for different error response structures
+        // Check for different error response structures and provide user-friendly messages
         let errorMessage = "Login failed. Please check your credentials.";
 
         if (response.error) {
@@ -127,6 +127,25 @@ const LoginPage = () => {
           errorMessage = response.message;
         } else if (response.details?.detail) {
           errorMessage = response.details.detail;
+        }
+
+        // Handle specific error cases
+        if (errorMessage.toLowerCase().includes("user not found") || 
+            errorMessage.toLowerCase().includes("no active account") ||
+            errorMessage.toLowerCase().includes("user does not exist")) {
+          // Automatically redirect to signup page for new users
+          console.log("User not found, redirecting to signup with email:", formData.email);
+          const signupUrl = `/signup${formData.email ? `?email=${encodeURIComponent(formData.email)}` : ''}`;
+          router.push(signupUrl);
+          return; // Don't set error, just redirect
+        } else if (errorMessage.toLowerCase().includes("invalid credentials") || 
+                   errorMessage.toLowerCase().includes("authentication failed") ||
+                   errorMessage.toLowerCase().includes("password") ||
+                   errorMessage.toLowerCase().includes("incorrect")) {
+          errorMessage = "The email or password you entered is incorrect. Please check your credentials and try again.";
+        } else if (errorMessage.toLowerCase().includes("account disabled") || 
+                   errorMessage.toLowerCase().includes("inactive")) {
+          errorMessage = "Your account has been deactivated. Please contact support for assistance.";
         }
 
         console.log("Final error message:", errorMessage);
@@ -234,7 +253,19 @@ const LoginPage = () => {
           setError("Wallet login response is missing required data");
         }
       } else {
-        setError(response.error || "Wallet login failed.");
+        // Handle wallet login errors
+        let walletErrorMessage = response.error || "Wallet login failed.";
+        
+        if (walletErrorMessage.toLowerCase().includes("user not found") || 
+            walletErrorMessage.toLowerCase().includes("wallet not registered")) {
+          // Automatically redirect to signup page for unregistered wallets
+          console.log("Wallet not registered, redirecting to signup with wallet:", address);
+          const signupUrl = `/signup${address ? `?wallet=${encodeURIComponent(address)}` : ''}`;
+          router.push(signupUrl);
+          return; // Don't set error, just redirect
+        }
+        
+        setError(walletErrorMessage);
       }
     } catch (err) {
       console.error("Wallet login error:", err);
@@ -261,7 +292,7 @@ const LoginPage = () => {
 
         {/* Error and Success Messages */}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
             {error}
           </div>
         )}

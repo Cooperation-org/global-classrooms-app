@@ -711,6 +711,14 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
     
+    // Debug logging
+    console.log('API Request:', {
+      method: options.method || 'GET',
+      url,
+      API_BASE_URL,
+      endpoint
+    });
+    
     const authHeaders = getAuthHeaders();
 
     const config: RequestInit = {
@@ -723,7 +731,33 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      // Check if the response is JSON
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      let data;
+      if (isJson) {
+        data = await response.json();
+      } else {
+        // If it's not JSON, get the text to see what we received
+        const text = await response.text();
+        console.error('Non-JSON response received:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          contentType,
+          text: text.substring(0, 200) + (text.length > 200 ? '...' : '')
+        });
+        
+        // Return a proper error response
+        return {
+          success: false,
+          error: `Server returned ${response.status}: ${response.statusText}`,
+          message: 'Server error - expected JSON response',
+          status_code: response.status
+        };
+      }
 
       // If the response is not ok (4xx, 5xx), handle it as an error response
       if (!response.ok) {

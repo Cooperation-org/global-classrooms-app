@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiService } from "@/app/services/api";
 import { API_ENDPOINTS } from "@/app/utils/constants";
 import { isValidEmail, isValidPassword } from "@/app/utils/validation";
 import { useConnect, useAccount } from "wagmi";
 
-const SignUpPage = () => {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+const SignUpForm = () => {
+  const searchParams = useSearchParams();
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("");
+  // const [selectedRole, setSelectedRole] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -16,6 +19,22 @@ const SignUpPage = () => {
     password: "",
     password_confirm: "",
   });
+
+  // Pre-fill email if redirected from signin
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    const walletParam = searchParams.get('wallet');
+    
+    if (emailParam) {
+      setFormData(prev => ({ ...prev, email: emailParam }));
+      setShowEmailForm(true); // Show email form if email is provided
+    }
+    
+    if (walletParam) {
+      // If wallet is provided, we might want to show wallet signup flow
+      console.log('Redirected from signin with wallet:', walletParam);
+    }
+  }, [searchParams]);
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);
@@ -45,10 +64,10 @@ const SignUpPage = () => {
     e.preventDefault();
 
     // Validation
-    if (!selectedRole) {
-      setError("Please select a role");
-      return;
-    }
+    // if (!selectedRole) {
+    //   setError("Please select a role");
+    //   return;
+    // }
 
     if (!formData.email || !formData.password || !formData.password_confirm) {
       setError("Please fill in all fields");
@@ -80,7 +99,7 @@ const SignUpPage = () => {
         email: formData.email,
         password: formData.password,
         password_confirm: formData.password_confirm,
-        role: selectedRole,
+        // role: selectedRole,
       });
 
       if (response.success) {
@@ -127,11 +146,28 @@ const SignUpPage = () => {
             password: "",
             password_confirm: "",
           });
-          setSelectedRole("");
+          // setSelectedRole("");
           setShowEmailForm(false);
         }
       } else {
-        setError(response.error || "Registration failed. Please try again.");
+        // Handle specific error cases with user-friendly messages
+        let errorMessage = response.error || "Registration failed. Please try again.";
+        
+        // Check for specific error patterns and provide better messages
+        if (errorMessage.toLowerCase().includes("already exists") || 
+            errorMessage.toLowerCase().includes("duplicate") ||
+            errorMessage.toLowerCase().includes("unique constraint")) {
+          errorMessage = "An account with this email address already exists. Please sign in instead.";
+        } else if (errorMessage.toLowerCase().includes("passwords don't match")) {
+          errorMessage = "The passwords you entered don't match. Please check and try again.";
+        } else if (errorMessage.toLowerCase().includes("invalid email")) {
+          errorMessage = "Please enter a valid email address.";
+        } else if (errorMessage.toLowerCase().includes("password") && 
+                   errorMessage.toLowerCase().includes("too")) {
+          errorMessage = "Your password doesn't meet the requirements. Please choose a stronger password.";
+        }
+        
+        setError(errorMessage);
       }
     } catch (err) {
       setError("An error occurred during registration. Please try again.");
@@ -146,10 +182,10 @@ const SignUpPage = () => {
     setError("");
     setSuccess("");
 
-    if (!selectedRole) {
-      setError("Please select a role before connecting your wallet.");
-      return;
-    }
+    // if (!selectedRole) {
+    //   setError("Please select a role before connecting your wallet.");
+    //   return;
+    // }
 
     setIsWalletLoading(true);
     setPendingWalletRegistration(true);
@@ -188,17 +224,19 @@ const SignUpPage = () => {
 
   // Handle wallet registration after connection
   useEffect(() => {
-    if (isConnected && address && selectedRole && pendingWalletRegistration) {
+    // if (isConnected && address && selectedRole && pendingWalletRegistration) {
+    if (isConnected && address && pendingWalletRegistration) {
       handleWalletRegistration(address);
       setPendingWalletRegistration(false);
     }
-  }, [isConnected, address, selectedRole, pendingWalletRegistration]);
+  // }, [isConnected, address, selectedRole, pendingWalletRegistration]);
+  }, [isConnected, address, pendingWalletRegistration]);
 
   const handleWalletRegistration = async (walletAddress: string) => {
     try {
       const response = await apiService.post("/auth/wallet-register/", {
         wallet_address: walletAddress,
-        role: selectedRole,
+        // role: selectedRole,
       });
 
       if (response.success) {
@@ -243,9 +281,18 @@ const SignUpPage = () => {
         }
 
         // Reset form
-        setSelectedRole("");
+        // setSelectedRole("");
       } else {
-        setError(response.error || "Wallet registration failed.");
+        // Handle wallet registration errors with user-friendly messages
+        let walletErrorMessage = response.error || "Wallet registration failed.";
+        
+        if (walletErrorMessage.toLowerCase().includes("already exists") || 
+            walletErrorMessage.toLowerCase().includes("duplicate") ||
+            walletErrorMessage.toLowerCase().includes("unique constraint")) {
+          walletErrorMessage = "This wallet address is already registered. Please sign in instead.";
+        }
+        
+        setError(walletErrorMessage);
       }
     } catch (err) {
       console.error("Wallet registration error:", err);
@@ -271,13 +318,14 @@ const SignUpPage = () => {
         </div>
 
         {/* Role Selection */}
-        <div>
+        
+        {/* <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Select your role:
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4"> */}
             {/* Student Role */}
-            <button
+            {/* <button
               type="button"
               onClick={() => setSelectedRole("student")}
               className={`p-4 rounded-lg border-2 transition-all ${
@@ -289,10 +337,10 @@ const SignUpPage = () => {
               <div className="flex flex-col items-center">
                 <span className="font-semibold text-gray-900">Student</span>
               </div>
-            </button>
+            </button> */}
 
             {/* Teacher Role */}
-            <button
+            {/* <button
               type="button"
               onClick={() => setSelectedRole("teacher")}
               className={`p-4 rounded-lg border-2 transition-all ${
@@ -306,12 +354,28 @@ const SignUpPage = () => {
               </div>
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Error and Success Messages */}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-            {error}
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+            <div className="text-sm text-red-600 mb-2">
+              {error}
+            </div>
+            {(error.toLowerCase().includes("already exists") || 
+              error.toLowerCase().includes("already registered")) && (
+              <div className="mt-3">
+                <a
+                  href="/signin"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  Sign In Instead
+                  <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            )}
           </div>
         )}
 
@@ -539,6 +603,22 @@ const SignUpPage = () => {
         </p>
       </div>
     </div>
+  );
+};
+
+// Main component with Suspense wrapper
+const SignUpPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   );
 };
 
