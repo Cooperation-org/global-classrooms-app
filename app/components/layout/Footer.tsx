@@ -186,7 +186,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 pt-8">
           <div className="text-center">
-            <p className="text-gray-400 text-sm pb-3 sm:pb-0">
+            <p className="text-gray-400 text-sm pb-8 lg:pb-0">
               © 2025 EGR. Building sustainable futures through education.
             </p>
           </div>
@@ -197,6 +197,11 @@ export default function Footer() {
                 <small>
                   <a href="https://www.vecteezy.com/free-png/rabbit" target="_blank" rel="noopener noreferrer">
                     Rabbit PNGs by Vecteezy
+                  </a>
+                </small>
+                <small>
+                  <a href="https://www.vecteezy.com/free-png/squirrel" target="_blank" rel="noopener noreferrer">
+                    Squirrel PNGs by Vecteezy
                   </a>
                 </small>
                 <small>

@@ -58,88 +58,66 @@ export default function WhyWeExistSection() {
           filter: 'blur(1.5px) saturate(1.1)',
         }}
       />
+      {/* Animal decorations - responsive positioning */}
       <motion.div
-        className='opacity-18'
+        className='absolute inset-0 opacity-40 pointer-events-none'
       >
         <motion.img
           src="/vecteezy-flock-of-birds.png"
           alt="Cut out flock of birds flying"
+          className='w-24 sm:w-32 md:w-36 lg:w-40'
           style={{
             position: 'absolute',
             bottom: '85%',
             right: '80%',
-            width: '150px',
-            // height: '80px',
             objectFit: 'cover',
             zIndex: 5,
-            pointerEvents: 'none'
           }}
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 1, delay: 0.5 }}
         />
         <motion.img
           src="/vecteezy-white-arctic-hare-rabbit.png"
           alt="White hare"
+          className='w-16 sm:w-20 md:w-24'
           style={{
             position: 'absolute',
             bottom: '40%',
             right: '90%',
-            width: '75px',
-            // height: '80px',
             objectFit: 'cover',
             zIndex: 5,
-            pointerEvents: 'none'
           }}
         />
         <motion.img
-          src="/vecteezy-hornbill.png"
-          alt="Hornbill side profile"
+          src="/vecteezy-squirrel.png"
+          alt="Squirrel side profile"
+          className='right-[50%] sm:right-[40%] w-14 sm:w-16 md:w-16 lg:w-18'
           style={{
             position: 'absolute',
             bottom: '40%',
-            right: '40%',
-            width: '100px',
-            // height: '80px',
             objectFit: 'cover',
             zIndex: 4,
-            pointerEvents: 'none'
-          }}
-        />
-        <motion.img
-          src="/vecteezy-small-monkey.png"
-          alt="Small monkey side profile in 3D"
-          style={{
-            position: 'absolute',
-            bottom: '40%',
-            right: '30%',
-            width: '80px',
-            // height: '80px',
-            objectFit: 'cover',
-            zIndex: 3,
-            pointerEvents: 'none'
           }}
         />
         <motion.img
           src="/vecteezy-deer.png"
           alt="Adult male deer side profile in 3D"
+          className='right-0 sm:right-[5%] md:right-[7%] lg:right-[9%] w-36 sm:w-40 md:w-48 lg:w-56 object-contain'
           style={{
             position: 'absolute',
             bottom: '38%',
-            right: '10%',
-            width: '250px',
-            height: '250px',
             objectFit: 'cover',
             zIndex: 1,
-            pointerEvents: 'none'
           }}
         />
         <motion.img
           src="/vecteezy-young-deer.png"
           alt="Little fawn side profile in 3D"
+          className='right-[20%] sm:right-[15%] md:right-[17%] lg:right-[19%] w-16 sm:w-18 md:w-22 lg:w-24 object-contain'
           style={{
             position: 'absolute',
             bottom: '40%',
-            right: '19%',
-            width: '116px',
-            height: '116px',
             objectFit: 'cover',
             zIndex: 2,
             pointerEvents: 'none'
