@@ -33,6 +33,8 @@ export default function CreateSchoolPage() {
     number_of_teachers: 0,
     medium_of_instruction: 'english',
     logo: '',
+    creator_name: '',
+    creator_role: 'teacher'
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -67,7 +69,7 @@ export default function CreateSchoolPage() {
 
     try {
       // Validate required fields
-      const requiredFields = ['name', 'overview', 'registration_number', 'address_line_1', 'city', 'country', 'phone_number', 'email', 'principal_name', 'principal_email'];
+      const requiredFields = ['name', 'overview', 'registration_number', 'address_line_1', 'city', 'country', 'phone_number', 'email', 'principal_name', 'principal_email', 'creator_name', 'creator_role'];
       for (const field of requiredFields) {
         if (!formData[field as keyof CreateSchoolRequest]) {
           throw new Error(`${field.replace('_', ' ')} is required`);
@@ -484,6 +486,43 @@ export default function CreateSchoolPage() {
         </div>
       </div>
 
+      {/* Creator Information */}
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Creator Information</h2>
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block font-medium mb-2">Full Name *</label>
+          <input 
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              getFieldError('creator_name') ? 'border-red-500' : 'border-[#E5E7EB]'
+            }`}
+            placeholder="Principal's full name"
+            value={formData.creator_name}
+            onChange={(e) => handleInputChange('creator_name', e.target.value)}
+            required
+          />
+          {getFieldError('creator_name') && (
+            <p className="text-red-500 text-sm mt-1">{getFieldError('creator_name')}</p>
+          )}
+        </div>
+        <div>
+          <label className="block font-medium mb-2">Role *</label>
+          <select 
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              getFieldError('creator_role') ? 'border-red-500' : 'border-[#E5E7EB]'
+            }`}
+            value={formData.creator_role}
+            onChange={(e) => handleInputChange('creator_role', e.target.value)}
+            required
+          >
+            <option value="">Select Role</option>
+            <option value="student">Student</option>
+            <option value="teacher" selected>Teacher</option>
+          </select>
+          {getFieldError('creator_role') && (
+            <p className="text-red-500 text-sm mt-1">{getFieldError('creator_role')}</p>
+          )}
+        </div>
+      </div>
       <button 
         type="submit"
         disabled={loading}
