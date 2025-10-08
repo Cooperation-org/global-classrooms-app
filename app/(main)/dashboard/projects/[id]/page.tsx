@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useProjectById } from '@/app/hooks/useSWR';
+import { deleteProject } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
@@ -15,9 +16,24 @@ export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Use SWR hook for data fetching
   const { project, isLoading, error } = useProjectById(params.id as string);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject(params.id as string);
+      // Redirect to projects page after successful deletion
+      router.push('/dashboard/projects');
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Failed to delete project. Please try again.');
+      setIsDeleting(false);
+    }
+  };
 
   // Handle authentication errors
   if (error && (error as { status?: number })?.status === 401) {
@@ -140,10 +156,52 @@ export default function ProjectDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProjectHeader title={project.title} description={project.short_description} />
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            <ProjectHeader title={project.title} description={project.short_description} />
+          </div>
+          <button 
+            onClick={() => setShowConfirmDialog(true)}
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Project'}
+          </button>
+        </div>
         <ProjectTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         {renderTabContent()}
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Project</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete &quot;{project.title}&quot;? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  handleDelete();
+                }}
+                className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

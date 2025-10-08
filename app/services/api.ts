@@ -478,6 +478,35 @@ export async function fetchProjectById(id: string): Promise<Project> {
   }
 }
 
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      let errorData: { detail?: string } = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        // Ignore JSON parsing errors for empty responses
+      }
+
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    // DELETE requests often return 204 No Content
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    throw error;
+  }
+}
+
 export interface ProjectUpdate {
   id: string;
   title: string;

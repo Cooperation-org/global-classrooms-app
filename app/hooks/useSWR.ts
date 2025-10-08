@@ -1,4 +1,5 @@
 import useSWR, { SWRConfiguration, mutate, useSWRConfig } from 'swr';
+import type { ProjectsResponse } from '@/app/services/api';
 
 // Extend Error type for custom properties
 interface ApiError extends Error {
@@ -178,6 +179,73 @@ export const useProjects = (page: number = 1, limit: number = 10) => {
     error,
     mutate: mutateProjects,
   };
+};
+
+export const useDeleteProject = () => {
+  const { mutate } = useSWRConfig();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  const deleteProject = async (id: string) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+
+        let errorMessage = 'Failed to delete project';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorMessage;
+        } catch {
+          // Ignore JSON parsing issues for empty responses
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      mutate(
+        (key: string) => key.includes('/projects/?'),
+        (currentData: ProjectsResponse | undefined) => {
+          if (!currentData) return currentData;
+
+          const results = currentData.results || [];
+          const projectWasPresent = results.some((project) => project.id === id);
+          const filteredResults = results.filter((project) => project.id !== id);
+
+          return {
+            ...currentData,
+            results: filteredResults,
+            count: projectWasPresent
+              ? Math.max((currentData.count || 1) - 1, 0)
+              : currentData.count,
+          };
+        },
+        false
+      );
+
+      mutate(`${API_BASE_URL}/projects/${id}/`, null, false);
+
+      return true;
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      throw error;
+    }
+  };
+
+  return { deleteProject };
 };
 
 // Public projects hook for landing page (no authentication required)

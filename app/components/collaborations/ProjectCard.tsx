@@ -1,6 +1,8 @@
-import React from 'react';
+'use client';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Project } from '@/app/services/api';
+import { Project, deleteProject } from '@/app/services/api';
+import { useRouter } from 'next/navigation';
 
 interface ThemeTag {
   label: string;
@@ -8,6 +10,24 @@ interface ThemeTag {
 }
 
 export function ProjectCard({ project }: { project: Project }) {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject(project.id);
+      // Refresh the page to show updated list
+      router.refresh();
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Failed to delete project. Please try again.');
+      setIsDeleting(false);
+    }
+  };
+
   // Helper function to get theme tags from environmental_themes
   const getThemeTags = (): ThemeTag[] => {
     const tags: ThemeTag[] = [];
@@ -94,12 +114,50 @@ export function ProjectCard({ project }: { project: Project }) {
             </span>
           )}
         </div>
-        <div className="flex items-center justify-end mt-auto">
+        <div className="flex items-center justify-between gap-2 mt-auto">
+          <button 
+            onClick={() => setShowConfirmDialog(true)}
+            disabled={isDeleting}
+            className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
           <Link href={`/dashboard/projects/${project.id}`} className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition">
             View Details
           </Link>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Project</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete &quot;{project.title}&quot;? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  handleDelete();
+                }}
+                className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
