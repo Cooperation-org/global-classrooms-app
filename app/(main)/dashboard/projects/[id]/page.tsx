@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
 import { deleteProject } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
@@ -160,13 +161,21 @@ export default function ProjectDetailsPage() {
           <div className="flex-1">
             <ProjectHeader title={project.title} description={project.short_description} />
           </div>
-          <button 
-            onClick={() => setShowConfirmDialog(true)}
-            disabled={isDeleting}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isDeleting ? 'Deleting...' : 'Delete Project'}
-          </button>
+          <div className="flex gap-3">
+            <Link
+              href={`/dashboard/projects/${project.id}/edit`}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+            >
+              Edit Project
+            </Link>
+            <button 
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Project'}
+            </button>
+          </div>
         </div>
         <ProjectTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         {renderTabContent()}

@@ -478,6 +478,69 @@ export async function fetchProjectById(id: string): Promise<Project> {
   }
 }
 
+export async function updateProject(id: string, projectData: Partial<CreateProjectRequest>): Promise<Project> {
+  try {
+    const formData = new FormData();
+    
+    // Add all text fields if they exist
+    if (projectData.title) formData.append('title', projectData.title);
+    if (projectData.short_description) formData.append('short_description', projectData.short_description);
+    if (projectData.detailed_description) formData.append('detailed_description', projectData.detailed_description);
+    if (projectData.start_date) formData.append('start_date', projectData.start_date);
+    if (projectData.end_date) formData.append('end_date', projectData.end_date);
+    if (projectData.is_open_for_collaboration !== undefined) {
+      formData.append('is_open_for_collaboration', projectData.is_open_for_collaboration.toString());
+    }
+    if (projectData.offer_rewards !== undefined) {
+      formData.append('offer_rewards', projectData.offer_rewards.toString());
+    }
+    if (projectData.recognition_type) formData.append('recognition_type', projectData.recognition_type);
+    if (projectData.award_criteria) formData.append('award_criteria', projectData.award_criteria);
+    if (projectData.lead_school) formData.append('lead_school', projectData.lead_school);
+    if (projectData.contact_person_name) formData.append('contact_person_name', projectData.contact_person_name);
+    if (projectData.contact_person_email) formData.append('contact_person_email', projectData.contact_person_email);
+    if (projectData.contact_person_role) formData.append('contact_person_role', projectData.contact_person_role);
+    if (projectData.contact_country) formData.append('contact_country', projectData.contact_country);
+    if (projectData.contact_city) formData.append('contact_city', projectData.contact_city);
+    
+    // Add goals as JSON string if exists
+    if (projectData.goals) {
+      formData.append('goals', JSON.stringify(projectData.goals));
+    }
+    
+    // Add environmental themes as JSON string if exists
+    if (projectData.environmental_themes) {
+      formData.append('environmental_themes', JSON.stringify(projectData.environmental_themes));
+    }
+    
+    // Add cover image if it's a File
+    if (projectData.cover_image instanceof File) {
+      formData.append('cover_image', projectData.cover_image);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': getAuthHeaders().Authorization || '',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating project:', error);
+    throw error;
+  }
+}
+
 export async function deleteProject(id: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
