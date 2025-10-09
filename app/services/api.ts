@@ -27,6 +27,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   participating_schools_count: string;
+  goals?: string[];
   total_impact: {
     trees_planted: number;
     students_engaged: number;
