@@ -92,7 +92,7 @@ function GoalsSection({ goals }: { goals: ProjectGoal[] }) {
 
   return (
     <div>
-      <div className="py-5 border-b border-gray-100">
+      <div className="p-5 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">
           Goals and Targets
         </h3>
