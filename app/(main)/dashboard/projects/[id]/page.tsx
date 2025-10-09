@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
@@ -20,9 +20,23 @@ export default function ProjectDetailsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Use SWR hook for data fetching
   const { project, isLoading, error } = useProjectById(params.id as string);
+
+  // Get current user ID from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUserId(parsedUser.id);
+      } catch (error) {
+        console.error('Failed to parse user data:', error);
+      }
+    }
+  }, []);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -117,6 +131,9 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  // Check if current user is the project owner
+  const isOwner = currentUserId && project?.created_by === currentUserId;
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
@@ -178,7 +195,7 @@ export default function ProjectDetailsPage() {
             <ProjectHeader title={project.title} description={project.short_description} />
           </div>
           <div className="flex gap-3">
-            {project.is_open_for_collaboration && (
+            {project.is_open_for_collaboration && !isOwner && (
               <button 
                 onClick={handleJoin}
                 disabled={isJoining}
@@ -187,19 +204,23 @@ export default function ProjectDetailsPage() {
                 {isJoining ? 'Joining...' : 'Join Project'}
               </button>
             )}
-            <Link
-              href={`/dashboard/projects/${project.id}/edit`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-            >
-              Edit Project
-            </Link>
-            <button 
-              onClick={() => setShowConfirmDialog(true)}
-              disabled={isDeleting}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete Project'}
-            </button>
+            {isOwner && (
+              <>
+                <Link
+                  href={`/dashboard/projects/${project.id}/edit`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  Edit Project
+                </Link>
+                <button 
+                  onClick={() => setShowConfirmDialog(true)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Project'}
+                </button>
+              </>
+            )}
           </div>
         </div>
         <ProjectTabs activeTab={activeTab} setActiveTab={setActiveTab} />

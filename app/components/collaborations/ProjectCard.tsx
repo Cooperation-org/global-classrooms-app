@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Project, deleteProject, joinProject } from '@/app/services/api';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,23 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user ID from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUserId(parsedUser.id);
+      } catch (error) {
+        console.error('Failed to parse user data:', error);
+      }
+    }
+  }, []);
+
+  // Check if current user is the project owner
+  const isOwner = currentUserId && project.created_by === currentUserId;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -131,7 +148,7 @@ export function ProjectCard({ project }: { project: Project }) {
         </div>
         <div className="flex flex-col gap-2 mt-auto">
           <div className="flex items-center justify-between gap-2">
-            {project.is_open_for_collaboration && (
+            {project.is_open_for_collaboration && !isOwner && (
               <button 
                 onClick={handleJoin}
                 disabled={isJoining}
@@ -140,25 +157,30 @@ export function ProjectCard({ project }: { project: Project }) {
                 {isJoining ? 'Joining...' : 'Join Project'}
               </button>
             )}
-            <Link href={`/dashboard/projects/${project.id}`} className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition ${project.is_open_for_collaboration ? '' : 'flex-1'}`}>
+            <Link 
+              href={`/dashboard/projects/${project.id}`} 
+              className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition ${project.is_open_for_collaboration && !isOwner ? '' : 'flex-1'}`}
+            >
               View Details
             </Link>
           </div>
-          <div className="flex gap-2">
-            <Link 
-              href={`/dashboard/projects/${project.id}/edit`}
-              className="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition text-center"
-            >
-              Edit
-            </Link>
-            <button 
-              onClick={() => setShowConfirmDialog(true)}
-              disabled={isDeleting}
-              className="flex-1 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
+          {isOwner && (
+            <div className="flex gap-2">
+              <Link 
+                href={`/dashboard/projects/${project.id}/edit`}
+                className="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition text-center"
+              >
+                Edit
+              </Link>
+              <button 
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={isDeleting}
+                className="flex-1 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
