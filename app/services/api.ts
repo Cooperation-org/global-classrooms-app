@@ -649,9 +649,35 @@ export interface ProjectGoalsResponse {
   results: ProjectGoal[];
 }
 
-export async function fetchProjectGoals(projectId: string, page: number = 1, limit: number = 10): Promise<ProjectGoalsResponse> {
+export interface FetchProjectGoalsParams {
+  page?: number;
+  limit?: number;
+  ordering?: string;
+  search?: string;
+}
+
+export async function fetchProjectGoals(
+  projectId: string, 
+  params: FetchProjectGoalsParams = {}
+): Promise<ProjectGoalsResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?page=${page}&limit=${limit}`, {
+    const { page = 1, limit = 10, ordering, search } = params;
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (ordering) {
+      queryParams.append('ordering', ordering);
+    }
+    
+    if (search) {
+      queryParams.append('search', search);
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?${queryParams.toString()}`, {
       headers: getAuthHeaders(),
     });
 
