@@ -37,6 +37,8 @@ export default function CreateCollaborationPage() {
   const [goals, setGoals] = useState<string[]>(['']);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string>('');
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 
   useEffect(() => {
     const loadSchools = async () => {
@@ -88,6 +90,38 @@ export default function CreateCollaborationPage() {
   const removeGoal = (index: number) => {
     const newGoals = goals.filter((_, i) => i !== index);
     setGoals(newGoals);
+  };
+
+  const handleDocumentFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setDocumentFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const handleMediaFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setMediaFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeDocumentFile = (index: number) => {
+    setDocumentFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeMediaFile = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -472,15 +506,138 @@ export default function CreateCollaborationPage() {
 
       {/* Media & Attachments */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">Media & Attachments</h2>
-      <div className="mb-6 border-2 border-dashed border-[#D1E7DD] rounded-xl p-8 flex flex-col items-center justify-center">
-        <h3 className="font-bold text-lg mb-2">Upload Supporting Files</h3>
-        <p className="text-gray-500 mb-4">Drag and drop or browse to upload PDFs, slides, or documents</p>
-        <button type="button" className="px-6 py-2 bg-[#E6F4EA] text-[#4BA186] rounded-lg font-medium">Upload Files</button>
+      
+      {/* Supporting Files Upload */}
+      <div className="mb-6">
+        <div className="border-2 border-dashed border-[#D1E7DD] rounded-xl p-8 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="font-bold text-lg mb-2">Upload Supporting Files</h3>
+          <p className="text-gray-500 text-sm mb-4 text-center">PDFs, Word docs, PowerPoint, Excel (Max 10MB each)</p>
+          <input
+            id="document-files-input"
+            type="file"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+            multiple
+            onChange={handleDocumentFilesChange}
+            className="hidden"
+          />
+          <button 
+            type="button" 
+            onClick={() => document.getElementById('document-files-input')?.click()}
+            className="px-6 py-2 bg-[#E6F4EA] text-[#4BA186] rounded-lg font-medium hover:bg-[#d4e8dc] transition"
+          >
+            Choose Files
+          </button>
+        </div>
+        
+        {/* Display uploaded documents */}
+        {documentFiles.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">{documentFiles.length} file(s) selected</p>
+            {documentFiles.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeDocumentFile(index)}
+                  className="ml-4 p-1 text-red-600 hover:bg-red-50 rounded"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="mb-10 border-2 border-dashed border-[#D1E7DD] rounded-xl p-8 flex flex-col items-center justify-center">
-        <h3 className="font-bold text-lg mb-2">Upload Photos/Videos</h3>
-        <p className="text-gray-500 mb-4">Drag and drop or browse to upload images and videos</p>
-        <button type="button" className="px-6 py-2 bg-[#E6F4EA] text-[#4BA186] rounded-lg font-medium">Upload Media</button>
+
+      {/* Photos/Videos Upload */}
+      <div className="mb-10">
+        <div className="border-2 border-dashed border-[#D1E7DD] rounded-xl p-8 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-3">
+            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="font-bold text-lg mb-2">Upload Photos/Videos</h3>
+          <p className="text-gray-500 text-sm mb-4 text-center">JPG, PNG, GIF, MP4, MOV (Max 50MB each)</p>
+          <input
+            id="media-files-input"
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            onChange={handleMediaFilesChange}
+            className="hidden"
+          />
+          <button 
+            type="button" 
+            onClick={() => document.getElementById('media-files-input')?.click()}
+            className="px-6 py-2 bg-[#E6F4EA] text-[#4BA186] rounded-lg font-medium hover:bg-[#d4e8dc] transition"
+          >
+            Choose Media
+          </button>
+        </div>
+        
+        {/* Display uploaded media with previews */}
+        {mediaFiles.length > 0 && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">{mediaFiles.length} file(s) selected</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {mediaFiles.map((file, index) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                    {file.type.startsWith('image/') ? (
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={file.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : file.type.startsWith('video/') ? (
+                      <video 
+                        src={URL.createObjectURL(file)} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-900 truncate" title={file.name}>{file.name}</p>
+                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMediaFile(index)}
+                    className="absolute top-1 right-1 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition opacity-0 group-hover:opacity-100"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <button 
