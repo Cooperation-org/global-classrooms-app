@@ -279,6 +279,35 @@ export async function fetchFutureProjects(): Promise<Project[]> {
   }
 }
 
+export async function uploadProjectFile(projectId: string, file: File, description: string = ''): Promise<any> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', description);
+
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': getAuthHeaders().Authorization || '',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading project file:', error);
+    throw error;
+  }
+}
+
 export async function createProject(projectData: CreateProjectRequest): Promise<Project> {
   try {
     const formData = new FormData();
@@ -314,22 +343,6 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
       console.log('No cover image file found:', projectData.cover_image);
     }
 
-    // Add document files
-    if (projectData.document_files && projectData.document_files.length > 0) {
-      projectData.document_files.forEach((file, index) => {
-        formData.append(`document_files`, file);
-        console.log(`Document file ${index + 1} added:`, file.name, file.size);
-      });
-    }
-
-    // Add media files
-    if (projectData.media_files && projectData.media_files.length > 0) {
-      projectData.media_files.forEach((file, index) => {
-        formData.append(`media_files`, file);
-        console.log(`Media file ${index + 1} added:`, file.name, file.size);
-      });
-    }
-
     console.log('FormData entries:');
     for (const [key, value] of formData.entries()) {
       console.log(key, value);
@@ -351,7 +364,39 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const createdProject = await response.json();
+
+    // After project is created, upload files separately
+    const uploadPromises: Promise<any>[] = [];
+
+    // Upload document files
+    if (projectData.document_files && projectData.document_files.length > 0) {
+      projectData.document_files.forEach((file) => {
+        const promise = uploadProjectFile(createdProject.id, file, 'Supporting Document');
+        uploadPromises.push(promise);
+      });
+    }
+
+    // Upload media files
+    if (projectData.media_files && projectData.media_files.length > 0) {
+      projectData.media_files.forEach((file) => {
+        const promise = uploadProjectFile(createdProject.id, file, 'Project Media');
+        uploadPromises.push(promise);
+      });
+    }
+
+    // Wait for all files to upload
+    if (uploadPromises.length > 0) {
+      try {
+        await Promise.all(uploadPromises);
+        console.log(`Successfully uploaded ${uploadPromises.length} files`);
+      } catch (uploadError) {
+        console.error('Some files failed to upload:', uploadError);
+        // Project is created, but some files failed - we still return the project
+      }
+    }
+
+    return createdProject;
   } catch (error) {
     console.error('Error creating project:', error);
     throw error;
