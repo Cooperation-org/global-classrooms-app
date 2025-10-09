@@ -542,6 +542,28 @@ export async function updateProject(id: string, projectData: Partial<CreateProje
   }
 }
 
+export async function joinProject(id: string): Promise<{ message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/join/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error joining project:', error);
+    throw error;
+  }
+}
+
 export async function deleteProject(id: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {

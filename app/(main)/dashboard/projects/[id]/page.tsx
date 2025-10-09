@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
-import { deleteProject } from '@/app/services/api';
+import { deleteProject, joinProject } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
@@ -18,6 +18,7 @@ export default function ProjectDetailsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Use SWR hook for data fetching
@@ -33,6 +34,21 @@ export default function ProjectDetailsPage() {
       console.error('Failed to delete project:', error);
       alert('Failed to delete project. Please try again.');
       setIsDeleting(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    setIsJoining(true);
+    try {
+      const result = await joinProject(params.id as string);
+      alert(result.message || 'Successfully joined the project!');
+      // Refresh the project data
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to join project:', error);
+      alert(error instanceof Error ? error.message : 'Failed to join project. Please try again.');
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -162,6 +178,15 @@ export default function ProjectDetailsPage() {
             <ProjectHeader title={project.title} description={project.short_description} />
           </div>
           <div className="flex gap-3">
+            {project.is_open_for_collaboration && (
+              <button 
+                onClick={handleJoin}
+                disabled={isJoining}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isJoining ? 'Joining...' : 'Join Project'}
+              </button>
+            )}
             <Link
               href={`/dashboard/projects/${project.id}/edit`}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"

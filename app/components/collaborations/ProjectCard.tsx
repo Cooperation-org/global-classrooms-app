@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Project, deleteProject } from '@/app/services/api';
+import { Project, deleteProject, joinProject } from '@/app/services/api';
 import { useRouter } from 'next/navigation';
 
 interface ThemeTag {
@@ -12,6 +12,7 @@ interface ThemeTag {
 export function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleDelete = async () => {
@@ -25,6 +26,20 @@ export function ProjectCard({ project }: { project: Project }) {
       console.error('Failed to delete project:', error);
       alert('Failed to delete project. Please try again.');
       setIsDeleting(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    setIsJoining(true);
+    try {
+      const result = await joinProject(project.id);
+      alert(result.message || 'Successfully joined the project!');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to join project:', error);
+      alert(error instanceof Error ? error.message : 'Failed to join project. Please try again.');
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -114,25 +129,36 @@ export function ProjectCard({ project }: { project: Project }) {
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-2 mt-auto">
+        <div className="flex flex-col gap-2 mt-auto">
+          <div className="flex items-center justify-between gap-2">
+            {project.is_open_for_collaboration && (
+              <button 
+                onClick={handleJoin}
+                disabled={isJoining}
+                className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isJoining ? 'Joining...' : 'Join Project'}
+              </button>
+            )}
+            <Link href={`/dashboard/projects/${project.id}`} className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition ${project.is_open_for_collaboration ? '' : 'flex-1'}`}>
+              View Details
+            </Link>
+          </div>
           <div className="flex gap-2">
             <Link 
               href={`/dashboard/projects/${project.id}/edit`}
-              className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+              className="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition text-center"
             >
               Edit
             </Link>
             <button 
               onClick={() => setShowConfirmDialog(true)}
               disabled={isDeleting}
-              className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           </div>
-          <Link href={`/dashboard/projects/${project.id}`} className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition">
-            View Details
-          </Link>
         </div>
       </div>
 
