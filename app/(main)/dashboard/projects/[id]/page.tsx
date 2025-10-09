@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
-import { deleteProject, joinProject } from '@/app/services/api';
+import { deleteProject, joinProject, fetchProjectGoals, ProjectGoal } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
@@ -21,6 +21,8 @@ export default function ProjectDetailsPage() {
   const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [goals, setGoals] = useState<ProjectGoal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
 
   // Use SWR hook for data fetching
   const { project, isLoading, error } = useProjectById(params.id as string);
@@ -37,6 +39,25 @@ export default function ProjectDetailsPage() {
       }
     }
   }, []);
+
+  // Fetch project goals
+  useEffect(() => {
+    const loadGoals = async () => {
+      if (!params.id) return;
+      
+      try {
+        setGoalsLoading(true);
+        const response = await fetchProjectGoals(params.id as string, { limit: 100 });
+        setGoals(response.results);
+      } catch (error) {
+        console.error('Failed to load project goals:', error);
+      } finally {
+        setGoalsLoading(false);
+      }
+    };
+
+    loadGoals();
+  }, [params.id]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -161,7 +182,14 @@ export default function ProjectDetailsPage() {
                 description: `End date: ${project.end_date}`
               }
             ]} />
-            <GoalsSection goals={[]} />
+            {goalsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-600 mt-2">Loading goals...</p>
+              </div>
+            ) : (
+              <GoalsSection goals={goals} />
+            )}
             <ResourcesSection resources={[]} />
             <DiscussionSection discussion={[]} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -179,7 +207,14 @@ export default function ProjectDetailsPage() {
       case 'activity':
         return <ProjectProgressUpdates projectId={project.id} />;
       case 'goals':
-        return <GoalsSection goals={[]} />;
+        return goalsLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-600 mt-2">Loading goals...</p>
+          </div>
+        ) : (
+          <GoalsSection goals={goals} />
+        );
       case 'members':
         return <ManageMembers />;
       default:
