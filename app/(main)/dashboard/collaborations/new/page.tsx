@@ -146,12 +146,14 @@ export default function CreateCollaborationPage() {
         ...formData as CreateProjectRequest,
         cover_image: coverImage || undefined, // Send undefined instead of empty string
         goals: filteredGoals,
+        document_files: documentFiles.length > 0 ? documentFiles : undefined,
+        media_files: mediaFiles.length > 0 ? mediaFiles : undefined,
       };
 
       console.log('Project data being sent:', projectData);
       console.log('Cover image:', coverImage);
-      console.log('Cover image type:', typeof coverImage);
-      console.log('Is cover image File?', coverImage instanceof File);
+      console.log('Document files:', documentFiles.length);
+      console.log('Media files:', mediaFiles.length);
 
       await createProject(projectData);
       

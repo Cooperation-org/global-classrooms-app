@@ -61,6 +61,8 @@ export interface CreateProjectRequest {
   contact_country: string;
   contact_city: string;
   goals: string[];
+  document_files?: File[];
+  media_files?: File[];
 }
 
 export interface School {
@@ -310,6 +312,22 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
       console.log('Cover image added to FormData:', projectData.cover_image.name, projectData.cover_image.size);
     } else {
       console.log('No cover image file found:', projectData.cover_image);
+    }
+
+    // Add document files
+    if (projectData.document_files && projectData.document_files.length > 0) {
+      projectData.document_files.forEach((file, index) => {
+        formData.append(`document_files`, file);
+        console.log(`Document file ${index + 1} added:`, file.name, file.size);
+      });
+    }
+
+    // Add media files
+    if (projectData.media_files && projectData.media_files.length > 0) {
+      projectData.media_files.forEach((file, index) => {
+        formData.append(`media_files`, file);
+        console.log(`Media file ${index + 1} added:`, file.name, file.size);
+      });
     }
 
     console.log('FormData entries:');
