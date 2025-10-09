@@ -1,8 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Project, deleteProject, joinProject } from '@/app/services/api';
-import { useRouter } from 'next/navigation';
+import { Project } from '@/app/services/api';
 
 interface ThemeTag {
   label: string;
@@ -10,55 +9,6 @@ interface ThemeTag {
 }
 
 export function ProjectCard({ project }: { project: Project }) {
-  const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  // Get current user ID from localStorage
-  useEffect(() => {
-    const userData = localStorage.getItem('user_data');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setCurrentUserId(parsedUser.id);
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-      }
-    }
-  }, []);
-
-  // Check if current user is the project owner
-  const isOwner = currentUserId && project.created_by === currentUserId;
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteProject(project.id);
-      // Refresh the page to show updated list
-      router.refresh();
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-      alert('Failed to delete project. Please try again.');
-      setIsDeleting(false);
-    }
-  };
-
-  const handleJoin = async () => {
-    setIsJoining(true);
-    try {
-      const result = await joinProject(project.id);
-      alert(result.message || 'Successfully joined the project!');
-      router.refresh();
-    } catch (error) {
-      console.error('Failed to join project:', error);
-      alert(error instanceof Error ? error.message : 'Failed to join project. Please try again.');
-    } finally {
-      setIsJoining(false);
-    }
-  };
 
   // Helper function to get theme tags from environmental_themes
   const getThemeTags = (): ThemeTag[] => {
@@ -146,74 +96,15 @@ export function ProjectCard({ project }: { project: Project }) {
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-2 mt-auto">
-          <div className="flex items-center justify-between gap-2">
-            {project.is_open_for_collaboration && !isOwner && (
-              <button 
-                onClick={handleJoin}
-                disabled={isJoining}
-                className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isJoining ? 'Joining...' : 'Join Project'}
-              </button>
-            )}
-            <Link 
-              href={`/dashboard/projects/${project.id}`} 
-              className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition ${project.is_open_for_collaboration && !isOwner ? '' : 'flex-1'}`}
-            >
-              View Details
-            </Link>
-          </div>
-          {isOwner && (
-            <div className="flex gap-2">
-              <Link 
-                href={`/dashboard/projects/${project.id}/edit`}
-                className="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-100 transition text-center"
-              >
-                Edit
-              </Link>
-              <button 
-                onClick={() => setShowConfirmDialog(true)}
-                disabled={isDeleting}
-                className="flex-1 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium text-red-700 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          )}
+        <div className="flex items-center justify-end mt-auto">
+          <Link 
+            href={`/dashboard/projects/${project.id}`}
+            className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+          >
+            View Details
+          </Link>
         </div>
       </div>
-
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Project</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete &quot;{project.title}&quot;? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowConfirmDialog(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowConfirmDialog(false);
-                  handleDelete();
-                }}
-                className="px-4 py-2 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition disabled:opacity-50"
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Project'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 
