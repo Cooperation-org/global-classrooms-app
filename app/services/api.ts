@@ -116,6 +116,8 @@ export interface CreateSchoolRequest {
   number_of_teachers: number;
   medium_of_instruction: 'english' | 'hindi' | 'french' | 'spanish' | 'german' | 'other';
   logo?: File | string;
+  creator_name: string;
+  creator_role: 'student' | 'teacher';
 }
 
 export interface SchoolsResponse {
@@ -450,6 +452,9 @@ export async function createSchool(schoolData: CreateSchoolRequest): Promise<Sch
     formData.append('number_of_students', schoolData.number_of_students.toString());
     formData.append('number_of_teachers', schoolData.number_of_teachers.toString());
     formData.append('medium_of_instruction', schoolData.medium_of_instruction);
+    formData.append('creator_name', schoolData.creator_name);
+    formData.append('creator_role', schoolData.creator_role);
+
     
     // Add logo if it's a File
     if (schoolData.logo instanceof File) {
