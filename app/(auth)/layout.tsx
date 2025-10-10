@@ -1,5 +1,5 @@
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 
 export default function AuthLayout({
   children,
@@ -29,10 +29,12 @@ export default function AuthLayout({
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-xl font-semibold text-gray-900">EGR</span>
-              <span className="text-xs text-green-700 -mt-1">Educating Global Resilience</span>
+              <span className="text-xs text-green-700 -mt-1">
+                Educating Global Resilience
+              </span>
             </div>
           </Link>
-          
+
           {/* Navigation items can be added here if needed */}
           <div className="hidden md:flex items-center space-x-6">
             {/* Add nav items here if needed */}
@@ -42,9 +44,7 @@ export default function AuthLayout({
 
       {/* Main Content Area */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {children}
-        </div>
+        <div className="w-full max-w-md">{children}</div>
       </div>
 
       {/* Footer */}
@@ -52,9 +52,19 @@ export default function AuthLayout({
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-center items-center space-x-6 text-xs text-gray-500">
             <span>© 2025 EGR - Educating Global Resilience</span>
-            <a href="#" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-gray-700 transition-colors">Contact Us</a>
+            <a
+              href="/privacypolicy"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Privacy Policy
+            </a>
+
+            <a
+              href="/contact"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Contact Us
+            </a>
           </div>
         </div>
       </footer>
