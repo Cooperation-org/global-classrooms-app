@@ -104,8 +104,9 @@ export default function WhatWeOfferSection() {
             variants={fadeUp}
           >
             <img
-              src="https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=800&q=80"
-              alt="Classroom"
+              // src="https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=800&q=80"
+              src="https://images.unsplash.com/photo-1733388972592-ec1da2ddc432?auto=format&fit=crop&w=800&q=80&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              alt="Students working on an environmental project"
               className="rounded-2xl shadow-lg w-full max-w-md object-cover"
               style={{ aspectRatio: '4/3' }}
             />
