@@ -979,6 +979,62 @@ export const useDeleteStudent = () => {
   return { deleteStudent };
 };
 
+export const useAddUserToSchool = (schoolId: string) => {
+  // const { mutate } = useSWRConfig();
+
+  const addUserToSchool = async (userData: {
+    full_name: string;
+    email: string;
+    wallet_id: string;
+    gender?: string;
+    assigned_classes: number;
+    date_of_joining: string;
+    is_active: boolean;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools/${schoolId}/add-user/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to add user to school.');
+      }
+
+      const addedUser = await response.json();
+      
+      // Optimistically update the students list
+      // mutate(
+      //   (key: string) => key.includes('/student-profiles/'),
+      //   (currentData: { students: Array<{ id: string; user_name: string; student_id: string; current_class: number }>; totalCount: number } | undefined) => {
+      //     if (!currentData) return currentData;
+      //     return {
+      //       ...currentData,
+      //       students: [...(currentData.students || []), addedUser],
+      //       totalCount: (currentData.totalCount || 0) + 1,
+      //     };
+      //   },
+      //   false
+      // );
+
+      return addedUser;
+    } catch (error) {
+      console.error('Failed to create student:', error);
+      throw error;
+    }
+  };
+
+  return { addUserToSchool };
+};
+
 // Utility function to revalidate all data
 export const revalidateAll = () => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

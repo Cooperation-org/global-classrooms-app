@@ -1,8 +1,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, useAddUserToSchool } from '@/app/hooks/useSWR';
 import { useAuth } from '@/app/context/AuthContext';
+import { StudentProfile, TeacherProfile } from '@/app/services/api';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
@@ -57,25 +58,27 @@ export default function SettingsPage() {
   const [editingSubject, setEditingSubject] = useState<{ id: number; name: string; description: string; is_active: boolean } | null>(null);
   const [isAddingTeacher, setIsAddingTeacher] = useState(false);
   const [newTeacher, setNewTeacher] = useState({
-    user: '',
-    school: '',
-    teacher_role: 'class_teacher',
-    assigned_subjects: [] as number[],
+    full_name: '',
+    email: '',
+    wallet_id: '123',
     assigned_classes: [] as number[],
-    status: 'active'
+    date_of_joining: '',
+    is_active: true,
+    send_invite_link: false
   });
-  const [editingTeacher, setEditingTeacher] = useState<{ id: string; user: string; teacher_role: string; assigned_subjects: number[]; assigned_classes: number[]; status: string } | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<Partial<TeacherProfile> | null>(null);
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [newStudent, setNewStudent] = useState({
-    user: '',
-    school: '',
-    student_id: '',
-    current_class: 0,
-    parent_name: '',
-    parent_email: '',
-    parent_phone: ''
+    full_name: '',
+    email: '',
+    wallet_id: '123',
+    gender: 'male',
+    assigned_class: 0,
+    date_of_joining: '',
+    is_active: true,
+    send_invite_link: false
   });
-  const [editingStudent, setEditingStudent] = useState<{ id: string; user: string; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string } | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Partial<StudentProfile> | null>(null);
   
   // School edit state
   const [isEditingSchool, setIsEditingSchool] = useState(false);
@@ -142,7 +145,6 @@ export default function SettingsPage() {
   const { createSubject } = useCreateSubject();
   const { updateSubject } = useUpdateSubject();
   const { deleteSubject } = useDeleteSubject();
-  const { createTeacher } = useCreateTeacher();
   const { updateTeacher } = useUpdateTeacher();
   const { deleteTeacher } = useDeleteTeacher();
   const { students, isLoading: studentsLoading } = useStudentProfiles();
@@ -266,11 +268,11 @@ export default function SettingsPage() {
     }
   }, [schools]);
 
-  useEffect(() => {
-    if (swrProjects) {
-      setProjects(swrProjects);
-    }
-  }, [swrProjects]);
+  // useEffect(() => {
+  //   if (swrProjects) {
+  //     setProjects(swrProjects);
+  //   }
+  // }, [swrProjects]);
 
   // Add new subject
   const handleAddSubject = async (e: React.FormEvent) => {
@@ -308,7 +310,7 @@ export default function SettingsPage() {
     e.preventDefault();
     
     // Validate required fields
-    if (!newTeacher.user || !newTeacher.teacher_role) {
+    if (!newTeacher.full_name || !newTeacher.email) {
       alert('Please fill in all required fields');
       return;
     }
@@ -321,34 +323,36 @@ export default function SettingsPage() {
     try {
       if (editingTeacher) {
         // Update existing teacher
-        await updateTeacher(editingTeacher.id, {
-          user: newTeacher.user,
-          school: school.id,
-          teacher_role: newTeacher.teacher_role,
-          assigned_subjects: newTeacher.assigned_subjects,
-          assigned_classes: newTeacher.assigned_classes,
-          status: newTeacher.status
-        });
+        // await updateTeacher(editingTeacher.id, {
+        //   user: newTeacher.full_name,
+        //   school: school.id,
+        //   teacher_role: newTeacher.teacher_role,
+        //   assigned_subjects: newTeacher.assigned_subjects,
+        //   assigned_classes: newTeacher.assigned_classes,
+        //   status: newTeacher.status
+        // });
       } else {
-        // Create new teacher
-        await createTeacher({
-          user: newTeacher.user,
-          school: school.id,
-          teacher_role: newTeacher.teacher_role,
-          assigned_subjects: newTeacher.assigned_subjects,
-          assigned_classes: newTeacher.assigned_classes,
-          status: newTeacher.status
-        });
+          const { addUserToSchool } = useAddUserToSchool(school.id)
+          // Create new teacher
+          await addUserToSchool({
+            full_name: newTeacher.full_name,
+            email: newTeacher.email,
+            wallet_id: newTeacher.wallet_id,
+            assigned_classes: newTeacher.assigned_classes[0],
+            date_of_joining: newTeacher.date_of_joining,
+            is_active: newTeacher.is_active
+          });
       }
       
       // Reset form
       setNewTeacher({
-        user: '',
-        school: '',
-        teacher_role: 'class_teacher',
-        assigned_subjects: [],
-        assigned_classes: [],
-        status: 'active'
+        full_name: '',
+        email: '',
+        wallet_id: '123',
+        assigned_classes: [] as number[],
+        date_of_joining: '',
+        is_active: true,
+        send_invite_link: false
       });
       setIsAddingTeacher(false);
       setEditingTeacher(null);
@@ -371,23 +375,23 @@ export default function SettingsPage() {
   };
 
   // Handle teacher edit
-  const handleEditTeacher = (teacher: { id: string; user: { id: string; name: string } | string; teacher_role: string; assigned_subjects?: number[]; assigned_classes?: number[]; status: string }) => {
+  const handleEditTeacher = (teacher: TeacherProfile) => {
     setEditingTeacher({
       id: teacher.id,
-      user: typeof teacher.user === 'string' ? teacher.user : teacher.user.id,
+      user: teacher.user,
       teacher_role: teacher.teacher_role,
       assigned_subjects: teacher.assigned_subjects || [],
       assigned_classes: teacher.assigned_classes || [],
       status: teacher.status
     });
-    setNewTeacher({
-      user: typeof teacher.user === 'string' ? teacher.user : teacher.user.id,
-      school: school?.id || '',
-      teacher_role: teacher.teacher_role,
-      assigned_subjects: teacher.assigned_subjects || [],
-      assigned_classes: teacher.assigned_classes || [],
-      status: teacher.status
-    });
+    // setNewTeacher({
+    //   user: typeof teacher.user === 'string' ? teacher.user : teacher.user.id,
+    //   school: school?.id || '',
+    //   teacher_role: teacher.teacher_role,
+    //   assigned_subjects: teacher.assigned_subjects || [],
+    //   assigned_classes: teacher.assigned_classes || [],
+    //   status: teacher.status
+    // });
     setIsAddingTeacher(true);
   };
 
@@ -396,7 +400,7 @@ export default function SettingsPage() {
     e.preventDefault();
     
     // Validate required fields
-    if (!newStudent.user || !newStudent.student_id) {
+    if (!newStudent.full_name || !newStudent.email) {
       alert('Please fill in all required fields');
       return;
     }
@@ -409,37 +413,39 @@ export default function SettingsPage() {
     try {
       if (editingStudent) {
         // Update existing student
-        await updateStudent(editingStudent.id, {
-          user: newStudent.user,
-          school: school.id,
-          student_id: newStudent.student_id,
-          current_class: newStudent.current_class,
-          parent_name: newStudent.parent_name,
-          parent_email: newStudent.parent_email,
-          parent_phone: newStudent.parent_phone
-        });
+        // await updateStudent(editingStudent.id, {
+        //   user: newStudent.user,
+        //   school: school.id,
+        //   student_id: newStudent.student_id,
+        //   current_class: newStudent.current_class,
+        //   parent_name: newStudent.parent_name,
+        //   parent_email: newStudent.parent_email,
+        //   parent_phone: newStudent.parent_phone
+        // });
       } else {
+        const { addUserToSchool } = useAddUserToSchool(school.id)
         // Create new student
-        await createStudent({
-          user: newStudent.user,
-          school: school.id,
-          student_id: newStudent.student_id,
-          current_class: newStudent.current_class,
-          parent_name: newStudent.parent_name,
-          parent_email: newStudent.parent_email,
-          parent_phone: newStudent.parent_phone
+        await addUserToSchool({
+          full_name: newStudent.full_name,
+          email: newStudent.email,
+          wallet_id: newStudent.wallet_id,
+          gender: newStudent.gender,
+          assigned_classes: newStudent.assigned_class,
+          date_of_joining: newStudent.date_of_joining,
+          is_active: newStudent.is_active
         });
       }
       
       // Reset form
       setNewStudent({
-        user: '',
-        school: '',
-        student_id: '',
-        current_class: 0,
-        parent_name: '',
-        parent_email: '',
-        parent_phone: ''
+        full_name: '',
+        email: '',
+        wallet_id: '123',
+        gender: 'male',
+        assigned_class: 0,
+        date_of_joining: '',
+        is_active: true,
+        send_invite_link: false
       });
       setIsAddingStudent(false);
       setEditingStudent(null);
@@ -462,10 +468,10 @@ export default function SettingsPage() {
   };
 
   // Handle student edit
-  const handleEditStudent = (student: { id: string; user: { id: string; name: string } | string; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string }) => {
+  const handleEditStudent = (student: StudentProfile) => {
     setEditingStudent({
       id: student.id,
-      user: typeof student.user === 'string' ? student.user : student.user.id,
+      user: student.user,
       school: student.school,
       student_id: student.student_id,
       current_class: student.current_class,
@@ -473,15 +479,15 @@ export default function SettingsPage() {
       parent_email: student.parent_email,
       parent_phone: student.parent_phone
     });
-    setNewStudent({
-      user: typeof student.user === 'string' ? student.user : student.user.id,
-      school: student.school,
-      student_id: student.student_id,
-      current_class: student.current_class,
-      parent_name: student.parent_name,
-      parent_email: student.parent_email,
-      parent_phone: student.parent_phone
-    });
+    // setNewStudent({
+    //   user: typeof student.user === 'string' ? student.user : student.user.id,
+    //   school: student.school,
+    //   student_id: student.student_id,
+    //   current_class: student.current_class,
+    //   parent_name: student.parent_name,
+    //   parent_email: student.parent_email,
+    //   parent_phone: student.parent_phone
+    // });
     setIsAddingStudent(true);
   };
 
@@ -730,33 +736,16 @@ export default function SettingsPage() {
       )}
       {activeTab === 'Teachers' && (
         <div>
-          {/* Header and Add Teacher Button */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold">Manage Teachers</h3>
-            <button
-              className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
-              onClick={() => setIsAddingTeacher(true)}
-            >
-              + Add Teacher
-            </button>
-          </div>
-
           {isAddingTeacher ? (
             <>
-              {/* Blurred Overlay */}
-              <div className="fixed inset-0 bg-transparent backdrop-blur-sm z-40" onClick={() => setIsAddingTeacher(false)} />
-              
-              {/* Modal */}
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-full md:max-w-md mx-auto">
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="bg-white w-full max-w-md md:max-w-full">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="pb-3 text-2xl font-bold text-gray-900">
                         {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        {editingTeacher ? 'Update teacher information' : 'Register a new teacher to your school'}
+                      <p className="text-sm text-[color:var(--color-text-green)]">
+                        {editingTeacher ? 'Update teacher information' : 'Fill out the following details to register a new teacher. A one-time invitation link will be generated on successful submission.'}
                       </p>
                     </div>
                     <button
@@ -764,12 +753,13 @@ export default function SettingsPage() {
                         setIsAddingTeacher(false);
                         setEditingTeacher(null);
                         setNewTeacher({
-                          user: '',
-                          school: '',
-                          teacher_role: 'class_teacher',
-                          assigned_subjects: [],
+                          full_name: '',
+                          email: '',
+                          wallet_id: '123',
                           assigned_classes: [],
-                          status: 'active'
+                          date_of_joining: '',
+                          is_active: false,
+                          send_invite_link: false
                         });
                       }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -778,105 +768,56 @@ export default function SettingsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-          </div>
+                  </div>
 
-                  {/* Modal Body */}
-                  <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
+                  <form onSubmit={handleAddTeacher} className="py-6 space-y-4 max-w-full md:max-w-md">
                     <div>
                       <label htmlFor="newTeacherUser" className="block text-sm font-medium text-gray-700 mb-1">
-                        Teacher Name *
+                        Full Name *
                       </label>
-                      <select
+                      <input
+                        type="text"
                         id="newTeacherUser"
-                        value={newTeacher.user}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, user: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={newTeacher.full_name}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, full_name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter full name"
                         required
-                      >
-                        <option value="">Select teacher</option>
-                        {availableUsers.map(user => (
-                          <option key={user.id} value={user.id}>{user.name}</option>
-                        ))}
-            </select>
+                      />
                     </div>
 
                     <div>
-                      <label htmlFor="newTeacherRole" className="block text-sm font-medium text-gray-700 mb-1">
-                        Role *
+                      <label htmlFor="newTeacherEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
                       </label>
-                      <select
-                        id="newTeacherRole"
-                        value={newTeacher.teacher_role}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, teacher_role: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      <input
+                        type="email"
+                        id="newTeacherEmail"
+                        value={newTeacher.email}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter email address"
                         required
-                      >
-                        <option value="">Select role</option>
-                        <option value="class_teacher">Class Teacher</option>
-                        <option value="subject_teacher">Subject Teacher</option>
-                        <option value="principal">Principal</option>
-            </select>
+                      />
                     </div>
 
                     <div>
-                      <label htmlFor="newTeacherAssignedSubjects" className="block text-sm font-medium text-gray-700 mb-1">
-                        Assigned Subjects
+                      <label htmlFor="newTeacherWallet" className="block text-sm font-medium text-gray-700 mb-1">
+                        Wallet ID
                       </label>
-                      <div className="relative">
-                        <select
-                          id="newTeacherAssignedSubjects"
-                          onChange={(e) => {
-                            const subjectId = parseInt(e.target.value);
-                            if (subjectId && !newTeacher.assigned_subjects.includes(subjectId)) {
-                              setNewTeacher(prev => ({ 
-                                ...prev, 
-                                assigned_subjects: [...prev.assigned_subjects, subjectId] 
-                              }));
-                            }
-                            e.target.value = '';
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select subjects to assign</option>
-                          {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
-                            <option key={subject.id} value={subject.id}>{subject.name}</option>
-                          ))}
-            </select>
-          </div>
-
-                      {/* Selected Subjects Display */}
-                      {newTeacher.assigned_subjects.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {newTeacher.assigned_subjects.map(subjectId => {
-                            const subject = subjects.find((s: { id: number; name: string }) => s.id === subjectId);
-                            return subject ? (
-                              <span
-                                key={subjectId}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                              >
-                                {subject.name}
-                                <button
-                                  type="button"
-                                  onClick={() => setNewTeacher(prev => ({
-                                    ...prev,
-                                    assigned_subjects: prev.assigned_subjects.filter(id => id !== subjectId)
-                                  }))}
-                                  className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
-                                >
-                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </span>
-                            ) : null;
-                          })}
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        id="newTeacherWallet"
+                        value={newTeacher.wallet_id}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, wallet_id: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter wallet ID"
+                      />
                     </div>
 
                     <div>
                       <label htmlFor="newTeacherAssignedClasses" className="block text-sm font-medium text-gray-700 mb-1">
-                        Assigned Classes
+                        Assigned Class(es)
                       </label>
                       <div className="relative">
                         <select
@@ -891,9 +832,9 @@ export default function SettingsPage() {
                             }
                             e.target.value = '';
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Select classes to assign</option>
+                          <option value="">Select class</option>
                           <option value="1">Class 1</option>
                           <option value="2">Class 2</option>
                           <option value="3">Class 3</option>
@@ -934,50 +875,84 @@ export default function SettingsPage() {
                       )}
                     </div>
 
+                    <div>
+                      <label htmlFor="newTeacherJoinDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Joining
+                      </label>
+                      <input
+                        type="text"
+                        id="newTeacherJoinDate"
+                        value={newTeacher.date_of_joining}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, date_of_joining: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Select date"
+                      />
+                    </div>
+
                     <div className="flex items-center">
                       <input
                         type="checkbox"
                         id="newTeacherStatus"
-                        checked={newTeacher.status === 'active'}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))}
+                        checked={newTeacher.is_active}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, is_active: e.target.checked ? true : false }))}
                         className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <label htmlFor="newTeacherStatus" className="text-sm text-gray-700">Active Status</label>
                     </div>
 
-                    {/* Modal Footer */}
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="newTeacherSendLink"
+                        checked={newTeacher.send_invite_link}
+                        onChange={(e) => setNewTeacher(prev => ({ ...prev, send_invite_link: e.target.checked ? true : false }))}
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="newTeacherSendLink" className="text-sm text-gray-700">Send invitation email with join link</label>
+                    </div>
+
                     <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="submit"
+                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                      >
+                        {editingTeacher ? 'Update Teacher' : 'Add Teacher'}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
                           setIsAddingTeacher(false);
                           setEditingTeacher(null);
                           setNewTeacher({
-                            user: '',
-                            school: '',
-                            teacher_role: 'class_teacher',
-                            assigned_subjects: [],
+                            full_name: '',
+                            email: '',
+                            wallet_id: '123',
                             assigned_classes: [],
-                            status: 'active'
+                            date_of_joining: '',
+                            is_active: false,
+                            send_invite_link: false
                           });
                         }}
                         className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                       >
                         Cancel
                       </button>
-                      <button
-                        type="submit"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                      >
-                        {editingTeacher ? 'Update Teacher' : 'Add Teacher'}
-                      </button>
                     </div>
                   </form>
                 </div>
-              </div>
             </>
           ) : (
             <>
+              {/* Header and Add Teacher Button */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Manage Teachers</h3>
+                <button
+                  className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
+                  onClick={() => setIsAddingTeacher(true)}
+                >
+                  + Add Teacher
+                </button>
+              </div>
             {teachersLoading ? (
                 <div className="flex items-center justify-center h-64">
                 <div className="text-center">
@@ -1006,6 +981,15 @@ export default function SettingsPage() {
                           Name
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phone
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Subject(s)
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Role
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1017,14 +1001,23 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {teachers.map((teacher: { id: string; user: { id: string; name: string }; teacher_role: string; status: string }) => (
+                      {teachers.map((teacher: TeacherProfile) => (
                         <tr key={teacher.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {teacher.user.name}
-                      </td>
+                            {teacher.user_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            johndoe@example.com
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            +661234567
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {teacher.assigned_subjects_data.map(subject => subject.name).join(', ')}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {teacher.teacher_role.replace('_', ' ').toUpperCase()}
-                      </td>
+                            {teacher.teacher_role.replace('_', ' ').toUpperCase()}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                               {teacher.status}
@@ -1038,7 +1031,7 @@ export default function SettingsPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteTeacher(teacher.id)}
+                              onClick={() => handleDeleteTeacher(String(teacher.id))}
                               className="text-red-600 hover:text-red-900"
                             >
                               Delete
@@ -1056,33 +1049,16 @@ export default function SettingsPage() {
       )}
       {activeTab === 'Students' && (
         <div>
-          {/* Header and Add Student Button */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold">Manage Students</h3>
-            <button
-              className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
-              onClick={() => setIsAddingStudent(true)}
-            >
-              + Add Student
-            </button>
-          </div>
-
           {isAddingStudent ? (
             <>
-              {/* Blurred Overlay */}
-              <div className="fixed inset-0 bg-transparent backdrop-blur-sm z-40" onClick={() => setIsAddingStudent(false)} />
-              
-              {/* Modal */}
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-full md:max-w-md mx-auto">
-                  {/* Modal Header */}
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="bg-white w-full max-w-md md:max-w-full">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="pb-3 text-2xl font-bold text-gray-900">
                         {editingStudent ? 'Edit Student' : 'Add New Student'}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        {editingStudent ? 'Update student information' : 'Register a new student to your school'}
+                      <p className="text-sm text-[color:var(--color-text-green)]">
+                        {editingStudent ? 'Update student information' : 'Fill out the following details to register a new student. A one-time invitation link will be generated on successful submission.'}
                       </p>
                     </div>
                     <button
@@ -1090,13 +1066,14 @@ export default function SettingsPage() {
                         setIsAddingStudent(false);
                         setEditingStudent(null);
                         setNewStudent({
-                          user: '',
-                          school: '',
-                          student_id: '',
-                          current_class: 0,
-                          parent_name: '',
-                          parent_email: '',
-                          parent_phone: ''
+                          full_name: '',
+                          email: '',
+                          wallet_id: '123',
+                          gender: 'male',
+                          assigned_class: 0,
+                          date_of_joining: '',
+                          is_active: false,
+                          send_invite_link: false
                         });
                       }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1107,50 +1084,77 @@ export default function SettingsPage() {
                     </button>
                   </div>
 
-                  {/* Modal Body */}
-                  <form onSubmit={handleAddStudent} className="p-6 space-y-4">
+                  <form onSubmit={handleAddStudent} className="py-6 space-y-4 max-w-full md:max-w-md">
                     <div>
                       <label htmlFor="newStudentUser" className="block text-sm font-medium text-gray-700 mb-1">
-                        Student Name *
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="newStudentUser"
+                        value={newStudent.full_name}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, full_name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter full name"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        id="newStudentEmail"
+                        value={newStudent.email}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter email address"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentWallet" className="block text-sm font-medium text-gray-700 mb-1">
+                        Wallet ID
+                      </label>
+                      <input
+                        type="text"
+                        id="newStudentWallet"
+                        value={newStudent.wallet_id}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, wallet_id: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter wallet ID"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newStudentGender" className="block text-sm font-medium text-gray-700 mb-1">
+                        Gender
                       </label>
                       <select
-                        id="newStudentUser"
-                        value={newStudent.user}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, user: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
+                        id="newStudentGender"
+                        value={newStudent.gender}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, gender: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">Select student</option>
-                        {availableUsers.map(user => (
-                          <option key={user.id} value={user.id}>{user.name}</option>
-                        ))}
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
                       </select>
                     </div>
 
                     <div>
-                      <label htmlFor="newStudentStudentId" className="block text-sm font-medium text-gray-700 mb-1">
-                        Student ID *
-                      </label>
-            <input
-              type="text"
-                        id="newStudentStudentId"
-                        value={newStudent.student_id}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, student_id: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
-            />
-          </div>
-
-                    <div>
-                      <label htmlFor="newStudentCurrentClass" className="block text-sm font-medium text-gray-700 mb-1">
-                        Current Class *
+                      <label htmlFor="newStudentAssignedClass" className="block text-sm font-medium text-gray-700 mb-1">
+                        Assigned Class
                       </label>
                       <select
-                        id="newStudentCurrentClass"
-                        value={newStudent.current_class}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, current_class: parseInt(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
+                        id="newStudentAssignedClass"
+                        value={newStudent.assigned_class}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, assigned_class: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select class</option>
                         <option value="1">Class 1</option>
@@ -1163,85 +1167,88 @@ export default function SettingsPage() {
                         <option value="8">Class 8</option>
                         <option value="9">Class 9</option>
                         <option value="10">Class 10</option>
-            </select>
-          </div>
+                      </select>
+                    </div>
 
                     <div>
-                      <label htmlFor="newStudentParentName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Parent Name *
+                      <label htmlFor="newStudentJoinDate" className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Joining
                       </label>
                       <input
                         type="text"
-                        id="newStudentParentName"
-                        value={newStudent.parent_name}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
+                        id="newStudentJoinDate"
+                        value={newStudent.date_of_joining}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, date_of_joining: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Select date"
                       />
                     </div>
 
-                    <div>
-                      <label htmlFor="newStudentParentEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                        Parent Email *
-                      </label>
+                    <div className="flex items-center">
                       <input
-                        type="email"
-                        id="newStudentParentEmail"
-                        value={newStudent.parent_email}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_email: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
+                        type="checkbox"
+                        id="newStudentStatus"
+                        checked={newStudent.is_active}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, is_active: e.target.checked ? true : false }))}
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
+                      <label htmlFor="newStudentStatus" className="text-sm text-gray-700">Active Status</label>
                     </div>
 
-                    <div>
-                      <label htmlFor="newStudentParentPhone" className="block text-sm font-medium text-gray-700 mb-1">
-                        Parent Phone *
-                      </label>
+                    <div className="flex items-center">
                       <input
-                        type="tel"
-                        id="newStudentParentPhone"
-                        value={newStudent.parent_phone}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, parent_phone: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        required
+                        type="checkbox"
+                        id="newStudentSendLink"
+                        checked={newStudent.send_invite_link}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, send_invite_link: e.target.checked ? true : false }))}
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
+                      <label htmlFor="newStudentSendLink" className="text-sm text-gray-700">Send invitation email with join link</label>
                     </div>
 
-                    {/* Modal Footer */}
                     <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        type="submit"
+                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                      >
+                        {editingStudent ? 'Update Student' : 'Add Student'}
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
                           setIsAddingStudent(false);
                           setEditingStudent(null);
                           setNewStudent({
-                            user: '',
-                            school: '',
-                            student_id: '',
-                            current_class: 0,
-                            parent_name: '',
-                            parent_email: '',
-                            parent_phone: ''
+                            full_name: '',
+                            email: '',
+                            wallet_id: '123',
+                            gender: 'male',
+                            assigned_class: 0,
+                            date_of_joining: '',
+                            is_active: false,
+                            send_invite_link: false
                           });
                         }}
                         className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                       >
                         Cancel
                       </button>
-                      <button
-                        type="submit"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                      >
-                        {editingStudent ? 'Update Student' : 'Add Student'}
-                      </button>
                     </div>
                   </form>
                 </div>
-              </div>
             </>
           ) : (
             <>
+              {/* Header and Add Student Button */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Manage Students</h3>
+                <button
+                  className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
+                  onClick={() => setIsAddingStudent(true)}
+                >
+                  + Add Student
+                </button>
+              </div>
             {studentsLoading ? (
                 <div className="flex items-center justify-center h-64">
                 <div className="text-center">
@@ -1270,19 +1277,13 @@ export default function SettingsPage() {
                           Name
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student ID
+                          Email
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phone
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Class
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Parent Name
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Parent Email
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Parent Phone
                         </th>
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -1290,13 +1291,16 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {students.map((student: { id: string; user: { id: string; name: string }; school: string; student_id: string; current_class: number; parent_name: string; parent_email: string; parent_phone: string }) => (
+                      {students.map((student: StudentProfile) => (
                         <tr key={student.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {student.user.name}
+                            {student.user_name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.student_id}
+                            johndoe@example.com
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            +661234567
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
@@ -1320,7 +1324,7 @@ export default function SettingsPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteStudent(student.id)}
+                              onClick={() => handleDeleteStudent(String(student.id))}
                               className="text-red-600 hover:text-red-900"
                             >
                               Delete

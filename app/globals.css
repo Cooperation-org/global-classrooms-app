@@ -43,6 +43,8 @@ html {
   --color-input: #e5e5e5;
   --color-ring: #171717;
   --color-auth-background: #E5E7EB;
+  --color-text-green: #4F9673;
+  --color-base-green: #E8F2ED;
 }
 
 @theme inline {
