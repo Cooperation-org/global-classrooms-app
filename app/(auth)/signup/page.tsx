@@ -263,13 +263,8 @@ const SignUpPage = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Create an account
           </h1>
-          <p className="text-gray-600 text-sm">
-            Choose how you want to sign up to earn CS tokens.
-            <br />
-            Powered by Universal Basic Income (UBI)
-          </p>
         </div>
-
+        {/* Signup with email */}
         {/* Role Selection */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
