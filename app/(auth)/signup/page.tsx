@@ -264,7 +264,6 @@ const SignUpPage = () => {
             Create an account
           </h1>
         </div>
-        {/* Signup with email */}
         {/* Role Selection */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
