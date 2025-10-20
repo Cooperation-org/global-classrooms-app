@@ -35,6 +35,21 @@ export interface Project {
   };
 }
 
+// Project Files (Resources)
+export interface ProjectFile {
+  id: string;
+  file: string; // absolute or relative URL
+  description: string;
+  created_at: string;
+}
+
+export interface ProjectFilesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ProjectFile[];
+}
+
 export interface ProjectsResponse {
   count: number;
   next: string | null;
@@ -306,6 +321,31 @@ export async function uploadProjectFile(projectId: string, file: File, descripti
     return await response.json();
   } catch (error) {
     console.error('Error uploading project file:', error);
+    throw error;
+  }
+}
+
+export async function fetchProjectFiles(projectId: string, page: number = 1, limit: number = 50): Promise<ProjectFile[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/?page=${page}&limit=${limit}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    const data: ProjectFilesResponse | ProjectFile[] = await response.json();
+    // Some backends may return a paginated object, others a raw list
+    // Normalize to an array of ProjectFile
+    // @ts-ignore - tolerate either shape
+    return Array.isArray(data) ? (data as ProjectFile[]) : ((data as ProjectFilesResponse).results || []);
+  } catch (error) {
+    console.error('Error fetching project files:', error);
     throw error;
   }
 }

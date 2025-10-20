@@ -3,15 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
-import { deleteProject, joinProject, fetchProjectGoals, ProjectGoal } from '@/app/services/api';
+import { deleteProject, joinProject, fetchProjectGoals, fetchProjectFiles, ProjectGoal, ProjectFile } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
 import { ParticipatingSchools, ProjectLeaders } from '@/app/components/projects/ProjectSidebar';
 import { ProjectProgressUpdates } from '@/app/components/projects/ProjectProgressUpdates';
 
-// Import the subcomponents from ProjectOverview
-import { GoalsSection, ResourcesSection, DiscussionSection, ScheduleSection } from '@/app/components/projects/ProjectOverview';
+// Import the ProjectOverview component
+import { ProjectOverview } from '@/app/components/projects/ProjectOverview';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -23,6 +23,8 @@ export default function ProjectDetailsPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [goals, setGoals] = useState<ProjectGoal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
+  const [resources, setResources] = useState<ProjectFile[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
 
   // Use SWR hook for data fetching
   const { project, isLoading, error } = useProjectById(params.id as string);
@@ -57,6 +59,25 @@ export default function ProjectDetailsPage() {
     };
 
     loadGoals();
+  }, [params.id]);
+
+  // Fetch project resources (files)
+  useEffect(() => {
+    const loadResources = async () => {
+      if (!params.id) return;
+
+      try {
+        setResourcesLoading(true);
+        const files = await fetchProjectFiles(params.id as string, 1, 100);
+        setResources(files);
+      } catch (error) {
+        console.error('Failed to load project resources:', error);
+      } finally {
+        setResourcesLoading(false);
+      }
+    };
+
+    loadResources();
   }, [params.id]);
 
   const handleDelete = async () => {
@@ -159,143 +180,19 @@ export default function ProjectDetailsPage() {
     switch (activeTab) {
       case "overview":
         return (
-          <div className="space-y-6">
-            {/* Key Information Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Timeline Card */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <h3 className="font-semibold text-gray-900">Timeline</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-1">
-                  <span className="font-medium">Start:</span> {new Date(project.start_date).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">End:</span> {new Date(project.end_date).toLocaleDateString()}
-                </p>
-              </div>
-
-              {/* Status Card */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h3 className="font-semibold text-gray-900">Status</h3>
-                </div>
-                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                  project.status === 'published' ? 'bg-green-100 text-green-800' :
-                  project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                </span>
-                <p className="text-xs text-gray-500 mt-2">
-                  {project.is_open_for_collaboration ? '✓ Open for collaboration' : 'Not accepting collaborators'}
-                </p>
-              </div>
-
-              {/* Participation Card */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  <h3 className="font-semibold text-gray-900">Participation</h3>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{project.participating_schools_count || 0}</p>
-                <p className="text-xs text-gray-500">Schools participating</p>
-              </div>
-            </div>
-
-            {/* Environmental Themes */}
-            {project.environmental_themes && Object.keys(project.environmental_themes).length > 0 && (
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Environmental Themes
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {Object.values(project.environmental_themes).map((theme, index) => (
-                    <span key={index} className="px-3 py-1 bg-white rounded-full text-sm font-medium text-green-700 border border-green-200">
-                      {String(theme)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Project Description */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                About This Project
-                </h2>
-              <p className="text-gray-700 leading-relaxed">{project.detailed_description}</p>
-            </div>
-
-            {/* Goals & Timeline Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Goals */}
-              <div className="bg-white rounded-lg border border-gray-200">
-                {goalsLoading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-2 text-sm">Loading goals...</p>
-                  </div>
-                ) : (
-                  <GoalsSection goals={goals} />
-                )}
-              </div>
-
-              {/* Project Leaders & Contact */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Project Lead
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{project.contact_person_name}</p>
-                    <p className="text-sm text-gray-600">{project.contact_person_role}</p>
-                  </div>
-                  <div className="pt-3 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">School:</span> {project.lead_school_name}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Location:</span> {project.contact_city}, {project.contact_country}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Email:</span> {project.contact_person_email}
-                    </p>
-                  </div>
-                  {project.recognition_type && (
-                    <div className="pt-3 border-t border-gray-200">
-                      <p className="text-sm font-medium text-gray-900 mb-1">Recognition Offered:</p>
-                      <span className="inline-flex px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
-                        {project.recognition_type.charAt(0).toUpperCase() + project.recognition_type.slice(1)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Discussion Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <DiscussionSection discussion={[]} />
-            </div>
-          </div>
+          <ProjectOverview
+            project={{
+              id: project.id,
+              title: project.title,
+              overview: project.detailed_description || project.description || '',
+              schedule: project.schedule || [],
+              resources: resources.map(f => ({ label: f.description || 'Project File', url: f.file, type: 'file' })),
+              discussion: project.discussion || [],
+              schools: project.participating_schools || [],
+              leaders: project.leaders || []
+            }}
+            goals={goals}
+          />
         );
       case 'discussion':
         return (
@@ -315,7 +212,23 @@ export default function ProjectDetailsPage() {
                 </div>
               </div>
               <div className="p-6">
-                <DiscussionSection discussion={[]} />
+                <div className="text-center py-6">
+                  <p className="text-gray-600 text-sm mb-6">
+                    Connect with other participants, share ideas, and collaborate on this
+                    project through our Slack workspace.
+                  </p>
+                  <a
+                    href="https://join.slack.com/t/global-classroom-talk/shared_invite/zt-38di7bdpy-znxFApF3QNg1F2guuKXPyw"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-[#4BA186] text-white font-medium rounded-lg shadow hover:bg-[#3a876e] transition"
+                  >
+                    Join the Slack Discussion
+                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -1,26 +1,27 @@
 import React from 'react';
-import { FileText, ExternalLink, Slack } from 'lucide-react';
+import { FileText, ExternalLink, Slack, Users, User } from 'lucide-react';
 import { ProjectGoal } from '@/app/services/api';
 
 interface Project {
   id: number;
   title: string;
   overview: string;
-  schedule: { week: string; title: string; description: string }[];
-  goals: string[];
-  resources: { label: string; url: string; type: string }[];
-  discussion: { user: string; message: string; time: string; avatar: string }[];
-  schools: { name: string; location: string; logo: string }[];
-  leaders: { name: string; role: string; avatar: string }[];
+  schedule?: { week: string; title: string; description: string }[];
+  resources?: { label: string; url: string; type: string }[];
+  discussion?: { user: string; message: string; time: string; avatar: string }[];
+  schools?: { name: string; location: string; logo: string }[];
+  leaders?: { name: string; role: string; avatar: string }[];
 }
 
 interface ProjectOverviewProps {
   project: Project;
+  goals?: ProjectGoal[];
 }
 
-export function ProjectOverview({ project }: ProjectOverviewProps) {
+export function ProjectOverview({ project, goals }: ProjectOverviewProps) {
   return (
     <div className="space-y-8">
+      {/* Project Overview Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="px-6 py-5 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -34,68 +35,80 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      {/* Schedule Section */}
+      {project.schedule && project.schedule.length > 0 && (
         <ScheduleSection schedule={project.schedule} />
-        <GoalsSection goals={[]} />
+      )}
+
+      {/* Goals and Resources Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <GoalsSection goals={goals || []} />
+        {project.resources && project.resources.length > 0 && (
+          <ResourcesSection resources={project.resources} />
+        )}
       </div>
 
-      <ResourcesSection resources={project.resources} />
+      {/* Discussion Forum */}
+      <DiscussionSection discussion={project.discussion} />
 
-      {/* Discussion Section with Slack Link */}
-      <DiscussionSection />
+      {/* Participating Schools */}
+      {project.schools && project.schools.length > 0 && (
+        <ParticipatingSchoolsSection schools={project.schools} />
+      )}
+
+      {/* Project Leaders */}
+      {project.leaders && project.leaders.length > 0 && (
+        <ProjectLeadersSection leaders={project.leaders} />
+      )}
     </div>
   );
 }
 
-function ScheduleSection({ schedule }: { schedule: Project["schedule"] }) {
+function ScheduleSection({ schedule }: { schedule: NonNullable<Project["schedule"]> }) {
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-[#222B45] mb-6">Schedule</h2>
-      <div className="flex flex-col">
-        {schedule.map((item, i) => (
-          <div key={i}>
-            <h3 className="font-bold text-[#222B45] text-base mb-1">
-              {item.week}: {item.title}
-            </h3>
-            <div className="text-sm text-[#1A7F4F]  mb-4">
-              {item.description}
-            </div>
-            {i !== schedule.length - 1 && <div className=" mb-4" />}
-          </div>
-        ))}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900">Schedule</h2>
       </div>
-    </section>
+      <div className="p-6">
+        <div className="space-y-4">
+          {schedule.map((item, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                  {item.week}: {item.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function GoalsSection({ goals }: { goals: ProjectGoal[] }) {
   if (!goals || goals.length === 0) {
     return (
-      <div>
-        <div className="py-5 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Goals and Targets</h3>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900">Goals and Targets</h2>
         </div>
         <div className="p-6">
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No goals set</h3>
-            <p className="text-gray-500">Project goals will appear here once they are added.</p>
-          </div>
+          <p className="text-sm text-gray-600">No goals have been added yet.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="p-5 border-b border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Goals and Targets
-        </h3>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900">Goals and Targets</h2>
       </div>
       <div className="p-6">
         <div className="space-y-4">
@@ -104,7 +117,7 @@ function GoalsSection({ goals }: { goals: ProjectGoal[] }) {
               <input 
                 type="checkbox" 
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5 flex-shrink-0" 
-                checked={goal.is_completed}
+                checked={!!goal.is_completed}
                 disabled
               />
               <div className="flex-1">
@@ -121,31 +134,30 @@ function GoalsSection({ goals }: { goals: ProjectGoal[] }) {
       </div>
     </div>
   );
-} // Make sure this closing brace exists
+}
 
-function ResourcesSection({ resources }: { resources: Project["resources"] }) {
+function ResourcesSection({ resources }: { resources: NonNullable<Project["resources"]> }) {
   return (
-    <div>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
       <div className="px-6 py-5 border-b border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900">Resources</h3>
+        <h2 className="text-lg font-semibold text-gray-900">Resources</h2>
       </div>
       <div className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-3">
           {resources.map((resource, i) => (
             <a
               key={i}
               href={resource.url}
-              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full block px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
             >
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                <FileText className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900">
                   {resource.label}
-                </p>
+                </span>
+                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
               </div>
-              <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-all" />
             </a>
           ))}
         </div>
@@ -155,23 +167,60 @@ function ResourcesSection({ resources }: { resources: Project["resources"] }) {
 }
 
 function DiscussionSection({ discussion }: { discussion?: Project['discussion'] }) {
-  return (
-    <div className="text-center py-6">
-      <p className="text-gray-600 text-sm mb-6">
-        Connect with other participants, share ideas, and collaborate on this
-        project through our Slack workspace.
-      </p>
+  if (discussion && discussion.length > 0) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900">Discussion Forum</h2>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            {discussion.map((msg, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 flex-shrink-0">
+                  {msg.user.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {msg.user}
+                    </span>
+                    <span className="text-xs text-gray-500">{msg.time}</span>
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    {msg.message}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      {/* Slack Channel Link */}
-      <a
-        href="https://join.slack.com/t/global-classroom-talk/shared_invite/zt-38di7bdpy-znxFApF3QNg1F2guuKXPyw"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center px-6 py-3 bg-[#4BA186] text-white font-medium rounded-lg shadow hover:bg-[#3a876e] transition"
-      >
-        Join the Slack Discussion
-        <ExternalLink className="ml-2 w-4 h-4" />
-      </a>
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900">Discussion Forum</h2>
+      </div>
+      <div className="p-6">
+        <div className="text-center py-6">
+          <p className="text-gray-600 text-sm mb-6">
+            Connect with other participants, share ideas, and collaborate on this
+            project through our Slack workspace.
+          </p>
+          <a
+            href="https://join.slack.com/t/global-classroom-talk/shared_invite/zt-38di7bdpy-znxFApF3QNg1F2guuKXPyw"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-6 py-3 bg-[#4BA186] text-white font-medium rounded-lg shadow hover:bg-[#3a876e] transition"
+          >
+            Join the Slack Discussion
+            <ExternalLink className="ml-2 w-4 h-4" />
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -250,5 +299,61 @@ function OriginalDiscussionSection({
 }
 */
 
+// Participating Schools Section
+function ParticipatingSchoolsSection({ schools }: { schools: NonNullable<Project["schools"]> }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900">Participating Schools</h2>
+      </div>
+      <div className="p-6">
+        <div className="space-y-3">
+          {schools.map((school, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">{school.name}</p>
+                {school.location && (
+                  <p className="text-xs text-gray-500">{school.location}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Project Leaders Section
+function ProjectLeadersSection({ leaders }: { leaders: NonNullable<Project["leaders"]> }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900">Project Leaders</h2>
+      </div>
+      <div className="p-6">
+        <div className="space-y-3">
+          {leaders.map((leader, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">{leader.name}</p>
+                {leader.role && (
+                  <p className="text-xs text-gray-500">{leader.role}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Added DiscussionSection back to exports
-export { GoalsSection, ResourcesSection, ScheduleSection, DiscussionSection };
+export { GoalsSection, ResourcesSection, ScheduleSection, DiscussionSection, ParticipatingSchoolsSection, ProjectLeadersSection };
