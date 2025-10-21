@@ -1047,6 +1047,31 @@ export const useDeleteStudent = () => {
   return { deleteStudent };
 };
 
+
+interface ClassChoice {
+  value: string;
+  label: string;
+}
+
+export const usePublicClassChoices = () => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const { data, error, isLoading } = useSWR<ClassChoice[]>(
+    `${API_BASE_URL}/classes/class-choices/`,
+    publicFetcher,
+    {
+      ...swrConfig,
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  return {
+    choices: data || [],
+    isLoading,
+    error,
+  };
+};
+
 // Utility function to revalidate all data
 export const revalidateAll = () => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -1054,6 +1079,7 @@ export const revalidateAll = () => {
   mutate(`${API_BASE_URL}/schools/`);
   mutate(`${API_BASE_URL}/teacher-profiles/`);
   mutate(`${API_BASE_URL}/student-profiles/`);
+  mutate(`${API_BASE_URL}/classes/`);
 };
 
 // Optimistic update helpers

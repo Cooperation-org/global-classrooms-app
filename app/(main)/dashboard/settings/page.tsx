@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices } from '@/app/hooks/useSWR';
 import { useAuth } from '@/app/context/AuthContext';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
@@ -137,6 +137,7 @@ export default function SettingsPage() {
   const { updateSchool } = useUpdateSchool();
   const { user } = useAuth();
   const { projects: swrProjects, isLoading: projectsLoading } = useProjects(1, 100);
+  const { choices, isLoading: choicesLoading, error: choicesError } = usePublicClassChoices();
   const { subjects, error: subjectsError } = useSubjects(school?.id);
   const { teachers, isLoading: teachersLoading } = useTeacherProfiles();
   const { createSubject } = useCreateSubject();
@@ -884,26 +885,29 @@ export default function SettingsPage() {
                           onChange={(e) => {
                             const classId = parseInt(e.target.value);
                             if (classId && !newTeacher.assigned_classes.includes(classId)) {
-                              setNewTeacher(prev => ({ 
-                                ...prev, 
-                                assigned_classes: [...prev.assigned_classes, classId] 
+                              setNewTeacher(prev => ({
+                                ...prev,
+                                assigned_classes: [...prev.assigned_classes, classId]
                               }));
                             }
                             e.target.value = '';
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={choicesLoading}
                         >
-                          <option value="">Select classes to assign</option>
-                          <option value="1">Class 1</option>
-                          <option value="2">Class 2</option>
-                          <option value="3">Class 3</option>
-                          <option value="4">Class 4</option>
-                          <option value="5">Class 5</option>
-                          <option value="6">Class 6</option>
-                          <option value="7">Class 7</option>
-                          <option value="8">Class 8</option>
-                          <option value="9">Class 9</option>
-                          <option value="10">Class 10</option>
+                          <option value="">
+                          {choicesLoading ? "Loading Classes..." : "Select Classes To Assign"}
+                        </option>
+                        {
+                          choices &&
+                          choices.map((choice) =>
+                            (
+                              <option key={choice.value} value={choice.value}>
+                                {choice.label}
+                              </option>
+                            )
+                          )
+                        }
                         </select>
                       </div>
                       
@@ -1151,19 +1155,28 @@ export default function SettingsPage() {
                         onChange={(e) => setNewStudent(prev => ({ ...prev, current_class: parseInt(e.target.value) }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
+                        disabled={choicesLoading}
                       >
-                        <option value="">Select class</option>
-                        <option value="1">Class 1</option>
-                        <option value="2">Class 2</option>
-                        <option value="3">Class 3</option>
-                        <option value="4">Class 4</option>
-                        <option value="5">Class 5</option>
-                        <option value="6">Class 6</option>
-                        <option value="7">Class 7</option>
-                        <option value="8">Class 8</option>
-                        <option value="9">Class 9</option>
-                        <option value="10">Class 10</option>
+                        
+                        <option value="">
+                          {choicesLoading ? "Loading Classes..." : "Select Class"}
+                        </option>
+                        {
+                          choices &&
+                          choices.map((choice) =>
+                            (
+                              <option key={choice.value} value={choice.value}>
+                                {choice.label}
+                              </option>
+                            )
+                          )
+                        }
             </select>
+            {choicesError && (
+              <span className='text-red-600 ms-2'>
+                {choicesError instanceof Error ? choicesError.message : 'No class data available'}
+              </span>
+            )}
           </div>
 
                     <div>
