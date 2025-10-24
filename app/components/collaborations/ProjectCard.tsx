@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import { Project } from '@/app/services/api';
@@ -8,6 +9,7 @@ interface ThemeTag {
 }
 
 export function ProjectCard({ project }: { project: Project }) {
+
   // Helper function to get theme tags from environmental_themes
   const getThemeTags = (): ThemeTag[] => {
     const tags: ThemeTag[] = [];
@@ -95,7 +97,10 @@ export function ProjectCard({ project }: { project: Project }) {
           )}
         </div>
         <div className="flex items-center justify-end mt-auto">
-          <Link href={`/dashboard/projects/${project.id}`} className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition">
+          <Link 
+            href={`/dashboard/projects/${project.id}`}
+            className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+          >
             View Details
           </Link>
         </div>

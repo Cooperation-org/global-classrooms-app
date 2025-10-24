@@ -59,73 +59,71 @@ export default function WhyWeExistSection() {
         }}
       />
       {/* Animal decorations - responsive positioning */}
-      <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
-        {/* Birds - top left */}
+      <motion.div
+        className='absolute inset-0 opacity-40 pointer-events-none'
+      >
         <motion.img
           src="/vecteezy-flock-of-birds.png"
           alt="Cut out flock of birds flying"
-          className="absolute top-8 left-4 w-24 sm:w-32 md:w-36 lg:w-40"
-          style={{ zIndex: 5 }}
+          className='w-24 sm:w-32 md:w-36 lg:w-40'
+          style={{
+            position: 'absolute',
+            bottom: '85%',
+            right: '80%',
+            objectFit: 'cover',
+            zIndex: 5,
+          }}
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
         />
-        
-        {/* Hare - left side */}
         <motion.img
           src="/vecteezy-white-arctic-hare-rabbit.png"
           alt="White hare"
-          className="absolute top-1/2 -left-4 sm:left-0 w-16 sm:w-20 md:w-24 transform -translate-y-1/2"
-          style={{ zIndex: 4 }}
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 0.7 }}
+          className='w-16 sm:w-20 md:w-24'
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            right: '90%',
+            objectFit: 'cover',
+            zIndex: 5,
+          }}
         />
-        
-        {/* Hornbill - center right */}
         <motion.img
-          src="/vecteezy-hornbill.png"
-          alt="Hornbill side profile"
-          className="absolute top-1/3 right-1/4 w-20 sm:w-24 md:w-28 lg:w-32"
-          style={{ zIndex: 3 }}
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.9 }}
+          src="/vecteezy-squirrel.png"
+          alt="Squirrel side profile"
+          className='right-[50%] sm:right-[40%] w-14 sm:w-16 md:w-16 lg:w-18'
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            objectFit: 'cover',
+            zIndex: 4,
+          }}
         />
-        
-        {/* Monkey - right side */}
-        <motion.img
-          src="/vecteezy-small-monkey.png"
-          alt="Small monkey side profile in 3D"
-          className="absolute bottom-1/3 right-8 sm:right-12 md:right-16 w-16 sm:w-20 md:w-24"
-          style={{ zIndex: 2 }}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 1.1 }}
-        />
-        
-        {/* Large deer - bottom right */}
         <motion.img
           src="/vecteezy-deer.png"
           alt="Adult male deer side profile in 3D"
-          className="absolute bottom-0 right-0 w-32 sm:w-40 md:w-48 lg:w-56 h-32 sm:h-40 md:h-48 lg:h-56 object-contain"
-          style={{ zIndex: 1 }}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 1.3 }}
+          className='right-0 sm:right-[5%] md:right-[7%] lg:right-[9%] w-36 sm:w-40 md:w-48 lg:w-56 object-contain'
+          style={{
+            position: 'absolute',
+            bottom: '38%',
+            objectFit: 'cover',
+            zIndex: 1,
+          }}
         />
-        
-        {/* Young deer - bottom right, in front of large deer */}
         <motion.img
           src="/vecteezy-young-deer.png"
           alt="Little fawn side profile in 3D"
-          className="absolute bottom-4 right-16 sm:right-20 md:right-24 lg:right-28 w-20 sm:w-24 md:w-28 lg:w-32 h-20 sm:h-24 md:h-28 lg:h-32 object-contain"
-          style={{ zIndex: 2 }}
-          initial={{ opacity: 0, scale: 0.3 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 1.5 }}
+          className='right-[20%] sm:right-[15%] md:right-[17%] lg:right-[19%] w-16 sm:w-18 md:w-22 lg:w-24 object-contain'
+          style={{
+            position: 'absolute',
+            bottom: '40%',
+            objectFit: 'cover',
+            zIndex: 2,
+            pointerEvents: 'none'
+          }}
         />
-      </div>
+      </motion.div>
       
       {/* Animated SVG eco background */}
       <motion.svg

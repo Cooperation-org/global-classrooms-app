@@ -27,6 +27,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   participating_schools_count: string;
+  goals?: string[];
   total_impact: {
     trees_planted: number;
     students_engaged: number;
@@ -60,6 +61,8 @@ export interface CreateProjectRequest {
   contact_country: string;
   contact_city: string;
   goals: string[];
+  document_files?: File[];
+  media_files?: File[];
 }
 
 export interface School {
@@ -113,6 +116,8 @@ export interface CreateSchoolRequest {
   number_of_teachers: number;
   medium_of_instruction: 'english' | 'hindi' | 'french' | 'spanish' | 'german' | 'other';
   logo?: File | string;
+  creator_name: string;
+  creator_role: 'student' | 'teacher';
 }
 
 export interface SchoolsResponse {
@@ -276,6 +281,35 @@ export async function fetchFutureProjects(): Promise<Project[]> {
   }
 }
 
+export async function uploadProjectFile(projectId: string, file: File, description: string = ''): Promise<any> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', description);
+
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': getAuthHeaders().Authorization || '',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading project file:', error);
+    throw error;
+  }
+}
+
 export async function createProject(projectData: CreateProjectRequest): Promise<Project> {
   try {
     const formData = new FormData();
@@ -332,7 +366,39 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const createdProject = await response.json();
+
+    // After project is created, upload files separately
+    const uploadPromises: Promise<any>[] = [];
+
+    // Upload document files
+    if (projectData.document_files && projectData.document_files.length > 0) {
+      projectData.document_files.forEach((file) => {
+        const promise = uploadProjectFile(createdProject.id, file, 'Supporting Document');
+        uploadPromises.push(promise);
+      });
+    }
+
+    // Upload media files
+    if (projectData.media_files && projectData.media_files.length > 0) {
+      projectData.media_files.forEach((file) => {
+        const promise = uploadProjectFile(createdProject.id, file, 'Project Media');
+        uploadPromises.push(promise);
+      });
+    }
+
+    // Wait for all files to upload
+    if (uploadPromises.length > 0) {
+      try {
+        await Promise.all(uploadPromises);
+        console.log(`Successfully uploaded ${uploadPromises.length} files`);
+      } catch (uploadError) {
+        console.error('Some files failed to upload:', uploadError);
+        // Project is created, but some files failed - we still return the project
+      }
+    }
+
+    return createdProject;
   } catch (error) {
     console.error('Error creating project:', error);
     throw error;
@@ -386,6 +452,9 @@ export async function createSchool(schoolData: CreateSchoolRequest): Promise<Sch
     formData.append('number_of_students', schoolData.number_of_students.toString());
     formData.append('number_of_teachers', schoolData.number_of_teachers.toString());
     formData.append('medium_of_instruction', schoolData.medium_of_instruction);
+    formData.append('creator_name', schoolData.creator_name);
+    formData.append('creator_role', schoolData.creator_role);
+
     
     // Add logo if it's a File
     if (schoolData.logo instanceof File) {
@@ -478,6 +547,120 @@ export async function fetchProjectById(id: string): Promise<Project> {
   }
 }
 
+export async function updateProject(id: string, projectData: Partial<CreateProjectRequest>): Promise<Project> {
+  try {
+    const formData = new FormData();
+    
+    // Add all text fields if they exist
+    if (projectData.title) formData.append('title', projectData.title);
+    if (projectData.short_description) formData.append('short_description', projectData.short_description);
+    if (projectData.detailed_description) formData.append('detailed_description', projectData.detailed_description);
+    if (projectData.start_date) formData.append('start_date', projectData.start_date);
+    if (projectData.end_date) formData.append('end_date', projectData.end_date);
+    if (projectData.is_open_for_collaboration !== undefined) {
+      formData.append('is_open_for_collaboration', projectData.is_open_for_collaboration.toString());
+    }
+    if (projectData.offer_rewards !== undefined) {
+      formData.append('offer_rewards', projectData.offer_rewards.toString());
+    }
+    if (projectData.recognition_type) formData.append('recognition_type', projectData.recognition_type);
+    if (projectData.award_criteria) formData.append('award_criteria', projectData.award_criteria);
+    if (projectData.lead_school) formData.append('lead_school', projectData.lead_school);
+    if (projectData.contact_person_name) formData.append('contact_person_name', projectData.contact_person_name);
+    if (projectData.contact_person_email) formData.append('contact_person_email', projectData.contact_person_email);
+    if (projectData.contact_person_role) formData.append('contact_person_role', projectData.contact_person_role);
+    if (projectData.contact_country) formData.append('contact_country', projectData.contact_country);
+    if (projectData.contact_city) formData.append('contact_city', projectData.contact_city);
+    
+    // Add goals as JSON string if exists
+    if (projectData.goals) {
+      formData.append('goals', JSON.stringify(projectData.goals));
+    }
+    
+    // Add environmental themes as JSON string if exists
+    if (projectData.environmental_themes) {
+      formData.append('environmental_themes', JSON.stringify(projectData.environmental_themes));
+    }
+    
+    // Add cover image if it's a File
+    if (projectData.cover_image instanceof File) {
+      formData.append('cover_image', projectData.cover_image);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': getAuthHeaders().Authorization || '',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating project:', error);
+    throw error;
+  }
+}
+
+export async function joinProject(id: string): Promise<{ message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/join/`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error joining project:', error);
+    throw error;
+  }
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      let errorData: { detail?: string } = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        // Ignore JSON parsing errors for empty responses
+      }
+
+      if (response.status === 401) {
+        handleAuthError(errorData);
+      }
+
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    // DELETE requests often return 204 No Content
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    throw error;
+  }
+}
+
 export interface ProjectUpdate {
   id: string;
   title: string;
@@ -534,9 +717,35 @@ export interface ProjectGoalsResponse {
   results: ProjectGoal[];
 }
 
-export async function fetchProjectGoals(projectId: string, page: number = 1, limit: number = 10): Promise<ProjectGoalsResponse> {
+export interface FetchProjectGoalsParams {
+  page?: number;
+  limit?: number;
+  ordering?: string;
+  search?: string;
+}
+
+export async function fetchProjectGoals(
+  projectId: string, 
+  params: FetchProjectGoalsParams = {}
+): Promise<ProjectGoalsResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?page=${page}&limit=${limit}`, {
+    const { page = 1, limit = 10, ordering, search } = params;
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (ordering) {
+      queryParams.append('ordering', ordering);
+    }
+    
+    if (search) {
+      queryParams.append('search', search);
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?${queryParams.toString()}`, {
       headers: getAuthHeaders(),
     });
 
