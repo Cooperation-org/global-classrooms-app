@@ -50,6 +50,7 @@ interface Project {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('Overview');
+  const [joinLink, setJoinLink] = useState('https://join-link.example/abc123');
   const [school, setSchool] = useState<School | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAddingSubject, setIsAddingSubject] = useState(false);
@@ -61,7 +62,7 @@ export default function SettingsPage() {
     full_name: '',
     email: '',
     wallet_id: '123',
-    assigned_classes: [] as number[],
+    assigned_classes: [] as string[],
     date_of_joining: '',
     is_active: true,
     send_invite_link: false
@@ -73,7 +74,7 @@ export default function SettingsPage() {
     email: '',
     wallet_id: '123',
     gender: 'male',
-    assigned_class: 0,
+    assigned_class: '',
     date_of_joining: '',
     is_active: true,
     send_invite_link: false
@@ -350,7 +351,7 @@ export default function SettingsPage() {
         full_name: '',
         email: '',
         wallet_id: '123',
-        assigned_classes: [] as number[],
+        assigned_classes: [] as string[],
         date_of_joining: '',
         is_active: true,
         send_invite_link: false
@@ -443,7 +444,7 @@ export default function SettingsPage() {
         email: '',
         wallet_id: '123',
         gender: 'male',
-        assigned_class: 0,
+        assigned_class: '',
         date_of_joining: '',
         is_active: true,
         send_invite_link: false
@@ -824,11 +825,11 @@ export default function SettingsPage() {
                         <select
                           id="newTeacherAssignedClasses"
                           onChange={(e) => {
-                            const classId = parseInt(e.target.value);
-                            if (classId && !newTeacher.assigned_classes.includes(classId)) {
+                            const className = e.target.value;
+                            if (className && !newTeacher.assigned_classes.includes(className)) {
                               setNewTeacher(prev => ({
                                 ...prev,
-                                assigned_classes: [...prev.assigned_classes, classId]
+                                assigned_classes: [...prev.assigned_classes, className]
                               }));
                             }
                             e.target.value = '';
@@ -884,24 +885,31 @@ export default function SettingsPage() {
                         Date of Joining
                       </label>
                       <input
-                        type="text"
+                        type="date"
                         id="newTeacherJoinDate"
                         value={newTeacher.date_of_joining}
                         onChange={(e) => setNewTeacher(prev => ({ ...prev, date_of_joining: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Select date"
                       />
                     </div>
 
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="newTeacherStatus"
-                        checked={newTeacher.is_active}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, is_active: e.target.checked ? true : false }))}
-                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="newTeacherStatus" className="text-sm text-gray-700">Active Status</label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex flex-col">
+                        <label className="font-semibold text-sm text-gray-700">Status</label>
+                        <span className={`text-xs ${newTeacher.is_active ? 'text-green-700' : 'text-gray-400'}`}>
+                          {newTeacher.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Toggle Status"
+                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 ${newTeacher.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
+                        onClick={() => newTeacher.is_active ? setNewTeacher(prev => ({ ...prev, is_active: false })) :  setNewTeacher(prev => ({ ...prev, is_active: true }))}
+                      >
+                        <span
+                          className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${newTeacher.is_active ? 'translate-x-5' : ''}`}
+                        />
+                      </button>
                     </div>
 
                     <div className="flex items-center">
@@ -1074,7 +1082,7 @@ export default function SettingsPage() {
                           email: '',
                           wallet_id: '123',
                           gender: 'male',
-                          assigned_class: 0,
+                          assigned_class: '',
                           date_of_joining: '',
                           is_active: false,
                           send_invite_link: false
@@ -1157,7 +1165,7 @@ export default function SettingsPage() {
                       <select
                         id="newStudentAssignedClass"
                         value={newStudent.assigned_class}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, assigned_class: parseInt(e.target.value) }))}
+                        onChange={(e) => setNewStudent(prev => ({ ...prev, assigned_class: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         disabled={choicesLoading}
                       >
@@ -1188,24 +1196,30 @@ export default function SettingsPage() {
                         Date of Joining
                       </label>
                       <input
-                        type="text"
+                        type="date"
                         id="newStudentJoinDate"
                         value={newStudent.date_of_joining}
                         onChange={(e) => setNewStudent(prev => ({ ...prev, date_of_joining: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Select date"
                       />
                     </div>
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="newStudentStatus"
-                        checked={newStudent.is_active}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, is_active: e.target.checked ? true : false }))}
-                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="newStudentStatus" className="text-sm text-gray-700">Active Status</label>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex flex-col">
+                        <label className="font-semibold text-sm text-gray-700">Status</label>
+                        <span className={`text-xs ${newStudent.is_active ? 'text-green-700' : 'text-gray-400'}`}>
+                          {newStudent.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Toggle Status"
+                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 ${newStudent.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
+                        onClick={() => newStudent.is_active ? setNewStudent(prev => ({ ...prev, is_active: false })) :  setNewStudent(prev => ({ ...prev, is_active: true }))}
+                      >
+                        <span
+                          className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${newStudent.is_active ? 'translate-x-5' : ''}`}
+                        />
+                      </button>
                     </div>
 
                     <div className="flex items-center">
@@ -1236,7 +1250,7 @@ export default function SettingsPage() {
                             email: '',
                             wallet_id: '123',
                             gender: 'male',
-                            assigned_class: 0,
+                            assigned_class: '',
                             date_of_joining: '',
                             is_active: false,
                             send_invite_link: false
@@ -1246,6 +1260,24 @@ export default function SettingsPage() {
                       >
                         Cancel
                       </button>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">Link to Join</label>
+                      <div className="flex md:flex-col gap-2">
+                        <input
+                          type="text"
+                          value={joinLink}
+                          readOnly
+                          className="block w-full bg-[color:var(--color-base-green)] rounded-lg px-3 py-3"
+                        />
+                        <button
+                          type="button"
+                          className="max-w-sm text-sm bg-black text-white px-3 py-2 rounded-lg font-semibold hover:bg-gray-900 hover:cursor-pointer transition md:mt-2"
+                          onClick={() => navigator.clipboard.writeText(joinLink)}
+                        >
+                          Copy Link
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>

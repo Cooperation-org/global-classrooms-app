@@ -1080,7 +1080,7 @@ export const useAddUserToSchool = (schoolId: string) => {
     email: string;
     wallet_id: string;
     gender?: string;
-    assigned_classes: number;
+    assigned_classes: string;
     date_of_joining: string;
     is_active: boolean;
   }) => {
