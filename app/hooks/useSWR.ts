@@ -741,7 +741,6 @@ export const useCreateTeacher = () => {
     email?: string;
     mobile_number?: string;
     gender?: string;
-    date_of_joining?: string;
     send_invitation?: boolean;
   }) => {
     try {
@@ -1081,7 +1080,6 @@ export const useAddUserToSchool = (schoolId: string) => {
     wallet_id: string;
     gender?: string;
     assigned_classes: string;
-    date_of_joining: string;
     is_active: boolean;
   }) => {
     try {
@@ -1126,6 +1124,117 @@ export const useAddUserToSchool = (schoolId: string) => {
   };
 
   return { addUserToSchool };
+};
+
+export const useAddTeacherToSchool = (schoolId?: string) => {
+  const { mutate } = useSWRConfig();
+
+  const addTeacherToSchool = async (userData: {
+    full_name: string;
+    teacher_email: string;
+    wallet_id: string;
+    gender?: string;
+    assigned_classes: string[];
+    is_active: boolean;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools/${schoolId}/add-teacher-school/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to add teacher to school.');
+      }
+
+      const addedTeacher = await response.json();
+      
+      // Optimistically update the teachers list
+      mutate(
+        (key: string) => key.includes('/teacher-profiles/'),
+        (currentData: { teachers: Array<{ id: string; user_name: string; teacher_id: string; status: string; }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            teachers: [...(currentData.teachers || []), addedTeacher],
+            totalCount: (currentData.totalCount || 0) + 1,
+          };
+        },
+        false
+      );
+
+      return addedTeacher;
+    } catch (error) {
+      console.error('Failed to create teacher:', error);
+      throw error;
+    }
+  };
+
+  return { addTeacherToSchool };
+};
+
+
+export const useAddStudentToSchool = (schoolId?: string) => {
+  const { mutate } = useSWRConfig();
+
+  const addStudentToSchool = async (userData: {
+    full_name: string;
+    student_email: string;
+    wallet_id: string;
+    gender?: string;
+    current_class: string;
+    is_active: boolean;
+  }) => {
+    try {
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/schools/${schoolId}/add-student-school/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to add student to school.');
+      }
+
+      const addedStudent = await response.json();
+      
+      // Optimistically update the students list
+      mutate(
+        (key: string) => key.includes('/student-profiles/'),
+        (currentData: { students: Array<{ id: string; user_name: string; student_id: string; current_class: number }>; totalCount: number } | undefined) => {
+          if (!currentData) return currentData;
+          return {
+            ...currentData,
+            students: [...(currentData.students || []), addedStudent],
+            totalCount: (currentData.totalCount || 0) + 1,
+          };
+        },
+        false
+      );
+
+      return addedStudent;
+    } catch (error) {
+      console.error('Failed to create student:', error);
+      throw error;
+    }
+  };
+
+  return { addStudentToSchool };
 };
 
 // Utility function to revalidate all data

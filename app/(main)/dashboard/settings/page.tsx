@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddUserToSchool } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddTeacherToSchool, useAddStudentToSchool } from '@/app/hooks/useSWR';
 import { useAuth } from '@/app/context/AuthContext';
 import { StudentProfile, TeacherProfile } from '@/app/services/api';
 
@@ -61,9 +61,8 @@ export default function SettingsPage() {
   const [newTeacher, setNewTeacher] = useState({
     full_name: '',
     email: '',
-    wallet_id: '123',
+    wallet_id: '',
     assigned_classes: [] as string[],
-    date_of_joining: '',
     is_active: true,
     send_invite_link: false
   });
@@ -72,10 +71,9 @@ export default function SettingsPage() {
   const [newStudent, setNewStudent] = useState({
     full_name: '',
     email: '',
-    wallet_id: '123',
+    wallet_id: '',
     gender: 'male',
     assigned_class: '',
-    date_of_joining: '',
     is_active: true,
     send_invite_link: false
   });
@@ -144,6 +142,8 @@ export default function SettingsPage() {
   const { choices, isLoading: choicesLoading, error: choicesError } = usePublicClassChoices();
   const { subjects, error: subjectsError } = useSubjects(school?.id);
   const { teachers, isLoading: teachersLoading } = useTeacherProfiles();
+  const { addStudentToSchool } = useAddStudentToSchool(school?.id)
+  const { addTeacherToSchool } = useAddTeacherToSchool(school?.id)
   const { createSubject } = useCreateSubject();
   const { updateSubject } = useUpdateSubject();
   const { deleteSubject } = useDeleteSubject();
@@ -334,14 +334,12 @@ export default function SettingsPage() {
         //   status: newTeacher.status
         // });
       } else {
-          const { addUserToSchool } = useAddUserToSchool(school.id)
           // Create new teacher
-          await addUserToSchool({
+          await addTeacherToSchool({
             full_name: newTeacher.full_name,
-            email: newTeacher.email,
+            teacher_email: newTeacher.email,
             wallet_id: newTeacher.wallet_id,
-            assigned_classes: newTeacher.assigned_classes[0],
-            date_of_joining: newTeacher.date_of_joining,
+            assigned_classes: newTeacher.assigned_classes,
             is_active: newTeacher.is_active
           });
       }
@@ -350,9 +348,9 @@ export default function SettingsPage() {
       setNewTeacher({
         full_name: '',
         email: '',
-        wallet_id: '123',
+        wallet_id: '',
         assigned_classes: [] as string[],
-        date_of_joining: '',
+  
         is_active: true,
         send_invite_link: false
       });
@@ -425,15 +423,13 @@ export default function SettingsPage() {
         //   parent_phone: newStudent.parent_phone
         // });
       } else {
-        const { addUserToSchool } = useAddUserToSchool(school.id)
         // Create new student
-        await addUserToSchool({
+        await addStudentToSchool({
           full_name: newStudent.full_name,
-          email: newStudent.email,
+          student_email: newStudent.email,
           wallet_id: newStudent.wallet_id,
           gender: newStudent.gender,
-          assigned_classes: newStudent.assigned_class,
-          date_of_joining: newStudent.date_of_joining,
+          current_class: newStudent.assigned_class,
           is_active: newStudent.is_active
         });
       }
@@ -442,10 +438,10 @@ export default function SettingsPage() {
       setNewStudent({
         full_name: '',
         email: '',
-        wallet_id: '123',
+        wallet_id: '',
         gender: 'male',
         assigned_class: '',
-        date_of_joining: '',
+  
         is_active: true,
         send_invite_link: false
       });
@@ -757,9 +753,9 @@ export default function SettingsPage() {
                         setNewTeacher({
                           full_name: '',
                           email: '',
-                          wallet_id: '123',
+                          wallet_id: '',
                           assigned_classes: [],
-                          date_of_joining: '',
+                    
                           is_active: false,
                           send_invite_link: false
                         });
@@ -879,20 +875,6 @@ export default function SettingsPage() {
                         </div>
                       )}
                     </div>
-
-                    <div>
-                      <label htmlFor="newTeacherJoinDate" className="block text-sm font-medium text-gray-700 mb-1">
-                        Date of Joining
-                      </label>
-                      <input
-                        type="date"
-                        id="newTeacherJoinDate"
-                        value={newTeacher.date_of_joining}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, date_of_joining: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex flex-col">
                         <label className="font-semibold text-sm text-gray-700">Status</label>
@@ -903,7 +885,7 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         aria-label="Toggle Status"
-                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 ${newTeacher.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
+                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 hover:cursor-pointer ${newTeacher.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
                         onClick={() => newTeacher.is_active ? setNewTeacher(prev => ({ ...prev, is_active: false })) :  setNewTeacher(prev => ({ ...prev, is_active: true }))}
                       >
                         <span
@@ -926,7 +908,7 @@ export default function SettingsPage() {
                     <div className="flex gap-3 pt-4 border-t border-gray-200">
                       <button
                         type="submit"
-                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition-colors font-medium"
                       >
                         {editingTeacher ? 'Update Teacher' : 'Add Teacher'}
                       </button>
@@ -938,14 +920,14 @@ export default function SettingsPage() {
                           setNewTeacher({
                             full_name: '',
                             email: '',
-                            wallet_id: '123',
+                            wallet_id: '',
                             assigned_classes: [],
-                            date_of_joining: '',
+                      
                             is_active: false,
                             send_invite_link: false
                           });
                         }}
-                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 hover:cursor-pointer transition-colors font-medium"
                       >
                         Cancel
                       </button>
@@ -1080,10 +1062,10 @@ export default function SettingsPage() {
                         setNewStudent({
                           full_name: '',
                           email: '',
-                          wallet_id: '123',
+                          wallet_id: '',
                           gender: 'male',
                           assigned_class: '',
-                          date_of_joining: '',
+                    
                           is_active: false,
                           send_invite_link: false
                         });
@@ -1190,19 +1172,6 @@ export default function SettingsPage() {
               </span>
             )}
           </div>
-
-                    <div>
-                      <label htmlFor="newStudentJoinDate" className="block text-sm font-medium text-gray-700 mb-1">
-                        Date of Joining
-                      </label>
-                      <input
-                        type="date"
-                        id="newStudentJoinDate"
-                        value={newStudent.date_of_joining}
-                        onChange={(e) => setNewStudent(prev => ({ ...prev, date_of_joining: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 bg-[color:var(--color-base-green)] placeholder-[color:var(--color-text-green)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex flex-col">
                         <label className="font-semibold text-sm text-gray-700">Status</label>
@@ -1213,7 +1182,7 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         aria-label="Toggle Status"
-                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 ${newStudent.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
+                        className={`w-12 h-7 flex items-center rounded-full p-1 transition-colors duration-200 hover:cursor-pointer ${newStudent.is_active ? 'bg-green-400' : 'bg-gray-300'}`}
                         onClick={() => newStudent.is_active ? setNewStudent(prev => ({ ...prev, is_active: false })) :  setNewStudent(prev => ({ ...prev, is_active: true }))}
                       >
                         <span
@@ -1236,7 +1205,7 @@ export default function SettingsPage() {
                     <div className="flex gap-3 pt-4 border-t border-gray-200">
                       <button
                         type="submit"
-                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                        className="flex-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 hover:cursor-pointer transition-colors font-medium"
                       >
                         {editingStudent ? 'Update Student' : 'Add Student'}
                       </button>
@@ -1248,36 +1217,18 @@ export default function SettingsPage() {
                           setNewStudent({
                             full_name: '',
                             email: '',
-                            wallet_id: '123',
+                            wallet_id: '',
                             gender: 'male',
                             assigned_class: '',
-                            date_of_joining: '',
+                      
                             is_active: false,
                             send_invite_link: false
                           });
                         }}
-                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 hover:cursor-pointer transition-colors font-medium"
                       >
                         Cancel
                       </button>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">Link to Join</label>
-                      <div className="flex md:flex-col gap-2">
-                        <input
-                          type="text"
-                          value={joinLink}
-                          readOnly
-                          className="block w-full bg-[color:var(--color-base-green)] rounded-lg px-3 py-3"
-                        />
-                        <button
-                          type="button"
-                          className="max-w-sm text-sm bg-black text-white px-3 py-2 rounded-lg font-semibold hover:bg-gray-900 hover:cursor-pointer transition md:mt-2"
-                          onClick={() => navigator.clipboard.writeText(joinLink)}
-                        >
-                          Copy Link
-                        </button>
-                      </div>
                     </div>
                   </form>
                 </div>
