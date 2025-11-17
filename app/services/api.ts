@@ -1,5 +1,276 @@
 import { ApiResponse } from '@/app/types';
 
+// ============================================================================
+// API Configuration & Utilities
+// ============================================================================
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+/**
+ * Get authentication headers for API requests
+ */
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+}
+
+/**
+ * Handle authentication errors (401)
+ */
+function handleAuthError(errorData: unknown): void {
+  const error = errorData as { status_code?: number; detail?: string };
+  
+  if (error.status_code === 401 || !error.status_code) {
+    // Clear invalid tokens
+    localStorage.removeItem('access_token');
+    sessionStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    
+    // Only redirect if we're not already on auth pages
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/signin') && !currentPath.includes('/signup')) {
+        window.location.href = '/signin';
+      }
+    }
+  }
+  
+  throw error;
+}
+
+/**
+ * Extract field errors from API error response
+ */
+function extractFieldErrors(errorData: { details?: Record<string, unknown> }): string[] {
+  const fieldErrors: string[] = [];
+  
+  if (!errorData.details) return fieldErrors;
+  
+  const fieldLabels: Record<string, string> = {
+    user: 'User',
+    email: 'Email',
+    assigned_classes: 'Classes',
+    assigned_class: 'Class',
+    teacher_role: 'Role',
+    student_id: 'Student ID',
+    parent_name: 'Parent Name',
+    parent_email: 'Parent Email',
+    parent_phone: 'Parent Phone',
+  };
+  
+  Object.entries(errorData.details).forEach(([field, error]) => {
+    const label = fieldLabels[field] || field.charAt(0).toUpperCase() + field.slice(1);
+    const message = Array.isArray(error) ? error[0] : String(error);
+    fieldErrors.push(`${label}: ${message}`);
+  });
+  
+  return fieldErrors;
+}
+
+/**
+ * Format error message from API error response
+ */
+function formatErrorMessage(
+  errorData: { detail?: string; message?: string; details?: Record<string, unknown> },
+  defaultMessage: string = 'An error occurred'
+): string {
+  // Try detail or message first
+  if (errorData.detail) return errorData.detail;
+  if (errorData.message) return errorData.message;
+  
+  // Extract field-specific errors
+  const fieldErrors = extractFieldErrors(errorData);
+  if (fieldErrors.length > 0) {
+    return fieldErrors.join('. ');
+  }
+  
+  return defaultMessage;
+}
+
+/**
+ * Handle API response errors with consistent error handling
+ */
+function handleApiError(
+  response: Response,
+  errorData: unknown,
+  context: string
+): never {
+  const error = errorData as { detail?: string; message?: string; details?: Record<string, unknown> };
+  
+  // Handle authentication errors
+  if (response.status === 401) {
+    handleAuthError(errorData);
+    throw new Error('Authentication required. Please log in again.');
+  }
+  
+  // Handle validation errors (400)
+  if (response.status === 400) {
+    const message = formatErrorMessage(error, 'Invalid request data');
+    throw new Error(message);
+  }
+  
+  // Handle permission errors (403)
+  if (response.status === 403) {
+    throw new Error(error.detail || 'You do not have permission to perform this action');
+  }
+  
+  // Handle not found errors (404)
+  if (response.status === 404) {
+    throw new Error(error.detail || 'Resource not found');
+  }
+  
+  // Generic error
+  const message = formatErrorMessage(error, `HTTP error! status: ${response.status}`);
+  throw new Error(message);
+}
+
+/**
+ * Generic API request wrapper with error handling
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  context: string = 'API request'
+): Promise<T> {
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  
+  const config: RequestInit = {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...options.headers,
+    },
+  };
+  
+  try {
+    const response = await fetch(url, config);
+    
+    // Handle non-JSON responses
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType?.includes('application/json');
+    
+    if (!response.ok) {
+      const errorData = isJson ? await response.json() : await response.text();
+      handleApiError(response, errorData, context);
+    }
+    
+    // Handle empty responses
+    if (response.status === 204 || !isJson) {
+      return {} as T;
+    }
+    
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`${context} failed: ${String(error)}`);
+  }
+}
+
+/**
+ * GET request helper
+ */
+async function apiGet<T>(endpoint: string, context?: string): Promise<T> {
+  return apiRequest<T>(endpoint, { method: 'GET' }, context);
+}
+
+/**
+ * POST request helper
+ */
+async function apiPost<T>(
+  endpoint: string,
+  data?: unknown,
+  context?: string,
+  useFormData: boolean = false
+): Promise<T> {
+  const options: RequestInit = {
+    method: 'POST',
+  };
+  
+  if (data) {
+    if (useFormData && data instanceof FormData) {
+      // Remove Content-Type header for FormData (browser sets it with boundary)
+      const headers = getAuthHeaders();
+      delete headers['Content-Type'];
+      options.headers = headers;
+      options.body = data;
+    } else {
+      options.body = JSON.stringify(data);
+    }
+  }
+  
+  return apiRequest<T>(endpoint, options, context);
+}
+
+/**
+ * PUT request helper
+ */
+async function apiPut<T>(endpoint: string, data?: unknown, context?: string): Promise<T> {
+  return apiRequest<T>(
+    endpoint,
+    {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    },
+    context
+  );
+}
+
+/**
+ * PATCH request helper
+ */
+async function apiPatch<T>(endpoint: string, data?: unknown, context?: string): Promise<T> {
+  return apiRequest<T>(
+    endpoint,
+    {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    },
+    context
+  );
+}
+
+/**
+ * DELETE request helper
+ */
+async function apiDelete<T>(endpoint: string, context?: string): Promise<T> {
+  return apiRequest<T>(endpoint, { method: 'DELETE' }, context);
+}
+
+/**
+ * Helper to build FormData from object
+ */
+function buildFormData(data: Record<string, unknown>): FormData {
+  const formData = new FormData();
+  
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    
+    if (value instanceof File) {
+      formData.append(key, value);
+    } else if (typeof value === 'object' && !(value instanceof Date)) {
+      formData.append(key, JSON.stringify(value));
+    } else {
+      formData.append(key, String(value));
+    }
+  });
+  
+  return formData;
+}
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
 export interface Project {
   id: string;
   title: string;
@@ -151,503 +422,237 @@ export interface SchoolDetails extends School {
   project_count: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('auth_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-};
-
-const handleAuthError = (error: { status_code?: number; detail?: string }) => {
-  if (error.status_code === 401) {
-    // Clear invalid tokens
-    localStorage.removeItem('access_token');
-    sessionStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    
-    // Only redirect if we're not already on auth pages
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/signin') && !currentPath.includes('/signup')) {
-        window.location.href = '/signin';
-      }
-    }
-  }
-  throw error;
-};
+// ============================================================================
+// Project API Functions
+// ============================================================================
 
 export async function fetchProjects(page: number = 1, limit: number = 10): Promise<ProjectsResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?page=${page}&limit=${limit}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    throw error;
-  }
+  return apiGet<ProjectsResponse>(
+    `/projects/?page=${page}&limit=${limit}`,
+    'fetching projects'
+  );
 }
 
 export async function fetchFeaturedProjects(): Promise<Project[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?featured=true&limit=6`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.results;
-  } catch (error) {
-    console.error('Error fetching featured projects:', error);
-    throw error;
-  }
+  const data = await apiGet<ProjectsResponse>(
+    '/projects/?featured=true&limit=6',
+    'fetching featured projects'
+  );
+  return data.results;
 }
 
 export async function fetchCompletedProjects(): Promise<Project[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?status=completed&limit=4`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.results;
-  } catch (error) {
-    console.error('Error fetching completed projects:', error);
-    throw error;
-  }
+  const data = await apiGet<ProjectsResponse>(
+    '/projects/?status=completed&limit=4',
+    'fetching completed projects'
+  );
+  return data.results;
 }
 
 export async function fetchOpenCollaborations(): Promise<Project[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?is_open_for_collaboration=true&limit=4`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.results;
-  } catch (error) {
-    console.error('Error fetching open collaborations:', error);
-    throw error;
-  }
+  const data = await apiGet<ProjectsResponse>(
+    '/projects/?is_open_for_collaboration=true&limit=4',
+    'fetching open collaborations'
+  );
+  return data.results;
 }
 
 export async function fetchFutureProjects(): Promise<Project[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?limit=20`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const currentDate = new Date();
-    
-    // Filter projects that haven't started yet (future projects)
-    const futureProjects = data.results.filter((project: Project) => {
-      const startDate = new Date(project.start_date);
-      return startDate > currentDate;
-    });
-
-    return futureProjects;
-  } catch (error) {
-    console.error('Error fetching future projects:', error);
-    throw error;
-  }
+  const data = await apiGet<ProjectsResponse>(
+    '/projects/?limit=20',
+    'fetching future projects'
+  );
+  
+  const currentDate = new Date();
+  return data.results.filter((project: Project) => {
+    const startDate = new Date(project.start_date);
+    return startDate > currentDate;
+  });
 }
 
-export async function uploadProjectFile(projectId: string, file: File, description: string = ''): Promise<any> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('description', description);
+export async function uploadProjectFile(projectId: string, file: File, description: string = ''): Promise<ProjectFile> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('description', description);
 
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': getAuthHeaders().Authorization || '',
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error uploading project file:', error);
-    throw error;
-  }
+  return apiPost<ProjectFile>(
+    `/projects/${projectId}/files/`,
+    formData,
+    'uploading project file',
+    true
+  );
 }
 
 export async function fetchProjectFiles(projectId: string, page: number = 1, limit: number = 50): Promise<ProjectFile[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/?page=${page}&limit=${limit}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data: ProjectFilesResponse | ProjectFile[] = await response.json();
-    // Some backends may return a paginated object, others a raw list
-    // Normalize to an array of ProjectFile
-    // @ts-ignore - tolerate either shape
-    return Array.isArray(data) ? (data as ProjectFile[]) : ((data as ProjectFilesResponse).results || []);
-  } catch (error) {
-    console.error('Error fetching project files:', error);
-    throw error;
-  }
+  const data = await apiGet<ProjectFilesResponse | ProjectFile[]>(
+    `/projects/${projectId}/files/?page=${page}&limit=${limit}`,
+    'fetching project files'
+  );
+  
+  // Normalize response: handle both paginated and array responses
+  return Array.isArray(data) ? data : (data as ProjectFilesResponse).results || [];
 }
 
 export async function createProject(projectData: CreateProjectRequest): Promise<Project> {
-  try {
-    const formData = new FormData();
-    
-    // Add all text fields
-    formData.append('title', projectData.title);
-    formData.append('short_description', projectData.short_description);
-    formData.append('detailed_description', projectData.detailed_description);
-    formData.append('start_date', projectData.start_date);
-    formData.append('end_date', projectData.end_date);
-    formData.append('is_open_for_collaboration', projectData.is_open_for_collaboration.toString());
-    formData.append('offer_rewards', projectData.offer_rewards.toString());
-    formData.append('recognition_type', projectData.recognition_type);
-    formData.append('award_criteria', projectData.award_criteria);
-    formData.append('lead_school', projectData.lead_school);
-    formData.append('contact_person_name', projectData.contact_person_name);
-    formData.append('contact_person_email', projectData.contact_person_email);
-    formData.append('contact_person_role', projectData.contact_person_role);
-    formData.append('contact_country', projectData.contact_country);
-    formData.append('contact_city', projectData.contact_city);
-    
-    // Add goals as JSON string
-    formData.append('goals', JSON.stringify(projectData.goals));
-    
-    // Add environmental themes as JSON string
-    formData.append('environmental_themes', JSON.stringify(projectData.environmental_themes));
-    
-    // Add cover image if it's a File
-    if (projectData.cover_image instanceof File) {
-      formData.append('cover_image', projectData.cover_image);
-      console.log('Cover image added to FormData:', projectData.cover_image.name, projectData.cover_image.size);
-    } else {
-      console.log('No cover image file found:', projectData.cover_image);
-    }
-
-    console.log('FormData entries:');
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
-    const response = await fetch(`${API_BASE_URL}/projects/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': getAuthHeaders().Authorization || '',
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const createdProject = await response.json();
-
-    // After project is created, upload files separately
-    const uploadPromises: Promise<any>[] = [];
-
-    // Upload document files
-    if (projectData.document_files && projectData.document_files.length > 0) {
-      projectData.document_files.forEach((file) => {
-        const promise = uploadProjectFile(createdProject.id, file, 'Supporting Document');
-        uploadPromises.push(promise);
-      });
-    }
-
-    // Upload media files
-    if (projectData.media_files && projectData.media_files.length > 0) {
-      projectData.media_files.forEach((file) => {
-        const promise = uploadProjectFile(createdProject.id, file, 'Project Media');
-        uploadPromises.push(promise);
-      });
-    }
-
-    // Wait for all files to upload
-    if (uploadPromises.length > 0) {
-      try {
-        await Promise.all(uploadPromises);
-        console.log(`Successfully uploaded ${uploadPromises.length} files`);
-      } catch (uploadError) {
-        console.error('Some files failed to upload:', uploadError);
-        // Project is created, but some files failed - we still return the project
-      }
-    }
-
-    return createdProject;
-  } catch (error) {
-    console.error('Error creating project:', error);
-    throw error;
+  const formData = new FormData();
+  
+  // Add all text fields
+  Object.entries({
+    title: projectData.title,
+    short_description: projectData.short_description,
+    detailed_description: projectData.detailed_description,
+    start_date: projectData.start_date,
+    end_date: projectData.end_date,
+    is_open_for_collaboration: projectData.is_open_for_collaboration.toString(),
+    offer_rewards: projectData.offer_rewards.toString(),
+    recognition_type: projectData.recognition_type,
+    award_criteria: projectData.award_criteria,
+    lead_school: projectData.lead_school,
+    contact_person_name: projectData.contact_person_name,
+    contact_person_email: projectData.contact_person_email,
+    contact_person_role: projectData.contact_person_role,
+    contact_country: projectData.contact_country,
+    contact_city: projectData.contact_city,
+    goals: JSON.stringify(projectData.goals),
+    environmental_themes: JSON.stringify(projectData.environmental_themes),
+  }).forEach(([key, value]) => {
+    if (value) formData.append(key, value);
+  });
+  
+  // Add cover image if it's a File
+  if (projectData.cover_image instanceof File) {
+    formData.append('cover_image', projectData.cover_image);
   }
+
+  const createdProject = await apiPost<Project>(
+    '/projects/',
+    formData,
+    'creating project',
+    true
+  );
+
+  // Upload additional files separately
+  const uploadPromises: Promise<ProjectFile>[] = [];
+  
+  if (projectData.document_files?.length) {
+    projectData.document_files.forEach((file) => {
+      uploadPromises.push(uploadProjectFile(createdProject.id, file, 'Supporting Document'));
+    });
+  }
+  
+  if (projectData.media_files?.length) {
+    projectData.media_files.forEach((file) => {
+      uploadPromises.push(uploadProjectFile(createdProject.id, file, 'Project Media'));
+    });
+  }
+
+  // Upload files in background (don't fail project creation if files fail)
+  if (uploadPromises.length > 0) {
+    Promise.all(uploadPromises).catch((error) => {
+      console.error('Some files failed to upload:', error);
+    });
+  }
+
+  return createdProject;
 }
 
+// ============================================================================
+// School API Functions
+// ============================================================================
+
 export async function fetchSchools(page: number = 1, limit: number = 10): Promise<SchoolsResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/schools/?page=${page}&limit=${limit}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching schools:', error);
-    throw error;
-  }
+  return apiGet<SchoolsResponse>(
+    `/schools/?page=${page}&limit=${limit}`,
+    'fetching schools'
+  );
 }
 
 export async function createSchool(schoolData: CreateSchoolRequest): Promise<School> {
-  try {
-    const formData = new FormData();
-    
-    // Add all text fields
-    formData.append('name', schoolData.name);
-    formData.append('overview', schoolData.overview);
-    formData.append('institution_type', schoolData.institution_type);
-    formData.append('affiliation', schoolData.affiliation);
-    formData.append('registration_number', schoolData.registration_number);
-    formData.append('year_of_establishment', schoolData.year_of_establishment.toString());
-    formData.append('address_line_1', schoolData.address_line_1);
-    formData.append('address_line_2', schoolData.address_line_2);
-    formData.append('city', schoolData.city);
-    formData.append('state', schoolData.state);
-    formData.append('postal_code', schoolData.postal_code);
-    formData.append('country', schoolData.country);
-    formData.append('phone_number', schoolData.phone_number);
-    formData.append('email', schoolData.email);
-    formData.append('website', schoolData.website);
-    formData.append('principal_name', schoolData.principal_name);
-    formData.append('principal_email', schoolData.principal_email);
-    formData.append('principal_phone', schoolData.principal_phone);
-    formData.append('number_of_students', schoolData.number_of_students.toString());
-    formData.append('number_of_teachers', schoolData.number_of_teachers.toString());
-    formData.append('medium_of_instruction', schoolData.medium_of_instruction);
-    formData.append('creator_name', schoolData.creator_name);
-    formData.append('creator_role', schoolData.creator_role);
-
-    
-    // Add logo if it's a File
-    if (schoolData.logo instanceof File) {
-      formData.append('logo', schoolData.logo);
-    }
-
-    const response = await fetch(`${API_BASE_URL}/schools/`, {
-      method: 'POST',
-      headers: {
-        'Authorization': getAuthHeaders().Authorization || '',
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating school:', error);
-    throw error;
+  const formData = new FormData();
+  
+  // Add all text fields
+  Object.entries({
+    name: schoolData.name,
+    overview: schoolData.overview,
+    institution_type: schoolData.institution_type,
+    affiliation: schoolData.affiliation,
+    registration_number: schoolData.registration_number,
+    year_of_establishment: schoolData.year_of_establishment.toString(),
+    address_line_1: schoolData.address_line_1,
+    address_line_2: schoolData.address_line_2,
+    city: schoolData.city,
+    state: schoolData.state,
+    postal_code: schoolData.postal_code,
+    country: schoolData.country,
+    phone_number: schoolData.phone_number,
+    email: schoolData.email,
+    website: schoolData.website,
+    principal_name: schoolData.principal_name,
+    principal_email: schoolData.principal_email,
+    principal_phone: schoolData.principal_phone,
+    number_of_students: schoolData.number_of_students.toString(),
+    number_of_teachers: schoolData.number_of_teachers.toString(),
+    medium_of_instruction: schoolData.medium_of_instruction,
+    creator_name: schoolData.creator_name,
+    creator_role: schoolData.creator_role,
+  }).forEach(([key, value]) => {
+    if (value) formData.append(key, value);
+  });
+  
+  // Add logo if it's a File
+  if (schoolData.logo instanceof File) {
+    formData.append('logo', schoolData.logo);
   }
+
+  return apiPost<School>('/schools/', formData, 'creating school', true);
 }
 
 export async function fetchSchoolById(id: string): Promise<SchoolDetails> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/schools/${id}/`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching school details:', error);
-    throw error;
-  }
+  return apiGet<SchoolDetails>(`/schools/${id}/`, 'fetching school details');
 }
 
 export async function fetchProjectsBySchool(schoolId: string, page: number = 1, limit: number = 10): Promise<ProjectsResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/?lead_school=${schoolId}&page=${page}&limit=${limit}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching projects by school:', error);
-    throw error;
-  }
+  return apiGet<ProjectsResponse>(
+    `/projects/?lead_school=${schoolId}&page=${page}&limit=${limit}`,
+    'fetching projects by school'
+  );
 }
 
 export async function fetchProjectById(id: string): Promise<Project> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching project details:', error);
-    throw error;
-  }
+  return apiGet<Project>(`/projects/${id}/`, 'fetching project details');
 }
 
 export async function updateProject(id: string, projectData: Partial<CreateProjectRequest>): Promise<Project> {
-  try {
-    const formData = new FormData();
+  const formData = new FormData();
+  
+  // Add fields that exist
+  Object.entries(projectData).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
     
-    // Add all text fields if they exist
-    if (projectData.title) formData.append('title', projectData.title);
-    if (projectData.short_description) formData.append('short_description', projectData.short_description);
-    if (projectData.detailed_description) formData.append('detailed_description', projectData.detailed_description);
-    if (projectData.start_date) formData.append('start_date', projectData.start_date);
-    if (projectData.end_date) formData.append('end_date', projectData.end_date);
-    if (projectData.is_open_for_collaboration !== undefined) {
-      formData.append('is_open_for_collaboration', projectData.is_open_for_collaboration.toString());
+    if (key === 'cover_image' && value instanceof File) {
+      formData.append(key, value);
+    } else if (key === 'goals' || key === 'environmental_themes') {
+      formData.append(key, JSON.stringify(value));
+    } else if (key === 'is_open_for_collaboration' || key === 'offer_rewards') {
+      formData.append(key, String(value));
+    } else if (typeof value === 'string' || typeof value === 'number') {
+      formData.append(key, String(value));
     }
-    if (projectData.offer_rewards !== undefined) {
-      formData.append('offer_rewards', projectData.offer_rewards.toString());
-    }
-    if (projectData.recognition_type) formData.append('recognition_type', projectData.recognition_type);
-    if (projectData.award_criteria) formData.append('award_criteria', projectData.award_criteria);
-    if (projectData.lead_school) formData.append('lead_school', projectData.lead_school);
-    if (projectData.contact_person_name) formData.append('contact_person_name', projectData.contact_person_name);
-    if (projectData.contact_person_email) formData.append('contact_person_email', projectData.contact_person_email);
-    if (projectData.contact_person_role) formData.append('contact_person_role', projectData.contact_person_role);
-    if (projectData.contact_country) formData.append('contact_country', projectData.contact_country);
-    if (projectData.contact_city) formData.append('contact_city', projectData.contact_city);
-    
-    // Add goals as JSON string if exists
-    if (projectData.goals) {
-      formData.append('goals', JSON.stringify(projectData.goals));
-    }
-    
-    // Add environmental themes as JSON string if exists
-    if (projectData.environmental_themes) {
-      formData.append('environmental_themes', JSON.stringify(projectData.environmental_themes));
-    }
-    
-    // Add cover image if it's a File
-    if (projectData.cover_image instanceof File) {
-      formData.append('cover_image', projectData.cover_image);
-    }
+  });
 
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+  return apiRequest<Project>(
+    `/projects/${id}/`,
+    {
       method: 'PATCH',
-      headers: {
-        'Authorization': getAuthHeaders().Authorization || '',
-      },
       body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating project:', error);
-    throw error;
-  }
+      headers: (() => {
+        const headers = getAuthHeaders();
+        delete headers['Content-Type']; // Let browser set boundary for FormData
+        return headers;
+      })(),
+    },
+    'updating project'
+  );
 }
 
 /**
@@ -657,78 +662,19 @@ export async function updateProject(id: string, projectData: Partial<CreateProje
  * @throws Error if user is not a teacher or school is already participating
  */
 export async function joinProject(id: string, schoolId?: string): Promise<{ message: string }> {
-  try {
-    // Validate school ID is provided
-    if (!schoolId) {
-      throw new Error('School ID is required to join a project. Only teachers can join projects on behalf of their school.');
-    }
-
-    // Prepare request body with school_id
-    const headers = {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    };
-
-    const body = JSON.stringify({
-      school_id: schoolId,
-    });
-
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/join/`, {
-      method: 'POST',
-      headers,
-      body,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      // Handle teacher permission errors
-      if (response.status === 403) {
-        throw new Error(errorData.detail || 'You do not have permission to join this project. Only teachers can join projects on behalf of their school.');
-      }
-      // Handle already joined errors
-      if (response.status === 400 && errorData.detail?.includes('already')) {
-        throw new Error('Your school is already participating in this project.');
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error joining project:', error);
-    throw error;
+  if (!schoolId) {
+    throw new Error('School ID is required to join a project. Only teachers can join projects on behalf of their school.');
   }
+
+  return apiPost<{ message: string }>(
+    `/projects/${id}/join/`,
+    { school_id: schoolId },
+    'joining project'
+  );
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      let errorData: { detail?: string } = {};
-      try {
-        errorData = await response.json();
-      } catch {
-        // Ignore JSON parsing errors for empty responses
-      }
-
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    // DELETE requests often return 204 No Content
-  } catch (error) {
-    console.error('Error deleting project:', error);
-    throw error;
-  }
+  await apiDelete<void>(`/projects/${id}/`, 'deleting project');
 }
 
 export interface ProjectUpdate {
@@ -750,24 +696,10 @@ export interface ProjectUpdatesResponse {
 }
 
 export async function fetchProjectUpdates(projectId: string, page: number = 1, limit: number = 10): Promise<ProjectUpdatesResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/updates/?page=${page}&limit=${limit}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching project updates:', error);
-    throw error;
-  }
+  return apiGet<ProjectUpdatesResponse>(
+    `/projects/${projectId}/updates/?page=${page}&limit=${limit}`,
+    'fetching project updates'
+  );
 }
 
 export interface ProjectGoal {
@@ -798,40 +730,20 @@ export async function fetchProjectGoals(
   projectId: string, 
   params: FetchProjectGoalsParams = {}
 ): Promise<ProjectGoalsResponse> {
-  try {
-    const { page = 1, limit = 10, ordering, search } = params;
-    
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-    });
-    
-    if (ordering) {
-      queryParams.append('ordering', ordering);
-    }
-    
-    if (search) {
-      queryParams.append('search', search);
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/goals/?${queryParams.toString()}`, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching project goals:', error);
-    throw error;
-  }
+  const { page = 1, limit = 10, ordering, search } = params;
+  
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  if (ordering) queryParams.append('ordering', ordering);
+  if (search) queryParams.append('search', search);
+  
+  return apiGet<ProjectGoalsResponse>(
+    `/projects/${projectId}/goals/?${queryParams.toString()}`,
+    'fetching project goals'
+  );
 }
 
 export interface AssignedSubject {
@@ -864,6 +776,26 @@ export interface TeacherProfile {
   join_link: string;
 }
 
+// Add Teacher to School Request/Response
+export interface AddTeacherToSchoolRequest {
+  email: string;
+  teacher_role: 'class_teacher' | 'subject_teacher' | 'admin';
+  assigned_classes: number[];
+}
+
+export interface AddTeacherToSchoolResponse {
+  message: string;
+  teacher_profile: TeacherProfile;
+  school_membership: {
+    id: string;
+    school: string;
+    user: string;
+    role: 'teacher' | 'student';
+    status: 'active' | 'inactive';
+    joined_at: string;
+  };
+}
+
 export interface TeacherProfilesResponse {
   count: number;
   next: string | null;
@@ -872,29 +804,19 @@ export interface TeacherProfilesResponse {
 }
 
 export async function fetchTeacherProfiles(schoolId?: string, page: number = 1, limit: number = 10): Promise<TeacherProfilesResponse> {
-  try {
-    let url = `${API_BASE_URL}/teacher-profiles/?page=${page}&limit=${limit}`;
-    if (schoolId) {
-      url += `&school=${schoolId}`;
-    }
-
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching teacher profiles:', error);
-    throw error;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  if (schoolId) {
+    queryParams.append('school', schoolId);
   }
+  
+  return apiGet<TeacherProfilesResponse>(
+    `/teacher-profiles/?${queryParams.toString()}`,
+    'fetching teacher profiles'
+  );
 }
 
 export interface StudentProfile {
@@ -912,6 +834,29 @@ export interface StudentProfile {
   enrollment_date: string;
 }
 
+// Add Student to School Request/Response
+export interface AddStudentToSchoolRequest {
+  email: string;
+  assigned_class: number;
+  student_id?: string;
+  parent_name?: string;
+  parent_email?: string;
+  parent_phone?: string;
+}
+
+export interface AddStudentToSchoolResponse {
+  message: string;
+  student_profile: StudentProfile;
+  school_membership: {
+    id: string;
+    school: string;
+    user: string;
+    role: 'teacher' | 'student';
+    status: 'active' | 'inactive';
+    joined_at: string;
+  };
+}
+
 export interface StudentProfilesResponse {
   count: number;
   next: string | null;
@@ -920,67 +865,81 @@ export interface StudentProfilesResponse {
 }
 
 export async function fetchStudentProfiles(schoolId?: string, page: number = 1, limit: number = 10): Promise<StudentProfilesResponse> {
-  try {
-    let url = `${API_BASE_URL}/student-profiles/?page=${page}&limit=${limit}`;
-    if (schoolId) {
-      url += `&school=${schoolId}`;
-    }
-
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) {
-        handleAuthError(errorData);
-      }
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching student profiles:', error);
-    throw error;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  if (schoolId) {
+    queryParams.append('school', schoolId);
   }
+  
+  return apiGet<StudentProfilesResponse>(
+    `/student-profiles/?${queryParams.toString()}`,
+    'fetching student profiles'
+  );
 }
 
+/**
+ * Add a teacher to a school
+ * Creates/activates SchoolMembership and creates TeacherProfile with class assignments
+ * 
+ * Backend Requirements:
+ * - The serializer should accept 'email' and look up the user
+ * - The user must exist and have role 'teacher'
+ * - All assigned_classes IDs must exist in the database
+ * - The user must not already be a member of the school (or membership should be activated)
+ * 
+ * @param schoolId - The school ID to add the teacher to
+ * @param data - Teacher data including email, role, and assigned classes
+ * @returns Response with teacher profile and school membership
+ */
+export async function addTeacherToSchool(
+  schoolId: string,
+  data: AddTeacherToSchoolRequest
+): Promise<AddTeacherToSchoolResponse> {
+  return apiPost<AddTeacherToSchoolResponse>(
+    `/schools/${schoolId}/add-teacher-school/`,
+    data,
+    'adding teacher to school'
+  );
+}
+
+/**
+ * Add a student to a school
+ * Creates/activates SchoolMembership and creates StudentProfile with class assignment
+ * 
+ * Backend Requirements:
+ * - The serializer should accept 'email' and look up the user
+ * - The user must exist and have role 'student'
+ * - The assigned_class ID must exist in the database
+ * - The user must not already be a member of the school (or membership should be activated)
+ * 
+ * @param schoolId - The school ID to add the student to
+ * @param data - Student data including email, assigned class, and optional parent info
+ * @returns Response with student profile and school membership
+ */
+export async function addStudentToSchool(
+  schoolId: string,
+  data: AddStudentToSchoolRequest
+): Promise<AddStudentToSchoolResponse> {
+  return apiPost<AddStudentToSchoolResponse>(
+    `/schools/${schoolId}/add-student-school/`,
+    data,
+    'adding student to school'
+  );
+}
+
+// ============================================================================
 // User Profile API
+// ============================================================================
 
 export async function fetchUserProfile(): Promise<unknown> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) handleAuthError(errorData);
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    throw error;
-  }
+  return apiGet<unknown>('/auth/profile/', 'fetching user profile');
 }
 
 export async function updateUserProfile(data: unknown): Promise<unknown> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/profile/`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) handleAuthError(errorData);
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating user profile:', error);
-    throw error;
-  }
+  return apiPatch<unknown>('/auth/profile/', data, 'updating user profile');
 }
 
 class ApiService {
