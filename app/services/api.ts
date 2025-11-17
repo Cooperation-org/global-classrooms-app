@@ -891,7 +891,7 @@ export async function fetchProjectUpdates(projectId: string, page: number = 1, l
 
 export interface CreateProjectUpdateRequest {
   description: string;
-  uploaded_files: string[]; // Array of file URLs or IDs (strings)
+  uploaded_files?: File[]; // Files to upload directly
 }
 
 export interface CreateProjectUpdateResponse {
@@ -907,12 +907,36 @@ export async function createProjectUpdate(
   projectId: string,
   updateData: CreateProjectUpdateRequest
 ): Promise<CreateProjectUpdateResponse> {
-  // The endpoint expects JSON with file URLs/IDs as strings
+  // The endpoint expects FormData with files directly, not URLs
+  if (updateData.uploaded_files && updateData.uploaded_files.length > 0) {
+    const formData = new FormData();
+    formData.append('description', updateData.description);
+    
+    // Append each file to the FormData
+    updateData.uploaded_files.forEach((file) => {
+      formData.append('uploaded_files', file);
+    });
+    
+    console.log('Creating project update with FormData:', {
+      description: updateData.description,
+      fileCount: updateData.uploaded_files.length,
+      fileNames: updateData.uploaded_files.map(f => f.name)
+    });
+    
+    return apiPost<CreateProjectUpdateResponse>(
+      `/projects/${projectId}/updates/`,
+      formData,
+      'creating project update',
+      true // useFormData = true
+    );
+  }
+  
+  // If no files, send JSON with just description
   return apiPost<CreateProjectUpdateResponse>(
     `/projects/${projectId}/updates/`,
     {
       description: updateData.description,
-      uploaded_files: updateData.uploaded_files || [],
+      uploaded_files: [],
     },
     'creating project update'
   );

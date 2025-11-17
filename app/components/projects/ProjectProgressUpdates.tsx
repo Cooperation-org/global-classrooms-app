@@ -147,11 +147,58 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
           const status = getStatus(update);
           const updateTitle = getUpdateTitle(update.description);
           const hasMedia = update.media && update.media.length > 0;
-          const firstImage = hasMedia ? update.media.find(url => /\.(jpg|jpeg|png|gif|webp)$/i.test(url)) : null;
+          
+          // Find first image for preview - handle both strings and objects
+          const firstImage = hasMedia ? update.media.find((mediaItem) => {
+            let urlString = '';
+            if (typeof mediaItem === 'string') {
+              urlString = mediaItem;
+            } else if (mediaItem && typeof mediaItem === 'object') {
+              urlString = (mediaItem as { file?: string; url?: string }).file || 
+                         (mediaItem as { file?: string; url?: string }).url || 
+                         String(mediaItem);
+            } else {
+              urlString = String(mediaItem || '');
+            }
+            const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(urlString) || 
+                          (urlString.includes('image') && !urlString.includes('pdf'));
+            return isImage;
+          }) : null;
+          
+          // Get the URL string for the first image
+          let firstImageUrl = '';
+          if (firstImage) {
+            if (typeof firstImage === 'string') {
+              firstImageUrl = firstImage;
+            } else if (firstImage && typeof firstImage === 'object') {
+              firstImageUrl = (firstImage as { file?: string; url?: string }).file || 
+                             (firstImage as { file?: string; url?: string }).url || 
+                             String(firstImage);
+            } else {
+              firstImageUrl = String(firstImage || '');
+            }
+          }
+          
+          // Count images vs other files
+          const imageCount = hasMedia ? update.media.filter((mediaItem) => {
+            let urlString = '';
+            if (typeof mediaItem === 'string') {
+              urlString = mediaItem;
+            } else if (mediaItem && typeof mediaItem === 'object') {
+              urlString = (mediaItem as { file?: string; url?: string }).file || 
+                         (mediaItem as { file?: string; url?: string }).url || 
+                         String(mediaItem);
+            } else {
+              urlString = String(mediaItem || '');
+            }
+            return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(urlString) || 
+                   (urlString.includes('image') && !urlString.includes('pdf'));
+          }).length : 0;
+          const otherFileCount = hasMedia ? update.media.length - imageCount : 0;
 
           return (
-            <div
-              key={update.id}
+          <div
+            key={update.id}
               className="border rounded-lg bg-white border-gray-200 overflow-hidden hover:shadow-md transition-all"
             >
               <div className="flex flex-col md:flex-row">
@@ -206,30 +253,84 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
                   </button>
                 </div>
 
-                {/* Right side - Image/Media */}
-                {firstImage && (
-                  <div className="w-full md:w-64 h-48 md:h-auto bg-gray-100 flex-shrink-0">
+                {/* Right side - Image/Media Preview */}
+                {firstImageUrl ? (
+                  <div className="w-full md:w-64 h-48 md:h-auto bg-gray-100 flex-shrink-0 relative group cursor-pointer overflow-hidden" onClick={() => setSelectedUpdate(update)}>
                     <img 
-                      src={firstImage} 
-                      alt="Update media"
-                      className="w-full h-full object-cover"
+                      src={firstImageUrl} 
+                      alt="Update preview"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="w-full h-full flex items-center justify-center bg-gray-100 cursor-pointer" onclick="this.closest('[data-update-id]')?.querySelector('button')?.click()">
+                              <div class="text-center">
+                                <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p class="text-xs text-gray-500">Image failed to load</p>
+                              </div>
+                            </div>
+                          `;
+                        }
                       }}
                     />
+                    {/* Overlay with file count on hover */}
+                    {hasMedia && update.media.length > 1 && (
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <div className="text-lg font-semibold">{update.media.length}</div>
+                          <div className="text-xs">file{update.media.length > 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Badge showing file count if multiple files */}
+                    {hasMedia && update.media.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                        +{update.media.length - 1}
+                      </div>
+                    )}
                   </div>
-                )}
-                {!firstImage && hasMedia && (
-                  <div className="w-full md:w-64 h-48 md:h-auto bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                ) : hasMedia ? (
+                  <div className="w-full md:w-64 h-48 md:h-auto bg-gray-100 flex-shrink-0 flex items-center justify-center cursor-pointer" onClick={() => setSelectedUpdate(update)}>
                     <div className="text-center">
-                      <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-xs text-gray-500">{update.media.length} file(s)</p>
+                      {/* Check if first file is PDF */}
+                      {(() => {
+                        const firstMedia = update.media[0];
+                        let urlString = '';
+                        if (typeof firstMedia === 'string') {
+                          urlString = firstMedia;
+                        } else if (firstMedia && typeof firstMedia === 'object') {
+                          urlString = (firstMedia as { file?: string; url?: string }).file || 
+                                     (firstMedia as { file?: string; url?: string }).url || 
+                                     String(firstMedia);
+                        } else {
+                          urlString = String(firstMedia || '');
+                        }
+                        const isPDF = /\.pdf$/i.test(urlString) || urlString.includes('pdf');
+                        
+                        return isPDF ? (
+                          <div className="flex flex-col items-center">
+                            <svg className="w-12 h-12 mx-auto mb-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-xs text-gray-500">PDF Document</p>
+                            <p className="text-xs text-gray-400 mt-1">{update.media.length} file{update.media.length > 1 ? 's' : ''}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-xs text-gray-500">{update.media.length} file{update.media.length > 1 ? 's' : ''}</p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           );
@@ -277,40 +378,96 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
                 <div className="mt-6">
                   <h4 className="text-sm font-semibold text-[#222B45] mb-3">Media Files</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedUpdate.media.map((mediaUrl, index) => {
-                      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(mediaUrl);
-                      const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl);
-                      const fileName = mediaUrl.split('/').pop() || `Media ${index + 1}`;
+                    {selectedUpdate.media.map((mediaItem, index) => {
+                      // Handle both string URLs and objects with file property
+                      let urlString = '';
+                      if (typeof mediaItem === 'string') {
+                        urlString = mediaItem;
+                      } else if (mediaItem && typeof mediaItem === 'object') {
+                        urlString = (mediaItem as { file?: string; url?: string }).file || 
+                                   (mediaItem as { file?: string; url?: string }).url || 
+                                   String(mediaItem);
+                      } else {
+                        urlString = String(mediaItem || '');
+                      }
+
+                      // Determine file type
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(urlString) || 
+                                     (urlString.includes('image') && !urlString.includes('pdf'));
+                      const isVideo = /\.(mp4|webm|ogg|mov|avi)$/i.test(urlString);
+                      const isPDF = /\.pdf$/i.test(urlString) || urlString.includes('pdf');
+                      const fileName = urlString.split('/').pop() || urlString.split('\\').pop() || `Media ${index + 1}`;
 
                       return (
-                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
                           {isImage ? (
-                            <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                            <div className="aspect-video bg-gray-100 flex items-center justify-center relative">
                               <img 
-                                src={mediaUrl} 
+                                src={urlString} 
                                 alt={fileName}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  if (target.nextElementSibling) {
-                                    (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = `
+                                      <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                        <div class="text-center">
+                                          <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                          </svg>
+                                          <p class="text-sm text-gray-500">Image failed to load</p>
+                                        </div>
+                                      </div>
+                                    `;
                                   }
                                 }}
                               />
-                              <div className="hidden w-full h-full items-center justify-center text-gray-400">
-                                <div className="text-center">
-                                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                  <p className="text-sm">Image failed to load</p>
-                                </div>
+                            </div>
+                          ) : isPDF ? (
+                            <div className="aspect-video bg-gray-100 flex flex-col">
+                              <div className="flex-1 relative">
+                                <iframe
+                                  src={`${urlString}#toolbar=0`}
+                                  className="w-full h-full border-0"
+                                  title={`PDF Preview: ${fileName}`}
+                                  onError={() => {
+                                    // Fallback if iframe fails
+                                    const iframe = document.querySelector(`iframe[title="PDF Preview: ${fileName}"]`) as HTMLIFrameElement;
+                                    if (iframe && iframe.parentElement) {
+                                      iframe.parentElement.innerHTML = `
+                                        <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                          <div class="text-center p-4">
+                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <p class="text-sm text-gray-600 mb-2">PDF Preview Unavailable</p>
+                                            <a href="${urlString}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#1A7F4F] hover:underline">
+                                              Open PDF in New Tab
+                                            </a>
+                                          </div>
+                                        </div>
+                                      `;
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <div className="p-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                                <span className="text-xs text-gray-600 truncate flex-1">{fileName}</span>
+                                <a 
+                                  href={urlString} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-[#1A7F4F] hover:underline ml-2 whitespace-nowrap"
+                                >
+                                  Open Full PDF
+                                </a>
                               </div>
                             </div>
                           ) : isVideo ? (
                             <div className="aspect-video bg-gray-100">
                               <video 
-                                src={mediaUrl} 
+                                src={urlString} 
                                 controls
                                 className="w-full h-full"
                               >
@@ -323,9 +480,9 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
                                 <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 </svg>
-                                <p className="text-sm text-gray-600 mb-2 truncate">{fileName}</p>
+                                <p className="text-sm text-gray-600 mb-2 truncate px-2">{fileName}</p>
                                 <a 
-                                  href={mediaUrl} 
+                                  href={urlString} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-xs text-[#1A7F4F] hover:underline"
@@ -335,16 +492,18 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
                               </div>
                             </div>
                           )}
-                          <div className="p-2 bg-gray-50">
-                            <a 
-                              href={mediaUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#1A7F4F] hover:underline truncate block"
-                            >
-                              {fileName}
-                            </a>
-                          </div>
+                          {!isPDF && (
+                            <div className="p-2 bg-gray-50 border-t border-gray-200">
+                              <a 
+                                href={urlString} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-[#1A7F4F] hover:underline truncate block"
+                              >
+                                {fileName}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -353,7 +512,7 @@ export function ProjectProgressUpdates({ projectId }: { projectId: string }) {
               )}
             </div>
           </div>
-        </div>
+      </div>
       )}
     </div>
   );

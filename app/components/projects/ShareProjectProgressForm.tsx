@@ -53,39 +53,17 @@ export function ShareProjectProgressForm({ projectId, onCancel, onSuccess }: Sha
     setError(null);
 
     try {
-      // Step 1: Upload all files first using POST /upload/image/ or /upload/document/
-      // These endpoints accept FormData and return file URLs
-      const uploadedFileUrls: string[] = [];
-      
-      if (files.length > 0) {
-        console.log(`Uploading ${files.length} file(s) using /upload/image/ or /upload/document/`);
-        const uploadPromises = files.map(async (file, index) => {
-          console.log(`Uploading file ${index + 1}: ${file.name} (${file.type})`);
-          try {
-            const fileUrl = await uploadFile(file);
-            console.log(`File ${index + 1} uploaded successfully: ${fileUrl}`);
-            return fileUrl;
-          } catch (error) {
-            console.error(`Failed to upload file ${index + 1}:`, error);
-            throw error;
-          }
-        });
-        
-        const urls = await Promise.all(uploadPromises);
-        uploadedFileUrls.push(...urls);
-        console.log('All file URLs to include in update:', uploadedFileUrls);
-      }
-
-      // Step 2: Create the project update with description and file URLs
-      // POST /projects/{projectId}/updates/ expects JSON with uploaded_files as array of strings
-      console.log('Creating project update with:', {
+      // Create the project update with description and files directly
+      // POST /projects/{projectId}/updates/ expects FormData with files
+      console.log('Creating project update with files:', {
         description: description.trim(),
-        uploaded_files: uploadedFileUrls
+        fileCount: files.length,
+        fileNames: files.map(f => f.name)
       });
       
       await createProjectUpdate(projectId, {
         description: description.trim(),
-        uploaded_files: uploadedFileUrls,
+        uploaded_files: files.length > 0 ? files : undefined,
       });
       
       console.log('Project update created successfully');
