@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useProjectById } from '@/app/hooks/useSWR';
-import { deleteProject, joinProject, fetchProjectGoals, fetchProjectFiles, ProjectGoal, ProjectFile } from '@/app/services/api';
+import { deleteProject, fetchProjectGoals, fetchProjectFiles, ProjectGoal, ProjectFile } from '@/app/services/api';
 import { ProjectHeader } from '@/app/components/projects/ProjectHeader';
 import { ProjectTabs } from '@/app/components/projects/ProjectTabs';
 import { ManageMembers } from '@/app/components/projects/ManageMembers';
 import { ParticipatingSchools, ProjectLeaders } from '@/app/components/projects/ProjectSidebar';
 import { ProjectProgressUpdates } from '@/app/components/projects/ProjectProgressUpdates';
+import { ProjectJoinButton } from '@/app/components/projects/ProjectJoinButton';
 
 // Import the ProjectOverview component
 import { ProjectOverview } from '@/app/components/projects/ProjectOverview';
@@ -18,7 +19,6 @@ export default function ProjectDetailsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [goals, setGoals] = useState<ProjectGoal[]>([]);
@@ -93,20 +93,6 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const handleJoin = async () => {
-    setIsJoining(true);
-    try {
-      const result = await joinProject(params.id as string);
-      alert(result.message || 'Successfully joined the project!');
-      // Refresh the project data
-      router.refresh();
-    } catch (error) {
-      console.error('Failed to join project:', error);
-      alert(error instanceof Error ? error.message : 'Failed to join project. Please try again.');
-    } finally {
-      setIsJoining(false);
-    }
-  };
 
   // Handle authentication errors
   if (error && (error as { status?: number })?.status === 401) {
@@ -383,17 +369,17 @@ export default function ProjectDetailsPage() {
           
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
-            {project.is_open_for_collaboration && !isOwner && (
-              <button 
-                onClick={handleJoin}
-                disabled={isJoining}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>{isJoining ? 'Joining...' : 'Join This Project'}</span>
-              </button>
+            {!isOwner && (
+              <ProjectJoinButton
+                projectId={project.id}
+                projectData={{
+                  lead_school: project.lead_school,
+                  participating_schools: project.participating_schools?.map((school: { id: string }) => ({ school: school.id })),
+                  is_open_for_collaboration: project.is_open_for_collaboration,
+                  title: project.title,
+                }}
+                onJoinSuccess={() => router.refresh()}
+              />
             )}
             {isOwner && (
               <>

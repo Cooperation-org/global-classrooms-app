@@ -650,17 +650,47 @@ export async function updateProject(id: string, projectData: Partial<CreateProje
   }
 }
 
-export async function joinProject(id: string): Promise<{ message: string }> {
+/**
+ * Join a project on behalf of a school
+ * @param id - Project ID
+ * @param schoolId - School ID joining the project (required)
+ * @throws Error if user is not a teacher or school is already participating
+ */
+export async function joinProject(id: string, schoolId?: string): Promise<{ message: string }> {
   try {
+    // Validate school ID is provided
+    if (!schoolId) {
+      throw new Error('School ID is required to join a project. Only teachers can join projects on behalf of their school.');
+    }
+
+    // Prepare request body with school_id
+    const headers = {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    };
+
+    const body = JSON.stringify({
+      school_id: schoolId,
+    });
+
     const response = await fetch(`${API_BASE_URL}/projects/${id}/join/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers,
+      body,
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 401) {
         handleAuthError(errorData);
+      }
+      // Handle teacher permission errors
+      if (response.status === 403) {
+        throw new Error(errorData.detail || 'You do not have permission to join this project. Only teachers can join projects on behalf of their school.');
+      }
+      // Handle already joined errors
+      if (response.status === 400 && errorData.detail?.includes('already')) {
+        throw new Error('Your school is already participating in this project.');
       }
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }

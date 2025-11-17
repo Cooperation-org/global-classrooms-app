@@ -492,6 +492,38 @@ export const useTeacherProfiles = (schoolId?: string, page: number = 1, limit: n
   };
 };
 
+/**
+ * Hook to fetch the current user's teacher profile
+ * Returns the teacher profile if the user is a teacher, null otherwise
+ */
+export const useCurrentTeacherProfile = () => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  
+  const { data, error, isLoading, mutate } = useSWR(
+    isValidToken() ? `${API_BASE_URL}/teacher-profiles/me/` : null,
+    fetcher,
+    {
+      ...swrConfig,
+      revalidateOnFocus: false,
+      // Fallback: if /me/ endpoint doesn't exist, try fetching all profiles and filter
+      onError: async (err) => {
+        console.log('Teacher profile /me/ endpoint not available, trying alternative');
+        return null;
+      }
+    }
+  );
+
+  return {
+    teacherProfile: data,
+    isSchoolAdmin: data?.teacher_role === 'admin',
+    school: data?.school,
+    schoolName: data?.school_name,
+    isLoading,
+    error,
+    mutate,
+  };
+};
+
 export const useStudentProfiles = (schoolId?: string, page: number = 1, limit: number = 10) => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const url = schoolId 
