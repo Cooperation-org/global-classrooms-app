@@ -34,6 +34,8 @@ interface School {
   number_of_teachers: number;
   number_of_students: number;
   medium_of_instruction: string;
+  admin?: string; // User ID of the school admin
+  admin_name?: string;
 }
 
 interface Project {
@@ -154,23 +156,29 @@ export default function SettingsPage() {
     { id: "5fa85f64-5717-4562-b3fc-2c963f66afa8", name: "Bob Johnson", email: "bob@example.com" },
   ];
 
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  // Check if user is platform admin
+  const isPlatformAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  
+  // Check if user is the school admin
+  const isSchoolAdmin = user?.id && school?.admin && user.id === school.admin;
+  
+  // User can manage school if they are platform admin OR school admin
+  const canManageSchool = isPlatformAdmin || isSchoolAdmin;
 
-  // Filter tabs based on admin status
-  const availableTabs = isAdmin ? ADMIN_TABS : NON_ADMIN_TABS;
+  // Filter tabs based on access level
+  const availableTabs = canManageSchool ? ADMIN_TABS : NON_ADMIN_TABS;
 
   // Reset activeTab if it's not available for the current user
   useEffect(() => {
     const restrictedTabs = ['Teachers', 'Students', 'Subjects'];
-    if (!isAdmin && restrictedTabs.includes(activeTab)) {
+    if (!canManageSchool && restrictedTabs.includes(activeTab)) {
       setActiveTab('Overview');
     }
-  }, [isAdmin, activeTab]);
+  }, [canManageSchool, activeTab]);
 
   // School edit handlers
   const handleEditSchool = () => {
-    if (!school || !isAdmin) return;
+    if (!school || !canManageSchool) return;
     
     const schoolData = school as School & { 
       is_verified?: boolean; 
@@ -241,7 +249,7 @@ export default function SettingsPage() {
 
   const handleSubmitSchoolEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!school || !isAdmin) return;
+    if (!school || !canManageSchool) return;
 
     setIsSubmittingSchool(true);
     try {
@@ -584,7 +592,7 @@ export default function SettingsPage() {
           <p className="text-green-700 text-sm">{school.overview}</p>
           <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
         </div>
-        {isAdmin && (
+        {canManageSchool && (
           <button 
             onClick={handleEditSchool}
             className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto"

@@ -57,6 +57,8 @@ function extractFieldErrors(errorData: { details?: Record<string, unknown> }): s
   const fieldLabels: Record<string, string> = {
     user: 'User',
     email: 'Email',
+    teacher_email: 'Teacher Email',
+    student_email: 'Student Email',
     assigned_classes: 'Classes',
     assigned_class: 'Class',
     teacher_role: 'Role',
@@ -69,7 +71,17 @@ function extractFieldErrors(errorData: { details?: Record<string, unknown> }): s
   Object.entries(errorData.details).forEach(([field, error]) => {
     const label = fieldLabels[field] || field.charAt(0).toUpperCase() + field.slice(1);
     const message = Array.isArray(error) ? error[0] : String(error);
-    fieldErrors.push(`${label}: ${message}`);
+    
+    // Add helpful context for common errors
+    let enhancedMessage = String(message);
+    if (field === 'user' && message.includes('Invalid pk') && message.includes('does not exist')) {
+      enhancedMessage += '. Note: Backend may be expecting user ID (PK) instead of email. Ensure backend serializer accepts teacher_email/student_email.';
+    }
+    if ((field === 'assigned_classes' || field === 'assigned_class') && message.includes('Invalid pk') && message.includes('does not exist')) {
+      enhancedMessage += '. Note: Backend may be expecting class IDs (PKs) instead of class identifiers. Ensure backend serializer accepts string identifiers like "GRADE_1".';
+    }
+    
+    fieldErrors.push(`${label}: ${enhancedMessage}`);
   });
   
   return fieldErrors;
@@ -113,6 +125,33 @@ function handleApiError(
   
   // Handle validation errors (400)
   if (response.status === 400) {
+    // Check for backend serializer mismatch (backend expects old format)
+    if (error.details) {
+      const hasUserError = error.details.user && 
+        Array.isArray(error.details.user) && 
+        error.details.user.some((msg: unknown) => 
+          String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+        );
+      const classErrors = error.details.assigned_classes || error.details.assigned_class;
+      const hasClassError = classErrors &&
+        Array.isArray(classErrors) &&
+        classErrors.some((msg: unknown) =>
+          String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+        );
+
+      if (hasUserError || hasClassError) {
+        const mismatchMessage = [
+          'Backend serializer format mismatch detected.',
+          hasUserError ? 'Backend expects "user" (UUID) but frontend sends "teacher_email"/"student_email".' : '',
+          hasClassError ? 'Backend expects numeric class IDs (PKs) but frontend sends string identifiers (e.g., "GRADE_1").' : '',
+          'Please update the backend serializer to accept the new format.'
+        ].filter(Boolean).join(' ');
+        
+        const originalMessage = formatErrorMessage(error, 'Invalid request data');
+        throw new Error(`${originalMessage}\n\n${mismatchMessage}`);
+      }
+    }
+    
     const message = formatErrorMessage(error, 'Invalid request data');
     throw new Error(message);
   }
@@ -142,12 +181,22 @@ async function apiRequest<T>(
 ): Promise<T> {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   
+  const authHeaders = getAuthHeaders();
+  
+  // Ensure Content-Type is set for JSON requests
+  const headers: Record<string, string> = {
+    ...authHeaders,
+    ...(options.headers as Record<string, string> || {}),
+  };
+  
+  // If we have a body and it's a string (JSON), ensure Content-Type is set
+  if (options.body && typeof options.body === 'string' && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
   const config: RequestInit = {
     ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
+    headers,
   };
   
   try {
@@ -204,7 +253,19 @@ async function apiPost<T>(
       options.headers = headers;
       options.body = data;
     } else {
-      options.body = JSON.stringify(data);
+      // Ensure we're sending JSON with proper Content-Type
+      const jsonBody = JSON.stringify(data);
+      options.body = jsonBody;
+      
+      // Log the exact payload being sent for debugging
+      if (context?.includes('teacher') || context?.includes('student')) {
+        console.log('EXACT PAYLOAD BEING SENT:', {
+          endpoint,
+          body: jsonBody,
+          parsed: JSON.parse(jsonBody),
+          contentType: 'application/json'
+        });
+      }
     }
   }
   
@@ -298,6 +359,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   participating_schools_count: string;
+  participating_schools?: Array<{ id?: string; school?: string; name?: string }>;
   goals?: string[];
   total_impact: {
     trees_planted: number;
@@ -377,6 +439,8 @@ export interface School {
   logo: string;
   created_at: string;
   updated_at: string;
+  admin?: string; // User ID of the school admin
+  admin_name?: string;
 }
 
 export interface CreateSchoolRequest {
@@ -778,9 +842,9 @@ export interface TeacherProfile {
 
 // Add Teacher to School Request/Response
 export interface AddTeacherToSchoolRequest {
-  email: string;
+  teacher_email: string;
   teacher_role: 'class_teacher' | 'subject_teacher' | 'admin';
-  assigned_classes: number[];
+  assigned_classes: string[];
 }
 
 export interface AddTeacherToSchoolResponse {
@@ -836,8 +900,8 @@ export interface StudentProfile {
 
 // Add Student to School Request/Response
 export interface AddStudentToSchoolRequest {
-  email: string;
-  assigned_class: number;
+  student_email: string;
+  assigned_class: string;
   student_id?: string;
   parent_name?: string;
   parent_email?: string;
@@ -885,24 +949,55 @@ export async function fetchStudentProfiles(schoolId?: string, page: number = 1, 
  * Creates/activates SchoolMembership and creates TeacherProfile with class assignments
  * 
  * Backend Requirements:
- * - The serializer should accept 'email' and look up the user
+ * - The serializer should accept 'teacher_email' and look up the user
  * - The user must exist and have role 'teacher'
- * - All assigned_classes IDs must exist in the database
+ * - All assigned_classes must be valid class identifiers (e.g., "GRADE_1", "GRADE_2")
  * - The user must not already be a member of the school (or membership should be activated)
  * 
  * @param schoolId - The school ID to add the teacher to
- * @param data - Teacher data including email, role, and assigned classes
+ * @param data - Teacher data including teacher_email, role, and assigned_classes (string array)
  * @returns Response with teacher profile and school membership
  */
 export async function addTeacherToSchool(
   schoolId: string,
   data: AddTeacherToSchoolRequest
 ): Promise<AddTeacherToSchoolResponse> {
-  return apiPost<AddTeacherToSchoolResponse>(
-    `/schools/${schoolId}/add-teacher-school/`,
-    data,
-    'adding teacher to school'
-  );
+  // Log the payload being sent for debugging
+  console.log('Adding teacher to school:', {
+    schoolId,
+    payload: data,
+    expectedFormat: {
+      teacher_email: 'string (email address)',
+      teacher_role: 'class_teacher | subject_teacher | admin',
+      assigned_classes: 'string[] (e.g., ["GRADE_1", "GRADE_2"])'
+    }
+  });
+
+  try {
+    return await apiPost<AddTeacherToSchoolResponse>(
+      `/schools/${schoolId}/add-teacher-school/`,
+      data,
+      'adding teacher to school'
+    );
+  } catch (error) {
+    // Enhance error message with payload info
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('user') || errorMessage.includes('Invalid pk')) {
+      console.error('Backend serializer mismatch detected:', {
+        sent: data,
+        backendExpects: {
+          user: 'UUID (primary key)',
+          assigned_classes: 'number[] (primary keys)'
+        },
+        frontendSends: {
+          teacher_email: 'string',
+          assigned_classes: 'string[]'
+        },
+        note: 'Backend serializer may need to be updated to accept teacher_email and string class identifiers'
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -910,24 +1005,54 @@ export async function addTeacherToSchool(
  * Creates/activates SchoolMembership and creates StudentProfile with class assignment
  * 
  * Backend Requirements:
- * - The serializer should accept 'email' and look up the user
+ * - The serializer should accept 'student_email' and look up the user
  * - The user must exist and have role 'student'
- * - The assigned_class ID must exist in the database
+ * - The assigned_class must be a valid class identifier (e.g., "GRADE_1")
  * - The user must not already be a member of the school (or membership should be activated)
  * 
  * @param schoolId - The school ID to add the student to
- * @param data - Student data including email, assigned class, and optional parent info
+ * @param data - Student data including student_email, assigned_class (string), and optional parent info
  * @returns Response with student profile and school membership
  */
 export async function addStudentToSchool(
   schoolId: string,
   data: AddStudentToSchoolRequest
 ): Promise<AddStudentToSchoolResponse> {
-  return apiPost<AddStudentToSchoolResponse>(
-    `/schools/${schoolId}/add-student-school/`,
-    data,
-    'adding student to school'
-  );
+  // Log the payload being sent for debugging
+  console.log('Adding student to school:', {
+    schoolId,
+    payload: data,
+    expectedFormat: {
+      student_email: 'string (email address)',
+      assigned_class: 'string (e.g., "GRADE_1")'
+    }
+  });
+
+  try {
+    return await apiPost<AddStudentToSchoolResponse>(
+      `/schools/${schoolId}/add-student-school/`,
+      data,
+      'adding student to school'
+    );
+  } catch (error) {
+    // Enhance error message with payload info
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('user') || errorMessage.includes('Invalid pk')) {
+      console.error('Backend serializer mismatch detected:', {
+        sent: data,
+        backendExpects: {
+          user: 'UUID (primary key)',
+          assigned_class: 'number (primary key)'
+        },
+        frontendSends: {
+          student_email: 'string',
+          assigned_class: 'string'
+        },
+        note: 'Backend serializer may need to be updated to accept student_email and string class identifier'
+      });
+    }
+    throw error;
+  }
 }
 
 // ============================================================================
