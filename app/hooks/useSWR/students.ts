@@ -158,8 +158,8 @@ export const useAddStudentToSchool = () => {
   const addStudentToSchool = async (
     schoolId: string,
     studentData: {
-      email: string;
-      assigned_class: number;
+      student_email: string;
+      assigned_class: string;
       student_id?: string;
       parent_name?: string;
       parent_email?: string;
@@ -171,10 +171,35 @@ export const useAddStudentToSchool = () => {
       throw new Error('Authentication required');
     }
 
+    // Ensure we're sending the exact format
+    const payload = {
+      student_email: studentData.student_email,
+      assigned_class: studentData.assigned_class,
+      ...(studentData.student_id && { student_id: studentData.student_id }),
+      ...(studentData.parent_name && { parent_name: studentData.parent_name }),
+      ...(studentData.parent_email && { parent_email: studentData.parent_email }),
+      ...(studentData.parent_phone && { parent_phone: studentData.parent_phone }),
+    };
+    
+    const jsonBody = JSON.stringify(payload);
+    
+    // Log the EXACT payload being sent
+    console.log('EXACT PAYLOAD BEING SENT (hook):', {
+      url: `${API_BASE_URL}/schools/${schoolId}/add-student-school/`,
+      payload: jsonBody,
+      parsed: JSON.parse(jsonBody),
+      contentType: 'application/json'
+    });
+    
+    const headers = {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    };
+    
     const response = await fetch(`${API_BASE_URL}/schools/${schoolId}/add-student-school/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(studentData),
+      headers,
+      body: jsonBody,
     });
 
     if (!response.ok) {
@@ -183,7 +208,34 @@ export const useAddStudentToSchool = () => {
         throw new Error('Authentication required');
       }
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to add student to school');
+      
+      // Provide better error messages for serializer mismatches
+      if (response.status === 400 && errorData.details) {
+        const hasUserError = errorData.details.user && 
+          Array.isArray(errorData.details.user) && 
+          errorData.details.user.some((msg: unknown) => 
+            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+          );
+        const hasClassError = errorData.details.assigned_class &&
+          Array.isArray(errorData.details.assigned_class) &&
+          errorData.details.assigned_class.some((msg: unknown) =>
+            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+          );
+
+        if (hasUserError || hasClassError) {
+          const parts = [];
+          if (hasUserError) {
+            parts.push('Backend expects "user" (UUID) but received "student_email".');
+          }
+          if (hasClassError) {
+            parts.push('Backend expects numeric class ID but received string identifier.');
+          }
+          parts.push('Please update the backend serializer to accept the new format.');
+          throw new Error(parts.join(' '));
+        }
+      }
+      
+      throw new Error(errorData.detail || errorData.message || 'Failed to add student to school');
     }
 
     const result = await response.json();

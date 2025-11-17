@@ -187,9 +187,9 @@ export const useAddTeacherToSchool = () => {
   const addTeacherToSchool = async (
     schoolId: string,
     teacherData: {
-      email: string;
+      teacher_email: string;
       teacher_role: 'class_teacher' | 'subject_teacher' | 'admin';
-      assigned_classes: number[];
+      assigned_classes: string[];
     }
   ) => {
     const token = getAuthToken();
@@ -197,10 +197,32 @@ export const useAddTeacherToSchool = () => {
       throw new Error('Authentication required');
     }
 
+    // Ensure we're sending the exact format
+    const payload = {
+      teacher_email: teacherData.teacher_email,
+      teacher_role: teacherData.teacher_role,
+      assigned_classes: teacherData.assigned_classes,
+    };
+    
+    const jsonBody = JSON.stringify(payload);
+    
+    // Log the EXACT payload being sent
+    console.log('EXACT PAYLOAD BEING SENT (hook):', {
+      url: `${API_BASE_URL}/schools/${schoolId}/add-teacher-school/`,
+      payload: jsonBody,
+      parsed: JSON.parse(jsonBody),
+      contentType: 'application/json'
+    });
+    
+    const headers = {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    };
+    
     const response = await fetch(`${API_BASE_URL}/schools/${schoolId}/add-teacher-school/`, {
       method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(teacherData),
+      headers,
+      body: jsonBody,
     });
 
     if (!response.ok) {
@@ -209,7 +231,34 @@ export const useAddTeacherToSchool = () => {
         throw new Error('Authentication required');
       }
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to add teacher to school');
+      
+      // Provide better error messages for serializer mismatches
+      if (response.status === 400 && errorData.details) {
+        const hasUserError = errorData.details.user && 
+          Array.isArray(errorData.details.user) && 
+          errorData.details.user.some((msg: unknown) => 
+            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+          );
+        const hasClassError = errorData.details.assigned_classes &&
+          Array.isArray(errorData.details.assigned_classes) &&
+          errorData.details.assigned_classes.some((msg: unknown) =>
+            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
+          );
+
+        if (hasUserError || hasClassError) {
+          const parts = [];
+          if (hasUserError) {
+            parts.push('Backend expects "user" (UUID) but received "teacher_email".');
+          }
+          if (hasClassError) {
+            parts.push('Backend expects numeric class IDs but received string identifiers.');
+          }
+          parts.push('Please update the backend serializer to accept the new format.');
+          throw new Error(parts.join(' '));
+        }
+      }
+      
+      throw new Error(errorData.detail || errorData.message || 'Failed to add teacher to school');
     }
 
     const result = await response.json();

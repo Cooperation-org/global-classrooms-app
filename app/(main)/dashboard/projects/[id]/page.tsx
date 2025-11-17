@@ -168,14 +168,18 @@ export default function ProjectDetailsPage() {
         return (
           <ProjectOverview
             project={{
-              id: project.id,
+              id: parseInt(project.id, 10) || 0,
               title: project.title,
-              overview: project.detailed_description || project.description || '',
-              schedule: project.schedule || [],
+              overview: project.detailed_description || '',
+              schedule: [],
               resources: resources.map(f => ({ label: f.description || 'Project File', url: f.file, type: 'file' })),
-              discussion: project.discussion || [],
-              schools: project.participating_schools || [],
-              leaders: project.leaders || []
+              discussion: [],
+              schools: (project.participating_schools || []).map((school: { id?: string; school?: string; name?: string }) => ({
+                name: school.name || 'Unknown School',
+                location: '',
+                logo: '',
+              })),
+              leaders: []
             }}
             goals={goals}
           />
@@ -374,7 +378,10 @@ export default function ProjectDetailsPage() {
                 projectId={project.id}
                 projectData={{
                   lead_school: project.lead_school,
-                  participating_schools: project.participating_schools?.map((school: { id: string }) => ({ school: school.id })),
+                  participating_schools: project.participating_schools?.map((school) => ({ 
+                    id: school.id || school.school,
+                    school: school.school || school.id 
+                  })),
                   is_open_for_collaboration: project.is_open_for_collaboration,
                   title: project.title,
                 }}

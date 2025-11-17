@@ -183,14 +183,18 @@ async function apiRequest<T>(
   
   const authHeaders = getAuthHeaders();
   
-  // Ensure Content-Type is set for JSON requests
+  // Merge headers
+  const providedHeaders = (options.headers as Record<string, string>) || {};
   const headers: Record<string, string> = {
     ...authHeaders,
-    ...(options.headers as Record<string, string> || {}),
+    ...providedHeaders,
   };
   
-  // If we have a body and it's a string (JSON), ensure Content-Type is set
-  if (options.body && typeof options.body === 'string' && !headers['Content-Type']) {
+  // For FormData, remove Content-Type to let browser set it with boundary
+  if (options.body instanceof FormData) {
+    delete headers['Content-Type'];
+  } else if (options.body && typeof options.body === 'string' && !headers['Content-Type']) {
+    // Only set Content-Type for JSON if it wasn't explicitly removed
     headers['Content-Type'] = 'application/json';
   }
   
@@ -200,14 +204,37 @@ async function apiRequest<T>(
   };
   
   try {
+    console.log('Making API request:', {
+      url,
+      method: config.method,
+      hasBody: !!config.body,
+      bodyType: config.body instanceof FormData ? 'FormData' : typeof config.body,
+      headers: Object.keys(config.headers as Record<string, string> || {}),
+      headerValues: config.headers
+    });
+
     const response = await fetch(url, config);
     
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
     const isJson = contentType?.includes('application/json');
     
+    console.log('API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      contentType,
+      isJson,
+      ok: response.ok
+    });
+    
     if (!response.ok) {
       const errorData = isJson ? await response.json() : await response.text();
+      console.error('API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        context
+      });
       handleApiError(response, errorData, context);
     }
     
@@ -502,7 +529,7 @@ export async function fetchFeaturedProjects(): Promise<Project[]> {
     '/projects/?featured=true&limit=6',
     'fetching featured projects'
   );
-  return data.results;
+    return data.results;
 }
 
 export async function fetchCompletedProjects(): Promise<Project[]> {
@@ -510,7 +537,7 @@ export async function fetchCompletedProjects(): Promise<Project[]> {
     '/projects/?status=completed&limit=4',
     'fetching completed projects'
   );
-  return data.results;
+    return data.results;
 }
 
 export async function fetchOpenCollaborations(): Promise<Project[]> {
@@ -518,7 +545,7 @@ export async function fetchOpenCollaborations(): Promise<Project[]> {
     '/projects/?is_open_for_collaboration=true&limit=4',
     'fetching open collaborations'
   );
-  return data.results;
+    return data.results;
 }
 
 export async function fetchFutureProjects(): Promise<Project[]> {
@@ -527,17 +554,112 @@ export async function fetchFutureProjects(): Promise<Project[]> {
     'fetching future projects'
   );
   
-  const currentDate = new Date();
+    const currentDate = new Date();
   return data.results.filter((project: Project) => {
-    const startDate = new Date(project.start_date);
-    return startDate > currentDate;
+      const startDate = new Date(project.start_date);
+      return startDate > currentDate;
+    });
+}
+
+/**
+ * Upload an image file using the dedicated image upload endpoint
+ * @param file - Image file to upload
+ * @returns URL of the uploaded image
+ */
+export async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  console.log('Uploading image:', {
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size,
+    endpoint: '/upload/image/',
+    formDataKeys: Array.from(formData.keys())
   });
+
+  try {
+    const response = await apiPost<{ url?: string; file?: string; id?: string; image?: string }>(
+      '/upload/image/',
+      formData,
+      'uploading image',
+      true
+    );
+
+    console.log('Image upload response:', response);
+
+    // The response might have 'url', 'file', 'image', or we might need to construct it from 'id'
+    const fileUrl = response.url || response.file || response.image || '';
+    if (!fileUrl) {
+      console.error('Upload response did not contain a file URL. Full response:', response);
+      throw new Error('Upload response did not contain a file URL');
+    }
+    return fileUrl;
+  } catch (error) {
+    console.error('Image upload error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload a document file using the dedicated document upload endpoint
+ * @param file - Document file to upload
+ * @returns URL of the uploaded document
+ */
+export async function uploadDocument(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  console.log('Uploading document:', {
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size,
+    endpoint: '/upload/document/',
+    formDataKeys: Array.from(formData.keys())
+  });
+
+  try {
+    const response = await apiPost<{ url?: string; file?: string; id?: string; document?: string }>(
+      '/upload/document/',
+      formData,
+      'uploading document',
+      true
+    );
+
+    console.log('Document upload response:', response);
+
+    // The response might have 'url', 'file', 'document', or we might need to construct it from 'id'
+    const fileUrl = response.url || response.file || response.document || '';
+    if (!fileUrl) {
+      console.error('Upload response did not contain a file URL. Full response:', response);
+      throw new Error('Upload response did not contain a file URL');
+    }
+    return fileUrl;
+  } catch (error) {
+    console.error('Document upload error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload a file - automatically chooses the correct endpoint based on file type
+ * @param file - File to upload
+ * @returns URL of the uploaded file
+ */
+export async function uploadFile(file: File): Promise<string> {
+  const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.name) || file.type.startsWith('image/');
+  
+  if (isImage) {
+    return uploadImage(file);
+  } else {
+    return uploadDocument(file);
+  }
 }
 
 export async function uploadProjectFile(projectId: string, file: File, description: string = ''): Promise<ProjectFile> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('description', description);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', description);
 
   return apiPost<ProjectFile>(
     `/projects/${projectId}/files/`,
@@ -558,9 +680,9 @@ export async function fetchProjectFiles(projectId: string, page: number = 1, lim
 }
 
 export async function createProject(projectData: CreateProjectRequest): Promise<Project> {
-  const formData = new FormData();
-  
-  // Add all text fields
+    const formData = new FormData();
+    
+    // Add all text fields
   Object.entries({
     title: projectData.title,
     short_description: projectData.short_description,
@@ -582,10 +704,10 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
   }).forEach(([key, value]) => {
     if (value) formData.append(key, value);
   });
-  
-  // Add cover image if it's a File
-  if (projectData.cover_image instanceof File) {
-    formData.append('cover_image', projectData.cover_image);
+    
+    // Add cover image if it's a File
+    if (projectData.cover_image instanceof File) {
+      formData.append('cover_image', projectData.cover_image);
   }
 
   const createdProject = await apiPost<Project>(
@@ -599,25 +721,25 @@ export async function createProject(projectData: CreateProjectRequest): Promise<
   const uploadPromises: Promise<ProjectFile>[] = [];
   
   if (projectData.document_files?.length) {
-    projectData.document_files.forEach((file) => {
+      projectData.document_files.forEach((file) => {
       uploadPromises.push(uploadProjectFile(createdProject.id, file, 'Supporting Document'));
-    });
-  }
-  
+      });
+    }
+
   if (projectData.media_files?.length) {
-    projectData.media_files.forEach((file) => {
+      projectData.media_files.forEach((file) => {
       uploadPromises.push(uploadProjectFile(createdProject.id, file, 'Project Media'));
-    });
-  }
+      });
+    }
 
   // Upload files in background (don't fail project creation if files fail)
-  if (uploadPromises.length > 0) {
+    if (uploadPromises.length > 0) {
     Promise.all(uploadPromises).catch((error) => {
       console.error('Some files failed to upload:', error);
     });
-  }
+    }
 
-  return createdProject;
+    return createdProject;
 }
 
 // ============================================================================
@@ -632,9 +754,9 @@ export async function fetchSchools(page: number = 1, limit: number = 10): Promis
 }
 
 export async function createSchool(schoolData: CreateSchoolRequest): Promise<School> {
-  const formData = new FormData();
-  
-  // Add all text fields
+    const formData = new FormData();
+    
+    // Add all text fields
   Object.entries({
     name: schoolData.name,
     overview: schoolData.overview,
@@ -662,11 +784,11 @@ export async function createSchool(schoolData: CreateSchoolRequest): Promise<Sch
   }).forEach(([key, value]) => {
     if (value) formData.append(key, value);
   });
-  
-  // Add logo if it's a File
-  if (schoolData.logo instanceof File) {
-    formData.append('logo', schoolData.logo);
-  }
+    
+    // Add logo if it's a File
+    if (schoolData.logo instanceof File) {
+      formData.append('logo', schoolData.logo);
+    }
 
   return apiPost<School>('/schools/', formData, 'creating school', true);
 }
@@ -687,8 +809,8 @@ export async function fetchProjectById(id: string): Promise<Project> {
 }
 
 export async function updateProject(id: string, projectData: Partial<CreateProjectRequest>): Promise<Project> {
-  const formData = new FormData();
-  
+    const formData = new FormData();
+    
   // Add fields that exist
   Object.entries(projectData).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
@@ -743,13 +865,14 @@ export async function deleteProject(id: string): Promise<void> {
 
 export interface ProjectUpdate {
   id: string;
-  title: string;
-  content: string;
-  author: string;
-  author_name: string;
-  created_at: string;
-  updated_at: string;
   project: string;
+  school: string;
+  school_name: string;
+  uploaded_by: string;
+  uploaded_by_name: string;
+  description: string;
+  created_at: string;
+  media: string[]; // Array of file URLs or IDs
 }
 
 export interface ProjectUpdatesResponse {
@@ -763,6 +886,35 @@ export async function fetchProjectUpdates(projectId: string, page: number = 1, l
   return apiGet<ProjectUpdatesResponse>(
     `/projects/${projectId}/updates/?page=${page}&limit=${limit}`,
     'fetching project updates'
+  );
+}
+
+export interface CreateProjectUpdateRequest {
+  description: string;
+  uploaded_files: string[]; // Array of file URLs or IDs (strings)
+}
+
+export interface CreateProjectUpdateResponse {
+  id: string;
+  description: string;
+  uploaded_files: string[];
+  created_at: string;
+  updated_at: string;
+  project: string;
+}
+
+export async function createProjectUpdate(
+  projectId: string,
+  updateData: CreateProjectUpdateRequest
+): Promise<CreateProjectUpdateResponse> {
+  // The endpoint expects JSON with file URLs/IDs as strings
+  return apiPost<CreateProjectUpdateResponse>(
+    `/projects/${projectId}/updates/`,
+    {
+      description: updateData.description,
+      uploaded_files: updateData.uploaded_files || [],
+    },
+    'creating project update'
   );
 }
 
@@ -794,13 +946,13 @@ export async function fetchProjectGoals(
   projectId: string, 
   params: FetchProjectGoalsParams = {}
 ): Promise<ProjectGoalsResponse> {
-  const { page = 1, limit = 10, ordering, search } = params;
-  
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-  
+    const { page = 1, limit = 10, ordering, search } = params;
+    
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
   if (ordering) queryParams.append('ordering', ordering);
   if (search) queryParams.append('search', search);
   
@@ -934,7 +1086,7 @@ export async function fetchStudentProfiles(schoolId?: string, page: number = 1, 
     limit: limit.toString(),
   });
   
-  if (schoolId) {
+    if (schoolId) {
     queryParams.append('school', schoolId);
   }
   
