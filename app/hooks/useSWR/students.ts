@@ -152,54 +152,30 @@ export const useDeleteStudent = () => {
   return { deleteStudent };
 };
 
-export const useAddStudentToSchool = () => {
+export const useAddStudentToSchool = (schoolId?: string) => {
   const { mutate } = useSWRConfig();
 
-  const addStudentToSchool = async (
-    schoolId: string,
-    studentData: {
-      student_email: string;
-      assigned_class: string;
-      student_id?: string;
-      parent_name?: string;
-      parent_email?: string;
-      parent_phone?: string;
-    }
-  ) => {
+  const addStudentToSchool = async (userData: {
+    full_name: string;
+    student_email: string;
+    wallet_id: string;
+    gender?: string;
+    current_class: string;
+    is_active: boolean;
+  }) => {
     const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required');
     }
 
-    // Ensure we're sending the exact format
-    const payload = {
-      student_email: studentData.student_email,
-      assigned_class: studentData.assigned_class,
-      ...(studentData.student_id && { student_id: studentData.student_id }),
-      ...(studentData.parent_name && { parent_name: studentData.parent_name }),
-      ...(studentData.parent_email && { parent_email: studentData.parent_email }),
-      ...(studentData.parent_phone && { parent_phone: studentData.parent_phone }),
-    };
-    
-    const jsonBody = JSON.stringify(payload);
-    
-    // Log the EXACT payload being sent
-    console.log('EXACT PAYLOAD BEING SENT (hook):', {
-      url: `${API_BASE_URL}/schools/${schoolId}/add-student-school/`,
-      payload: jsonBody,
-      parsed: JSON.parse(jsonBody),
-      contentType: 'application/json'
-    });
-    
-    const headers = {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    };
-    
+    if (!schoolId) {
+      throw new Error('School ID is required');
+    }
+
     const response = await fetch(`${API_BASE_URL}/schools/${schoolId}/add-student-school/`, {
       method: 'POST',
-      headers,
-      body: jsonBody,
+      headers: getAuthHeaders(),
+      body: JSON.stringify(userData),
     });
 
     if (!response.ok) {
@@ -207,43 +183,27 @@ export const useAddStudentToSchool = () => {
         handleAuthError();
         throw new Error('Authentication required');
       }
-      const errorData = await response.json();
-      
-      // Provide better error messages for serializer mismatches
-      if (response.status === 400 && errorData.details) {
-        const hasUserError = errorData.details.user && 
-          Array.isArray(errorData.details.user) && 
-          errorData.details.user.some((msg: unknown) => 
-            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
-          );
-        const hasClassError = errorData.details.assigned_class &&
-          Array.isArray(errorData.details.assigned_class) &&
-          errorData.details.assigned_class.some((msg: unknown) =>
-            String(msg).includes('Invalid pk') && String(msg).includes('does not exist')
-          );
-
-        if (hasUserError || hasClassError) {
-          const parts = [];
-          if (hasUserError) {
-            parts.push('Backend expects "user" (UUID) but received "student_email".');
-          }
-          if (hasClassError) {
-            parts.push('Backend expects numeric class ID but received string identifier.');
-          }
-          parts.push('Please update the backend serializer to accept the new format.');
-          throw new Error(parts.join(' '));
-        }
-      }
-      
-      throw new Error(errorData.detail || errorData.message || 'Failed to add student to school');
+      const errorData = await response.json().catch(() => ({ detail: 'Failed to add student to school' }));
+      throw new Error(errorData.detail || errorData.message || 'Failed to add student to school.');
     }
 
-    const result = await response.json();
+    const addedStudent = await response.json();
     
-    mutate((key: string) => key.includes('/student-profiles/'), undefined, { revalidate: true });
-    mutate((key: string) => key.includes('/schools/'), undefined, { revalidate: true });
+    // Optimistically update the students list
+    mutate(
+      (key: string) => key.includes('/student-profiles/'),
+      (currentData: { results?: Array<unknown>; count?: number } | undefined) => {
+        if (!currentData) return currentData;
+        return {
+          ...currentData,
+          results: [...(currentData.results || []), addedStudent],
+          count: (currentData.count || 0) + 1,
+        };
+      },
+      false
+    );
 
-    return result;
+    return addedStudent;
   };
 
   return { addStudentToSchool };

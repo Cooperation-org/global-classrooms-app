@@ -100,3 +100,27 @@ export const usePublicSchools = (page: number = 1, limit: number = 100) => {
   };
 };
 
+// Public class choices hook
+interface ClassChoice {
+  value: string;
+  label: string;
+}
+
+export const usePublicClassChoices = () => {
+  const { data, error, isLoading } = useSWR<ClassChoice[]>(
+    `${API_BASE_URL}/classes/class-choices/`,
+    publicFetcher,
+    {
+      ...swrConfig,
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  return {
+    choices: data || [],
+    isLoading,
+    error,
+  };
+};
+
