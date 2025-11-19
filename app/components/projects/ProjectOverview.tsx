@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, ExternalLink, Slack, Users, User } from 'lucide-react';
 import { ProjectGoal } from '@/app/services/api';
+import { ParticipatingClasses } from './ParticipatingClasses';
 
 interface Project {
   id: number;
@@ -16,9 +17,10 @@ interface Project {
 interface ProjectOverviewProps {
   project: Project;
   goals?: ProjectGoal[];
+  projectId?: string;
 }
 
-export function ProjectOverview({ project, goals }: ProjectOverviewProps) {
+export function ProjectOverview({ project, goals, projectId }: ProjectOverviewProps) {
   return (
     <div className="space-y-8">
       {/* Project Overview Section */}
@@ -54,6 +56,11 @@ export function ProjectOverview({ project, goals }: ProjectOverviewProps) {
       {/* Participating Schools */}
       {project.schools && project.schools.length > 0 && (
         <ParticipatingSchoolsSection schools={project.schools} />
+      )}
+
+      {/* Participating Classes */}
+      {projectId && (
+        <ParticipatingClasses projectId={projectId} />
       )}
 
       {/* Project Leaders */}

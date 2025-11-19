@@ -942,6 +942,123 @@ export async function createProjectUpdate(
   );
 }
 
+
+export interface ProjectParticipant {
+  id: string;
+  project: string;
+  student: string;
+  student_name?: string;
+  student_email?: string;
+  student_class: string; // Class identifier (e.g., "GRADE_1")
+  student_class_name?: string;
+  school: string;
+  school_name?: string;
+  joined_at: string;
+  status?: 'active' | 'inactive';
+}
+
+export interface ProjectParticipantsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ProjectParticipant[];
+}
+
+/**
+ * Fetch all participants (students) for a project
+ * @param projectId - The project ID
+ * @param page - Page number (default: 1)
+ * @param limit - Items per page (default: 100)
+ * @returns Paginated list of project participants
+ */
+export async function fetchProjectParticipants(
+  projectId: string,
+  page: number = 1,
+  limit: number = 100
+): Promise<ProjectParticipantsResponse> {
+  return apiGet<ProjectParticipantsResponse>(
+    `/projects/${projectId}/participants/?page=${page}&limit=${limit}`,
+    'fetching project participants'
+  );
+}
+
+/**
+ * Response from adding a class to a project
+ * This endpoint bulk adds all students from a class as individual participants
+ */
+export interface AddClassToProjectResponse {
+  message: string;
+  added_count: number;
+  already_participating_count: number;
+  added_students: Array<{
+    id: string;
+    student_name: string;
+    student_email: string;
+    student_class: string;
+  }>;
+  already_participating_students?: Array<{
+    id: string;
+    student_name: string;
+    student_email: string;
+  }>;
+}
+
+
+export async function addClassToProject(
+  projectId: string,
+  classId: string
+): Promise<AddClassToProjectResponse> {
+  console.log('Adding class to project:', {
+    projectId,
+    classId,
+    endpoint: `/projects/${projectId}/add-class/${classId}/`
+  });
+
+  return apiPost<AddClassToProjectResponse>(
+    `/projects/${projectId}/add-class/${classId}/`,
+    {},
+    'adding class to project'
+  );
+}
+
+/**
+ * Get distinct classes that are participating in a project
+ * This is determined by looking at the distinct student_class values
+ * from all participants.
+ * 
+ * @param participants - Array of project participants
+ * @returns Array of unique class identifiers with participant counts
+ */
+export interface ProjectClassInfo {
+  class_id: string;
+  class_name?: string;
+  participant_count: number;
+  participants: ProjectParticipant[];
+}
+
+export function getDistinctClassesFromParticipants(
+  participants: ProjectParticipant[]
+): ProjectClassInfo[] {
+  // Group participants by student_class
+  const classMap = new Map<string, ProjectParticipant[]>();
+  
+  participants.forEach(participant => {
+    const classId = participant.student_class;
+    if (!classMap.has(classId)) {
+      classMap.set(classId, []);
+    }
+    classMap.get(classId)!.push(participant);
+  });
+  
+  // Convert to array with counts
+  return Array.from(classMap.entries()).map(([classId, participantList]) => ({
+    class_id: classId,
+    class_name: participantList[0]?.student_class_name,
+    participant_count: participantList.length,
+    participants: participantList,
+  }));
+}
+
 export interface ProjectGoal {
   id: string;
   title: string;

@@ -182,6 +182,7 @@ export default function ProjectDetailsPage() {
               leaders: []
             }}
             goals={goals}
+            projectId={project.id}
           />
         );
       case 'discussion':
@@ -337,7 +338,7 @@ export default function ProjectDetailsPage() {
               </div>
             </div>
             <div className="p-6">
-              <ManageMembers />
+              <ManageMembers projectId={project.id} />
             </div>
           </div>
         );
