@@ -2,7 +2,8 @@ import { mutate } from 'swr';
 import { API_BASE_URL } from './types';
 import useSWR from 'swr';
 import { swrConfig } from './config';
-import { publicFetcher } from './fetchers';
+import { publicFetcher, fetcher } from './fetchers';
+import { isValidToken, getAuthHeaders, handleAuthError } from './utils';
 
 // Re-export utilities
 export { swrConfig } from './config';
@@ -55,6 +56,9 @@ export {
   useUpdateSubject,
   useDeleteSubject,
 } from './subjects';
+
+// Class hooks
+export { useCreateClass } from './classes';
 
 // User profile hooks
 export { useUserProfile } from './user';
@@ -116,11 +120,86 @@ export const usePublicClassChoices = () => {
       dedupingInterval: 60000,
     }
   );
- console.log(data, 'get data');
   return {
     choices: data || [],
     isLoading,
     error,
+  };
+};
+
+// Classes hook - fetches actual class objects with UUIDs
+interface Class {
+  id: string; // UUID
+  name: string;
+  school: string; // UUID
+  school_name: string;
+  description: string;
+}
+
+interface ClassesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Class[];
+}
+
+export const useClasses = (schoolId?: string, search?: string, page: number = 1) => {
+  const params = new URLSearchParams();
+  params.append('page', page.toString());
+  if (schoolId) {
+    params.append('school', schoolId);
+  }
+  if (search) {
+    params.append('search', search);
+  }
+  
+  const endpoint = `/classes/?${params.toString()}`;
+  const key = isValidToken() ? `${API_BASE_URL}${endpoint}` : null;
+  
+  const { data, error, isLoading, mutate } = useSWR<ClassesResponse>(
+    key,
+    async (url) => {
+      console.log('Fetching classes from:', url);
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch classes:', response.status, errorText);
+        if (response.status === 401) {
+          handleAuthError();
+          throw new Error('Authentication required');
+        }
+        throw new Error(`Failed to fetch classes: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Classes response:', result);
+      return result;
+    },
+    {
+      ...swrConfig,
+      revalidateOnFocus: false,
+    }
+  );
+
+  // Convert id to string if it's a number (API might return number but we need string UUID)
+  const classes = (data?.results || []).map(cls => ({
+    ...cls,
+    id: String(cls.id), // Ensure id is always a string
+  }));
+
+  console.log('Processed classes:', classes);
+
+  return {
+    classes,
+    totalCount: data?.count || 0,
+    next: data?.next,
+    previous: data?.previous,
+    isLoading,
+    error,
+    mutate,
   };
 };
 

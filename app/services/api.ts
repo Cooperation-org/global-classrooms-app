@@ -607,8 +607,8 @@ export async function uploadImage(file: File): Promise<string> {
  * @returns URL of the uploaded document
  */
 export async function uploadDocument(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
   console.log('Uploading document:', {
     fileName: file.name,
@@ -795,6 +795,48 @@ export async function createSchool(schoolData: CreateSchoolRequest): Promise<Sch
 
 export async function fetchSchoolById(id: string): Promise<SchoolDetails> {
   return apiGet<SchoolDetails>(`/schools/${id}/`, 'fetching school details');
+}
+
+export async function fetchClasses(
+  page: number = 1,
+  schoolId?: string,
+  search?: string
+): Promise<ClassesResponse> {
+  const params = new URLSearchParams();
+  params.append('page', page.toString());
+  if (schoolId) {
+    params.append('school', schoolId);
+  }
+  if (search) {
+    params.append('search', search);
+  }
+  
+  return apiGet<ClassesResponse>(
+    `/classes/?${params.toString()}`,
+    'fetching classes'
+  );
+}
+
+export async function createClass(classData: CreateClassRequest): Promise<Class> {
+  console.log('Creating class with data:', classData);
+  console.log('API_BASE_URL:', API_BASE_URL);
+  
+  // The API endpoint is POST /api/classes/ according to the documentation
+  // Check if API_BASE_URL already includes /api
+  const endpoint = API_BASE_URL.endsWith('/api') ? '/classes/' : '/api/classes/';
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  console.log('Using endpoint:', endpoint);
+  console.log('Full URL will be:', fullUrl);
+  
+  return apiPost<Class>(
+    endpoint,
+    {
+      name: classData.name,
+      school: classData.school,
+      description: classData.description || '',
+    },
+    'creating class'
+  );
 }
 
 export async function fetchProjectsBySchool(schoolId: string, page: number = 1, limit: number = 10): Promise<ProjectsResponse> {
@@ -1021,11 +1063,11 @@ export async function addClassToProject(
     projectId,
     classId,
     encodedClassId,
-    endpoint: `/projects/${projectId}/add-class/${encodedClassId}/`
+    endpoint: `/projects/${projectId}/add-class/${encodedClassId}`
   });
 
   return apiPost<AddClassToProjectResponse>(
-    `/projects/${projectId}/add-class/${encodedClassId}/`,
+    `/projects/${projectId}/add-class/${encodedClassId}`,
     {},
     'adding class to project'
   );
@@ -1126,6 +1168,27 @@ export interface AssignedClass {
   school: string;
   school_name: string;
   description: string;
+}
+
+export interface Class {
+  id: string; // UUID for the class
+  name: string;
+  school: string; // UUID of the school
+  school_name: string;
+  description: string;
+}
+
+export interface ClassesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Class[];
+}
+
+export interface CreateClassRequest {
+  name: string;
+  school: string; // UUID of the school
+  description?: string;
 }
 
 export interface TeacherProfile {

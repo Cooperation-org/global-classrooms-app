@@ -31,7 +31,7 @@ export const useCurrentTeacherProfile = () => {
     school?: string;
     school_name?: string;
   }>(
-    '/teacher-profiles/me/',
+    '/teacher-profiles/me',
     isValidToken(),
     {
       ...swrConfig,

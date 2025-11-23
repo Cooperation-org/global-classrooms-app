@@ -6,7 +6,7 @@ import {
   ProjectParticipant,
   ProjectClassInfo
 } from '@/app/services/api';
-import { useCurrentTeacherProfile, usePublicClassChoices } from '@/app/hooks/useSWR';
+import { useCurrentTeacherProfile, useClasses } from '@/app/hooks/useSWR';
 
 const TABS = [
   { id: 'students', label: 'Students' },
@@ -298,9 +298,21 @@ interface AddClassModalProps {
 function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
   const [classId, setClassId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Note: usePublicClassChoices should return UUIDs in the 'value' field
-  // The API endpoint /projects/{project_id}/add-class/{class_id}/ expects a UUID, not a string identifier
-  const { choices, isLoading: choicesLoading, error: choicesError } = usePublicClassChoices();
+  // Fetch classes from /api/classes/ endpoint which returns class objects with UUIDs
+  // The API endpoint /projects/{project_id}/add-class/{class_id}/ expects a UUID
+  const { classes, isLoading: classesLoading, error: classesError } = useClasses(
+    teacherProfile?.school, // Optionally filter by school
+    undefined, // search
+    1 // page
+  );
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('AddClassModal - Classes:', classes);
+    console.log('AddClassModal - Loading:', classesLoading);
+    console.log('AddClassModal - Error:', classesError);
+    console.log('AddClassModal - Teacher Profile:', teacherProfile);
+  }, [classes, classesLoading, classesError, teacherProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,28 +350,40 @@ function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
               value={classId}
               onChange={e => setClassId(e.target.value)}
               required
-              disabled={isSubmitting || choicesLoading}
+              disabled={isSubmitting || classesLoading}
             >
               <option value="">
-                {choicesLoading ? 'Loading classes...' : 'Select a class'}
+                {classesLoading ? 'Loading classes...' : 'Select a class'}
               </option>
-              {choices.map((choice) => (
-                <option key={choice.value} value={choice.value}>
-                  {choice.label}
+              {classes.length > 0 && classes.map((classItem) => (
+                <option key={classItem.id} value={String(classItem.id)}>
+                  {classItem.name} {classItem.school_name ? `(${classItem.school_name})` : ''}
                 </option>
               ))}
             </select>
-            {choicesError && (
-              <p className="text-xs text-red-600 mt-2">
-                {choicesError instanceof Error ? choicesError.message : 'Failed to load classes'}
-              </p>
+            {classesError && (
+              <div className="mt-2">
+                <p className="text-xs text-red-600">
+                  {classesError instanceof Error ? classesError.message : 'Failed to load classes'}
+                </p>
+                <p className="text-xs text-red-500 mt-1">
+                  Please check your browser console for more details.
+                </p>
+              </div>
             )}
-            {!choicesError && !choicesLoading && choices.length === 0 && (
-              <p className="text-xs text-[#6B7280] mt-2">
-                No classes available
-              </p>
+            {!classesError && !classesLoading && classes.length === 0 && (
+              <div className="mt-2">
+                <p className="text-xs text-[#6B7280]">
+                  No classes available
+                </p>
+                {teacherProfile?.school && (
+                  <p className="text-xs text-[#9CA3AF] mt-1">
+                    No classes found for your school. Please contact an administrator.
+                  </p>
+                )}
+              </div>
             )}
-            {!choicesError && choices.length > 0 && (
+            {!classesError && classes.length > 0 && (
               <p className="text-xs text-[#6B7280] mt-2">
                 All students from the selected class will be added to the project.
               </p>
@@ -378,7 +402,7 @@ function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
             <button
               type="submit"
               className="px-6 py-2 bg-black text-white rounded-full font-medium text-sm hover:bg-[#222B45] transition disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!classId.trim() || isSubmitting || choicesLoading}
+              disabled={!classId.trim() || isSubmitting || classesLoading}
             >
               {isSubmitting ? 'Adding...' : 'Add Class'}
             </button>

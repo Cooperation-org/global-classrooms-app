@@ -1,14 +1,14 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddTeacherToSchool, useAddStudentToSchool } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddTeacherToSchool, useAddStudentToSchool, useClasses, useCreateClass } from '@/app/hooks/useSWR';
 import { useAuth } from '@/app/context/AuthContext';
 import { StudentProfile, TeacherProfile } from '@/app/services/api';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
-const ALL_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Impact'] as const;
-const ADMIN_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Impact'] as const;
+const ALL_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Classes', 'Impact'] as const;
+const ADMIN_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Classes', 'Impact'] as const;
 const NON_ADMIN_TABS = ['Overview', 'Impact'] as const;
 
 interface School {
@@ -60,6 +60,9 @@ export default function SettingsPage() {
   const [newSubject, setNewSubject] = useState({ name: '', description: '', is_active: true });
   const [isEditingSubject, setIsEditingSubject] = useState(false);
   const [editingSubject, setEditingSubject] = useState<{ id: number; name: string; description: string; is_active: boolean } | null>(null);
+  const [isAddingClass, setIsAddingClass] = useState(false);
+  const [newClass, setNewClass] = useState({ name: '', description: '' });
+  const { choices: classChoices, isLoading: classChoicesLoading } = usePublicClassChoices();
   const [isAddingTeacher, setIsAddingTeacher] = useState(false);
   const [newTeacher, setNewTeacher] = useState({
     full_name: '',
@@ -150,6 +153,8 @@ export default function SettingsPage() {
   const { createSubject } = useCreateSubject();
   const { updateSubject } = useUpdateSubject();
   const { deleteSubject } = useDeleteSubject();
+  const { createClass } = useCreateClass();
+  const { classes, isLoading: classesLoading } = useClasses(school?.id);
   const { updateTeacher } = useUpdateTeacher();
   const { deleteTeacher } = useDeleteTeacher();
   const { students, isLoading: studentsLoading } = useStudentProfiles();
@@ -323,6 +328,27 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to add/update subject:', error);
       alert('Failed to save subject. Please try again.');
+    }
+  };
+
+  // Add new class
+  const handleAddClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClass.name.trim() || !school) return;
+
+    try {
+      await createClass({
+        name: newClass.name,
+        school: school.id,
+        description: newClass.description || '',
+      });
+      
+      setNewClass({ name: '', description: '' });
+      setIsAddingClass(false);
+      alert('Class created successfully!');
+    } catch (error) {
+      console.error('Failed to create class:', error);
+      alert('Failed to create class. Please try again.');
     }
   };
 
@@ -1349,6 +1375,142 @@ export default function SettingsPage() {
                     </tbody>
                   </table>
                         </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {activeTab === 'Classes' && (
+        <div>
+          <h3 className="text-2xl font-bold mb-2">Manage School Classes</h3>
+          {school ? (
+            <>
+              <p className="text-gray-600 mb-4">Managing classes for: <span className="font-semibold text-green-700">{school.name}</span></p>
+              <div className="flex justify-end mb-4">
+                <button
+                  className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
+                  onClick={() => {
+                    setIsAddingClass(true);
+                  }}
+                >
+                  + Add New Class
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No school selected. Please select a school first.</p>
+            </div>
+          )}
+
+          {school && (
+            <>
+              {isAddingClass ? (
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                    Add New Class
+                  </h4>
+                  <form onSubmit={handleAddClass} className="space-y-4">
+                    <div>
+                      <label htmlFor="newClassName" className="block text-sm font-medium text-gray-700">Class Name *</label>
+                      <select
+                        id="newClassName"
+                        value={newClass.name}
+                        onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200 bg-white"
+                        required
+                        disabled={classChoicesLoading}
+                      >
+                        <option value="">
+                          {classChoicesLoading ? 'Loading class choices...' : 'Select a class name'}
+                        </option>
+                        {classChoices.map((choice) => (
+                          <option key={choice.value} value={choice.value}>
+                            {choice.label}
+                          </option>
+                        ))}
+                      </select>
+                      {classChoices.length === 0 && !classChoicesLoading && (
+                        <p className="text-xs text-red-600 mt-1">
+                          No class choices available. Please contact an administrator.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor="newClassDescription" className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                      <textarea
+                        id="newClassDescription"
+                        value={newClass.description}
+                        onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200"
+                        rows={3}
+                        placeholder="Optional description for this class"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        Add Class
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingClass(false);
+                          setNewClass({ name: '', description: '' });
+                        }}
+                        className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  {classesLoading ? (
+                    <div className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Loading classes...</p>
+                    </div>
+                  ) : classes.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <p className="text-gray-500">No classes found. Add your first class to get started.</p>
+                    </div>
+                  ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Description
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            School
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {classes.map((classItem) => (
+                          <tr key={classItem.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {classItem.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {classItem.description || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {classItem.school_name || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               )}
             </>
           )}
