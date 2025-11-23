@@ -6,7 +6,7 @@ import {
   ProjectParticipant,
   ProjectClassInfo
 } from '@/app/services/api';
-import { useCurrentTeacherProfile } from '@/app/hooks/useSWR';
+import { useCurrentTeacherProfile, usePublicClassChoices } from '@/app/hooks/useSWR';
 
 const TABS = [
   { id: 'students', label: 'Students' },
@@ -298,6 +298,9 @@ interface AddClassModalProps {
 function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
   const [classId, setClassId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Note: usePublicClassChoices should return UUIDs in the 'value' field
+  // The API endpoint /projects/{project_id}/add-class/{class_id}/ expects a UUID, not a string identifier
+  const { choices, isLoading: choicesLoading, error: choicesError } = usePublicClassChoices();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,20 +331,39 @@ function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
             <label className="block text-[#222B45] font-medium mb-2">
-              Class Identifier
+              Select Class
             </label>
-            <input
-              type="text"
-              placeholder="e.g., GRADE_1, GRADE_2, etc."
-              className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 text-[#222B45] focus:outline-none focus:ring-2 focus:ring-[#1A7F4F]"
+            <select
+              className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 text-[#222B45] focus:outline-none focus:ring-2 focus:ring-[#1A7F4F] bg-white"
               value={classId}
               onChange={e => setClassId(e.target.value)}
               required
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-[#6B7280] mt-2">
-              Enter the class identifier (e.g., "GRADE_1"). All students from this class will be added to the project.
-            </p>
+              disabled={isSubmitting || choicesLoading}
+            >
+              <option value="">
+                {choicesLoading ? 'Loading classes...' : 'Select a class'}
+              </option>
+              {choices.map((choice) => (
+                <option key={choice.value} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
+            {choicesError && (
+              <p className="text-xs text-red-600 mt-2">
+                {choicesError instanceof Error ? choicesError.message : 'Failed to load classes'}
+              </p>
+            )}
+            {!choicesError && !choicesLoading && choices.length === 0 && (
+              <p className="text-xs text-[#6B7280] mt-2">
+                No classes available
+              </p>
+            )}
+            {!choicesError && choices.length > 0 && (
+              <p className="text-xs text-[#6B7280] mt-2">
+                All students from the selected class will be added to the project.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-4 justify-end">
@@ -356,7 +378,7 @@ function AddClassModal({ onClose, onAdd, teacherProfile }: AddClassModalProps) {
             <button
               type="submit"
               className="px-6 py-2 bg-black text-white rounded-full font-medium text-sm hover:bg-[#222B45] transition disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!classId.trim() || isSubmitting}
+              disabled={!classId.trim() || isSubmitting || choicesLoading}
             >
               {isSubmitting ? 'Adding...' : 'Add Class'}
             </button>

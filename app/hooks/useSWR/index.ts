@@ -116,7 +116,7 @@ export const usePublicClassChoices = () => {
       dedupingInterval: 60000,
     }
   );
-
+ console.log(data, 'get data');
   return {
     choices: data || [],
     isLoading,

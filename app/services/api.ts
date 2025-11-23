@@ -1004,18 +1004,28 @@ export interface AddClassToProjectResponse {
 }
 
 
+/**
+ * Add all students from a specific class to a project
+ * @param projectId - The UUID of the project
+ * @param classId - The UUID of the class (not the class name/identifier)
+ */
 export async function addClassToProject(
   projectId: string,
   classId: string
 ): Promise<AddClassToProjectResponse> {
+  // Ensure classId is a valid UUID and encode it properly for the URL
+  // The API expects a UUID, not a string identifier like "Grade 6"
+  const encodedClassId = encodeURIComponent(classId);
+  
   console.log('Adding class to project:', {
     projectId,
     classId,
-    endpoint: `/projects/${projectId}/add-class/${classId}/`
+    encodedClassId,
+    endpoint: `/projects/${projectId}/add-class/${encodedClassId}/`
   });
 
   return apiPost<AddClassToProjectResponse>(
-    `/projects/${projectId}/add-class/${classId}/`,
+    `/projects/${projectId}/add-class/${encodedClassId}/`,
     {},
     'adding class to project'
   );
