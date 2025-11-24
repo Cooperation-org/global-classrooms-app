@@ -444,8 +444,8 @@ export interface School {
   id: string;
   name: string;
   overview: string;
-  institution_type: 'primary' | 'secondary' | 'higher_secondary' | 'college' | 'university';
-  affiliation: 'government' | 'private' | 'semi_government' | 'international';
+  institution_type: 'primary' | 'secondary' | 'high_school' | 'college' | 'university' | 'academy' | 'other';
+  affiliation: 'government' | 'private' | 'semi_private' | 'ngo' | 'international';
   registration_number: string;
   year_of_establishment: number;
   address_line_1: string;
@@ -462,7 +462,7 @@ export interface School {
   principal_phone: string;
   number_of_students: number;
   number_of_teachers: number;
-  medium_of_instruction: 'english' | 'hindi' | 'french' | 'spanish' | 'german' | 'other';
+  medium_of_instruction: 'english' | 'local_language' | 'bilingual' | 'multilingual';
   logo: string;
   created_at: string;
   updated_at: string;
@@ -473,8 +473,8 @@ export interface School {
 export interface CreateSchoolRequest {
   name: string;
   overview: string;
-  institution_type: 'primary' | 'secondary' | 'higher_secondary' | 'college' | 'university';
-  affiliation: 'government' | 'private' | 'semi_government' | 'international';
+  institution_type: 'primary' | 'secondary' | 'high_school' | 'college' | 'university' | 'academy' | 'other';
+  affiliation: 'government' | 'private' | 'semi_private' | 'ngo' | 'international';
   registration_number: string;
   year_of_establishment: number;
   address_line_1: string;
@@ -491,7 +491,7 @@ export interface CreateSchoolRequest {
   principal_phone: string;
   number_of_students: number;
   number_of_teachers: number;
-  medium_of_instruction: 'english' | 'hindi' | 'french' | 'spanish' | 'german' | 'other';
+  medium_of_instruction: 'english' | 'local_language' | 'bilingual' | 'multilingual';
   logo?: File | string;
   creator_name: string;
   creator_role: 'student' | 'teacher';

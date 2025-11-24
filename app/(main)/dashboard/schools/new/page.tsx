@@ -166,9 +166,11 @@ export default function CreateSchoolPage() {
           >
             <option value="primary">Primary</option>
             <option value="secondary">Secondary</option>
-            <option value="higher_secondary">Higher Secondary</option>
+            <option value="high_school">High School</option>
             <option value="college">College</option>
             <option value="university">University</option>
+            <option value="academy">Academy</option>
+            <option value="other">Other</option>
           </select>
         </div>
         <div>
@@ -180,7 +182,8 @@ export default function CreateSchoolPage() {
           >
             <option value="government">Government</option>
             <option value="private">Private</option>
-            <option value="semi_government">Semi-Government</option>
+            <option value="semi_private">Semi-Private</option>
+            <option value="ngo">NGO</option>
             <option value="international">International</option>
           </select>
         </div>
@@ -204,11 +207,9 @@ export default function CreateSchoolPage() {
             onChange={(e) => handleInputChange('medium_of_instruction', e.target.value)}
           >
             <option value="english">English</option>
-            <option value="hindi">Hindi</option>
-            <option value="french">French</option>
-            <option value="spanish">Spanish</option>
-            <option value="german">German</option>
-            <option value="other">Other</option>
+            <option value="local_language">Local Language</option>
+            <option value="bilingual">Bilingual</option>
+            <option value="multilingual">Multilingual</option>
           </select>
         </div>
       </div>
@@ -369,22 +370,32 @@ export default function CreateSchoolPage() {
           )}
         </div>
         <div>
-          <label className="block font-medium mb-2">State</label>
+          <label className="block font-medium mb-2">State *</label>
           <input 
-            className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 text-base"
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              getFieldError('state') ? 'border-red-500' : 'border-[#E5E7EB]'
+            }`}
             placeholder="State/Province"
             value={formData.state}
             onChange={(e) => handleInputChange('state', e.target.value)}
           />
+          {getFieldError('state') && (
+            <p className="text-red-500 text-sm mt-1">{getFieldError('state')}</p>
+          )}
         </div>
         <div>
-          <label className="block font-medium mb-2">Postal Code</label>
+          <label className="block font-medium mb-2">Postal Code *</label>
           <input 
-            className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 text-base"
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              getFieldError('postal_code') ? 'border-red-500' : 'border-[#E5E7EB]'
+            }`}
             placeholder="Postal code"
             value={formData.postal_code}
             onChange={(e) => handleInputChange('postal_code', e.target.value)}
           />
+          {getFieldError('postal_code') && (
+            <p className="text-red-500 text-sm mt-1">{getFieldError('postal_code')}</p>
+          )}
         </div>
         <div>
           <label className="block font-medium mb-2">Country *</label>
@@ -448,14 +459,19 @@ export default function CreateSchoolPage() {
           )}
         </div>
         <div>
-          <label className="block font-medium mb-2">Principal Phone</label>
+          <label className="block font-medium mb-2">Principal Phone *</label>
           <input 
             type="tel"
-            className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 text-base"
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              getFieldError('principal_phone') ? 'border-red-500' : 'border-[#E5E7EB]'
+            }`}
             placeholder="+1234567890"
             value={formData.principal_phone}
             onChange={(e) => handleInputChange('principal_phone', e.target.value)}
           />
+          {getFieldError('principal_phone') && (
+            <p className="text-red-500 text-sm mt-1">{getFieldError('principal_phone')}</p>
+          )}
         </div>
       </div>
 
