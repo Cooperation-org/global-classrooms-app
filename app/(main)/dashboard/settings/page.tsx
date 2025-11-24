@@ -1,13 +1,15 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddTeacherToSchool, useAddStudentToSchool } from '@/app/hooks/useSWR';
+import { useSchools, useProjects, useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useTeacherProfiles, useCreateTeacher, useUpdateTeacher, useDeleteTeacher, useStudentProfiles, useCreateStudent, useUpdateStudent, useDeleteStudent, useUpdateSchool, usePublicClassChoices, useAddTeacherToSchool, useAddStudentToSchool, useClasses, useCreateClass } from '@/app/hooks/useSWR';
 import { useAuth } from '@/app/context/AuthContext';
 import { StudentProfile, TeacherProfile } from '@/app/services/api';
 
 const placeholderImg = 'https://placehold.co/120x120?text=School';
 
-const TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Impact'];
+const ALL_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Classes', 'Impact'] as const;
+const ADMIN_TABS = ['Overview', 'Teachers', 'Students', 'Subjects', 'Classes', 'Impact'] as const;
+const NON_ADMIN_TABS = ['Overview', 'Impact'] as const;
 
 interface School {
   id: string;
@@ -33,6 +35,8 @@ interface School {
   number_of_teachers: number;
   number_of_students: number;
   medium_of_instruction: string;
+  admin?: string; // User ID of the school admin
+  admin_name?: string;
 }
 
 interface Project {
@@ -52,11 +56,13 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [joinLink, setJoinLink] = useState('https://join-link.example/abc123');
   const [school, setSchool] = useState<School | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [newSubject, setNewSubject] = useState({ name: '', description: '', is_active: true });
   const [isEditingSubject, setIsEditingSubject] = useState(false);
   const [editingSubject, setEditingSubject] = useState<{ id: number; name: string; description: string; is_active: boolean } | null>(null);
+  const [isAddingClass, setIsAddingClass] = useState(false);
+  const [newClass, setNewClass] = useState({ name: '', description: '' });
+  const { choices: classChoices, isLoading: classChoicesLoading } = usePublicClassChoices();
   const [isAddingTeacher, setIsAddingTeacher] = useState(false);
   const [newTeacher, setNewTeacher] = useState({
     full_name: '',
@@ -138,19 +144,20 @@ export default function SettingsPage() {
   const { schools, isLoading, error } = useSchools(1, 1); // Get first school
   const { updateSchool } = useUpdateSchool();
   const { user } = useAuth();
-  const { projects: swrProjects, isLoading: projectsLoading } = useProjects(1, 100);
+  const { projects, isLoading: projectsLoading } = useProjects(1, 100);
   const { choices, isLoading: choicesLoading, error: choicesError } = usePublicClassChoices();
   const { subjects, error: subjectsError } = useSubjects(school?.id);
   const { teachers, isLoading: teachersLoading } = useTeacherProfiles();
-  const { addStudentToSchool } = useAddStudentToSchool(school?.id)
-  const { addTeacherToSchool } = useAddTeacherToSchool(school?.id)
+  const { addStudentToSchool } = useAddStudentToSchool(school?.id);
+  const { addTeacherToSchool } = useAddTeacherToSchool(school?.id);
   const { createSubject } = useCreateSubject();
   const { updateSubject } = useUpdateSubject();
   const { deleteSubject } = useDeleteSubject();
+  const { createClass } = useCreateClass();
+  const { classes, isLoading: classesLoading } = useClasses(school?.id);
   const { updateTeacher } = useUpdateTeacher();
   const { deleteTeacher } = useDeleteTeacher();
   const { students, isLoading: studentsLoading } = useStudentProfiles();
-  const { createStudent } = useCreateStudent();
   const { updateStudent } = useUpdateStudent();
   const { deleteStudent } = useDeleteStudent();
   
@@ -161,12 +168,29 @@ export default function SettingsPage() {
     { id: "5fa85f64-5717-4562-b3fc-2c963f66afa8", name: "Bob Johnson", email: "bob@example.com" },
   ];
 
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  // Check if user is platform admin
+  const isPlatformAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  
+  // Check if user is the school admin
+  const isSchoolAdmin = user?.id && school?.admin && user.id === school.admin;
+  
+  // User can manage school if they are platform admin OR school admin
+  const canManageSchool = isPlatformAdmin || isSchoolAdmin;
+
+  // Filter tabs based on access level
+  const availableTabs = canManageSchool ? ADMIN_TABS : NON_ADMIN_TABS;
+
+  // Reset activeTab if it's not available for the current user
+  useEffect(() => {
+    const restrictedTabs = ['Teachers', 'Students', 'Subjects'];
+    if (!canManageSchool && restrictedTabs.includes(activeTab)) {
+      setActiveTab('Overview');
+    }
+  }, [canManageSchool, activeTab]);
 
   // School edit handlers
   const handleEditSchool = () => {
-    if (!school || !isAdmin) return;
+    if (!school || !canManageSchool) return;
     
     const schoolData = school as School & { 
       is_verified?: boolean; 
@@ -237,7 +261,7 @@ export default function SettingsPage() {
 
   const handleSubmitSchoolEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!school || !isAdmin) return;
+    if (!school || !canManageSchool) return;
 
     setIsSubmittingSchool(true);
     try {
@@ -265,8 +289,8 @@ export default function SettingsPage() {
   // Update local state when SWR data changes
   useEffect(() => {
     if (schools && schools.length > 0) {
-      const schoolData = schools[0];
-          setSchool(schoolData);
+      const schoolData = schools[0] as School;
+      setSchool(schoolData);
     }
   }, [schools]);
 
@@ -304,6 +328,27 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to add/update subject:', error);
       alert('Failed to save subject. Please try again.');
+    }
+  };
+
+  // Add new class
+  const handleAddClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClass.name.trim() || !school) return;
+
+    try {
+      await createClass({
+        name: newClass.name,
+        school: school.id,
+        description: newClass.description || '',
+      });
+      
+      setNewClass({ name: '', description: '' });
+      setIsAddingClass(false);
+      alert('Class created successfully!');
+    } catch (error) {
+      console.error('Failed to create class:', error);
+      alert('Failed to create class. Please try again.');
     }
   };
 
@@ -358,7 +403,7 @@ export default function SettingsPage() {
       setEditingTeacher(null);
     } catch (error) {
       console.error('Failed to add/update teacher:', error);
-      alert('Failed to save teacher. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to save teacher. Please try again.');
     }
   };
 
@@ -449,7 +494,7 @@ export default function SettingsPage() {
       setEditingStudent(null);
     } catch (error) {
       console.error('Failed to add/update student:', error);
-      alert('Failed to save student. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to save student. Please try again.');
     }
   };
 
@@ -472,7 +517,6 @@ export default function SettingsPage() {
       user: student.user,
       school: student.school,
       student_id: student.student_id,
-      current_class: student.current_class,
       parent_name: student.parent_name,
       parent_email: student.parent_email,
       parent_phone: student.parent_phone
@@ -491,7 +535,7 @@ export default function SettingsPage() {
 
   // Calculate cumulative impact
   const calculateCumulativeImpact = () => {
-    return projects.reduce((total, project) => {
+    return (projects as Project[]).reduce((total: { trees_planted: number; students_engaged: number; waste_recycled: number }, project: Project) => {
       return {
         trees_planted: total.trees_planted + (project.total_impact?.trees_planted || 0),
         students_engaged: total.students_engaged + (project.total_impact?.students_engaged || 0),
@@ -590,7 +634,7 @@ export default function SettingsPage() {
           <p className="text-green-700 text-sm">{school.overview}</p>
           <p className="text-green-500 text-xs">Located in {school.city}, {school.country}</p>
         </div>
-        {isAdmin && (
+        {canManageSchool && (
           <button 
             onClick={handleEditSchool}
             className="bg-black text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-gray-900 transition w-full md:w-auto"
@@ -602,7 +646,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex overflow-x-auto whitespace-nowrap border-b border-gray-200 mb-6 gap-2 md:gap-8">
-        {TABS.map(tab => (
+        {availableTabs.map(tab => (
           <button
             key={tab}
             className={`pb-2 px-2 text-base md:text-lg font-medium transition border-b-2 ${activeTab === tab ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-green-700'}`}
@@ -850,14 +894,14 @@ export default function SettingsPage() {
                       </div>
                       
                       {/* Selected Classes Display */}
-                      {newTeacher.assigned_classes.length > 0 && (
+                      {newTeacher.assigned_classes && newTeacher.assigned_classes.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {newTeacher.assigned_classes.map(classId => (
                             <span
                               key={classId}
                               className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
                             >
-                              Class {classId}
+                              {classId.replace('_', ' ')}
                               <button
                                 type="button"
                                 onClick={() => setNewTeacher(prev => ({
@@ -995,7 +1039,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {teachers.map((teacher: TeacherProfile) => (
+                      {(teachers as TeacherProfile[]).map((teacher) => (
                         <tr key={teacher.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {teacher.user_name}
@@ -1287,7 +1331,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {students.map((student: StudentProfile) => (
+                      {(students as StudentProfile[]).map((student) => (
                         <tr key={student.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {student.user_name}
@@ -1331,6 +1375,142 @@ export default function SettingsPage() {
                     </tbody>
                   </table>
                         </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {activeTab === 'Classes' && (
+        <div>
+          <h3 className="text-2xl font-bold mb-2">Manage School Classes</h3>
+          {school ? (
+            <>
+              <p className="text-gray-600 mb-4">Managing classes for: <span className="font-semibold text-green-700">{school.name}</span></p>
+              <div className="flex justify-end mb-4">
+                <button
+                  className="bg-black text-white px-5 py-2 rounded-lg font-semibold hover:bg-gray-900 transition"
+                  onClick={() => {
+                    setIsAddingClass(true);
+                  }}
+                >
+                  + Add New Class
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">No school selected. Please select a school first.</p>
+            </div>
+          )}
+
+          {school && (
+            <>
+              {isAddingClass ? (
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                    Add New Class
+                  </h4>
+                  <form onSubmit={handleAddClass} className="space-y-4">
+                    <div>
+                      <label htmlFor="newClassName" className="block text-sm font-medium text-gray-700">Class Name *</label>
+                      <select
+                        id="newClassName"
+                        value={newClass.name}
+                        onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200 bg-white"
+                        required
+                        disabled={classChoicesLoading}
+                      >
+                        <option value="">
+                          {classChoicesLoading ? 'Loading class choices...' : 'Select a class name'}
+                        </option>
+                        {classChoices.map((choice) => (
+                          <option key={choice.value} value={choice.value}>
+                            {choice.label}
+                          </option>
+                        ))}
+                      </select>
+                      {classChoices.length === 0 && !classChoicesLoading && (
+                        <p className="text-xs text-red-600 mt-1">
+                          No class choices available. Please contact an administrator.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor="newClassDescription" className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                      <textarea
+                        id="newClassDescription"
+                        value={newClass.description}
+                        onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-200"
+                        rows={3}
+                        placeholder="Optional description for this class"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        Add Class
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingClass(false);
+                          setNewClass({ name: '', description: '' });
+                        }}
+                        className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                  {classesLoading ? (
+                    <div className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Loading classes...</p>
+                    </div>
+                  ) : classes.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <p className="text-gray-500">No classes found. Add your first class to get started.</p>
+                    </div>
+                  ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Description
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            School
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {classes.map((classItem) => (
+                          <tr key={classItem.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {classItem.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {classItem.description || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {classItem.school_name || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -1440,7 +1620,7 @@ export default function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {subjects.map((subject: { id: number; name: string; description: string; is_active: boolean }) => (
+                      {(subjects as Array<{ id: number; name: string; description: string; is_active: boolean }>).map((subject) => (
                         <tr key={subject.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {subject.name}
@@ -1558,11 +1738,11 @@ export default function SettingsPage() {
                     <p className="text-sm text-gray-500">Total Projects</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{projects.filter(p => p.status === 'completed').length}</p>
+                    <p className="text-2xl font-bold text-gray-900">{(projects as Project[]).filter(p => p.status === 'completed').length}</p>
                     <p className="text-sm text-gray-500">Completed Projects</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{projects.filter(p => p.is_open_for_collaboration).length}</p>
+                    <p className="text-2xl font-bold text-gray-900">{(projects as Project[]).filter(p => p.is_open_for_collaboration).length}</p>
                     <p className="text-sm text-gray-500">Open for Collaboration</p>
                   </div>
                 </div>
@@ -1573,7 +1753,7 @@ export default function SettingsPage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Recent Projects</h4>
                   <div className="space-y-4">
-                    {projects.slice(0, 5).map((project) => (
+                    {(projects as Project[]).slice(0, 5).map((project) => (
                       <div key={project.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg">
                         <div className="flex-1">
                           <h5 className="font-medium text-gray-900">{project.title}</h5>
