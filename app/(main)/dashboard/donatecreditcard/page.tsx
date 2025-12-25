@@ -721,7 +721,7 @@ const DonationPage: React.FC = () => {
               Dedicate this Donation (optional)
             </label>
             <p style={{ color: "#666", fontSize: "0.8rem", marginBottom: "12px" }} className="md:text-sm md:mb-4">
-              You can dedicate this donation and share an e-certificate with someone you'd like to honour.
+              You can dedicate this donation and share an e-certificate with someone you&apos;d like to honour.
             </p>
 
             <select
