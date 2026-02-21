@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { apiService } from "@/app/services/api";
 import { API_ENDPOINTS } from "@/app/utils/constants";
 import { isValidEmail, isValidPassword } from "@/app/utils/validation";
-import { useConnect, useAccount } from "wagmi";
+import { useConnect, useAccount, useSignMessage } from "wagmi";
+import { WalletNonceResponse } from "@/app/types";
 
 // Component that uses useSearchParams - needs to be wrapped in Suspense
 const SignUpForm = () => {
@@ -49,6 +50,7 @@ const SignUpForm = () => {
   // Wagmi wallet connect
   const { connect, connectors, isPending } = useConnect();
   const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -234,8 +236,26 @@ const SignUpForm = () => {
 
   const handleWalletRegistration = async (walletAddress: string) => {
     try {
+      const nonceRes = await apiService.post("/auth/wallet/nonce/", {
+        wallet_address: walletAddress,
+      });
+
+      const nonceData = nonceRes.data as WalletNonceResponse
+
+      if (!nonceRes.success || !nonceData?.nonce) {
+        setError("Failed to obtain nonce for wallet registration");
+        setIsWalletLoading(false);
+        return;
+      }
+      
+      const nonce = nonceData.nonce as string;
+      const message = `Register to Global Classrooms with this wallet\n\nNonce: ${nonce}`;
+      const signature = await signMessageAsync({ message });
+
       const response = await apiService.post("/auth/wallet-register/", {
         wallet_address: walletAddress,
+        message,
+        signature,
         // role: selectedRole,
       });
 
