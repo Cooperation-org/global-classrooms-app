@@ -103,6 +103,14 @@ export interface LoginResponse {
   refresh: string;
 }
 
+// Wallet nonce response types
+export interface WalletNonceResponse {
+  wallet_address: string;
+  nonce: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Form types
 export interface LoginForm {
   email: string;
@@ -122,4 +130,4 @@ export interface NavItem {
   href: string;
   icon?: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
-} 
+}

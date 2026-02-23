@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { apiService } from "@/app/services/api";
 import { API_ENDPOINTS } from "@/app/utils/constants";
 import { isValidEmail } from "@/app/utils/validation";
-import { LoginResponse } from "@/app/types";
-import { useConnect, useAccount } from "wagmi";
+import { LoginResponse, WalletNonceResponse } from "@/app/types";
+import { useConnect, useAccount, useSignMessage } from "wagmi";
 import { EnvelopeClosedIcon } from "@radix-ui/react-icons";
 
 const LoginPage = () => {
@@ -27,6 +27,7 @@ const LoginPage = () => {
   // Wagmi wallet connect
   const { connect, connectors, isPending } = useConnect();
   const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -207,8 +208,26 @@ const LoginPage = () => {
 
   const handleWalletLogin = async (walletAddress: string) => {
     try {
+
+      const nonceRes = await apiService.post("/auth/wallet/nonce/", {
+        wallet_address: walletAddress,
+      });
+
+      const nonceData = nonceRes.data as WalletNonceResponse
+
+      if (!nonceRes.success || !nonceData?.nonce) {
+        setError("Failed to obtain nonce for wallet login");
+        setIsLoading(false);
+        return;
+      }
+      const nonce = nonceData.nonce as string;
+      const message = `Login to Global Classrooms with this wallet\n\nNonce: ${nonce}`;
+      const signature = await signMessageAsync({ message });
+
       const response = await apiService.post("/auth/login/wallet/", {
         wallet_address: walletAddress,
+        message,
+        signature,
       });
 
       if (response.success) {
@@ -259,8 +278,8 @@ const LoginPage = () => {
         if (walletErrorMessage.toLowerCase().includes("user not found") || 
             walletErrorMessage.toLowerCase().includes("wallet not registered")) {
           // Automatically redirect to signup page for unregistered wallets
-          console.log("Wallet not registered, redirecting to signup with wallet:", address);
-          const signupUrl = `/signup${address ? `?wallet=${encodeURIComponent(address)}` : ''}`;
+          console.log("Wallet not registered, redirecting to signup with wallet:", walletAddress);
+          const signupUrl = `/signup${walletAddress ? `?wallet=${encodeURIComponent(walletAddress)}` : ''}`;
           router.push(signupUrl);
           return; // Don't set error, just redirect
         }
