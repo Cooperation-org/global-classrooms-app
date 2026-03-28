@@ -17,7 +17,8 @@ import {
   Calendar,
   Award,
   Target,
-  Zap
+  Zap,
+  Send
 } from 'lucide-react';
 
 // UI Components

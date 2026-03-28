@@ -58,7 +58,7 @@ const CustomTooltip = ({ active, payload, label }: {
       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
         <p className="font-medium text-gray-900 mb-2">{label}</p>
         {payload.map((entry, index) => {
-          let displayValue = entry.value;
+          const displayValue = entry.value;
           let unit = '';
           
           if (entry.dataKey === 'trees') {

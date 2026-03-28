@@ -273,7 +273,7 @@ const LoginPage = () => {
         }
       } else {
         // Handle wallet login errors
-        let walletErrorMessage = response.error || "Wallet login failed.";
+        const walletErrorMessage = response.error || "Wallet login failed.";
         
         if (walletErrorMessage.toLowerCase().includes("user not found") || 
             walletErrorMessage.toLowerCase().includes("wallet not registered")) {

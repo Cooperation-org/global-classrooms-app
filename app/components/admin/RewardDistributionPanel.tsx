@@ -569,7 +569,7 @@ const RewardDistributionPanel: React.FC = () => {
             <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
               <p className="text-sm text-emerald-700">
                 <strong>💡 How it works:</strong> Select a project below to start the reward distribution process. 
-                You'll be guided through setting up wallet addresses and confirming the distribution.
+                You&apos;ll be guided through setting up wallet addresses and confirming the distribution.
               </p>
             </div>
           </div>
